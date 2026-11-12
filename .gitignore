@@ -1,0 +1,22 @@
+# Gradle / Java
+.gradle/
+build/
+out/
+classes/
+*.class
+
+# IntelliJ
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local configuration and runtime files
+run/
+logs/
+crash-reports/
+*.log
+.env
+.env.*
