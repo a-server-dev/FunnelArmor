@@ -1,0 +1,12 @@
+name: FunnelArmor
+version: ${version}
+main: dev.emerald.funnel.FunnelArmorPlugin
+api-version: '26.3'
+author: Emerald
+commands:
+  funnel:
+    description: Funnel weapon and resource pack
+    usage: /funnel <give|pack|reload|status>
+permissions:
+  funnel.admin:
+    default: op
