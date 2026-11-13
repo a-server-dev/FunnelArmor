@@ -38,6 +38,8 @@ class ResourcePackTest {
             assertTrue(entries.contains("pack.mcmeta"));
             assertTrue(entries.contains("assets/minecraft/atlases/blocks.json"), "Explicit funnel atlas registration must be bundled");
             assertTrue(entries.contains("assets/funnel/textures/block/funnel.png"));
+            assertTrue(entries.contains("assets/minecraft/atlases/items.json"));
+            assertTrue(entries.contains("assets/funnel/textures/item/funnel.png"));
             for (int i = 1; i <= 4; i++) {
                 assertTrue(entries.contains("assets/funnel/items/funnel_drone_" + i + ".json"));
                 assertTrue(entries.contains("assets/funnel/models/item/funnel_drone_" + i + ".json"));
@@ -58,8 +60,10 @@ class ResourcePackTest {
                     if (entry.getName().startsWith("assets/funnel/models/item/")
                             && entry.getName().endsWith(".json")) {
                         JsonObject model = parse(zip.readAllBytes());
-                        assertEquals("funnel:block/funnel",
-                                model.getAsJsonObject("textures").get("0").getAsString());
+                        String textureId = model.getAsJsonObject("textures").get("0").getAsString();
+                        assertTrue(textureId.equals("funnel:item/funnel") ||
+                                textureId.equals("funnel:block/funnel"),
+                                "Unexpected texture " + textureId);
                         for (var element : model.getAsJsonArray("elements")) {
                             for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet()) {
                                 assertEquals("#0", face.getValue().getAsJsonObject()
@@ -74,6 +78,34 @@ class ResourcePackTest {
             }
             assertEquals(6, checked, "4 drones + quad + controller");
         }
+    }
+
+    @Test
+    void droneVariantsHaveDifferentGeometryAndEnoughDetail() throws Exception {
+        java.util.Map<String, String> signatures = new java.util.HashMap<>();
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(stream);
+            try (ZipInputStream zip = new ZipInputStream(stream)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    String path = entry.getName();
+                    if (path.matches("assets/funnel/models/item/funnel_drone_[1-4]\\.json")) {
+                        JsonObject model = parse(zip.readAllBytes());
+                        assertTrue(model.getAsJsonArray("elements").size() >= 20, path);
+                        var geometry = new StringBuilder();
+                        for (var cube : model.getAsJsonArray("elements")) {
+                            JsonObject obj = cube.getAsJsonObject();
+                            geometry.append(obj.get("from")).append(obj.get("to"));
+                            if (obj.has("rotation")) geometry.append(obj.get("rotation"));
+                        }
+                        signatures.put(path, geometry.toString());
+                    }
+                    zip.closeEntry();
+                }
+            }
+        }
+        assertEquals(4, signatures.size(), "All 4 drones must be present");
+        assertEquals(4, new HashSet<>(signatures.values()).size(), "All 4 drones need unique shapes");
     }
 
     @Test
