@@ -14,6 +14,7 @@ import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ItemDisplay;
@@ -27,7 +28,6 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -49,13 +49,14 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.List;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class FunnelArmorPlugin extends JavaPlugin implements Listener, CommandExecutor {
+public final class FunnelArmorPlugin extends JavaPlugin implements Listener, CommandExecutor, TabCompleter {
     private NamespacedKey itemKey;
     private NamespacedKey displayKey;
     private NamespacedKey variantKey;
@@ -100,8 +101,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
-        if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.9 ready. Built-in resource pack SHA1: " + sha1);
+        if (getCommand("funnel") != null) {
+            getCommand("funnel").setExecutor(this);
+            getCommand("funnel").setTabCompleter(this);
+        }
+        getLogger().info("FunnelArmor 0.7.10 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -622,10 +626,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shotAnimationStart.remove(e.getEntity().getUniqueId());
         shotAimTargets.remove(e.getEntity().getUniqueId());
     }
-    @EventHandler public void onJoin(PlayerJoinEvent e) {
-        if (getConfig().getBoolean("pack.send-on-join", true))
-            Bukkit.getScheduler().runTaskLater(this, () -> { if (e.getPlayer().isOnline()) applyPack(e.getPlayer()); }, 30L);
-    }
     @EventHandler public void onPack(PlayerResourcePackStatusEvent e) {
         // getLogger().info("Resource pack " + e.getPlayer().getName() + ": " + e.getStatus());
         switch (e.getStatus()) {
@@ -712,6 +712,18 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Entity hit = entityHit == null ? null : entityHit.getHitEntity();
         if (hit instanceof LivingEntity living) living.damage(Math.max(0, getConfig().getDouble("beam.damage",2.0)), player);
     }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command,
+                                      String alias, String[] args) {
+        if (!command.getName().equalsIgnoreCase("funnel")) return List.of();
+        // Never disclose admin-only actions or offer player targets to non-admins.
+        List<String> online = Bukkit.getOnlinePlayers().stream()
+                .map(Player::getName).toList();
+        return FunnelTabSuggestions.complete(args, sender.hasPermission("funnel.admin"),
+                sender instanceof Player, online);
+    }
+
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel reload §7| §b/funnel status"); return true; }
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {

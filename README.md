@@ -298,3 +298,18 @@ Explicit pack.external-url and pack.external-base-url overrides take precedence.
 The server must use the matching JAR after publish-direct succeeds. If the client
 still reports FAILED_DOWNLOAD, open .minecraft/logs/latest.log for the HTTP or TLS
 exception; the server can only see the status, not the client's exact error.
+
+## v0.7.10 — Manual-only pack delivery and command tab completion
+
+- Login never automatically calls the Minecraft resource-pack prompt.
+- Players only receive the resource pack when `/funnel pack` is executed
+  explicitly; admins may send it to an online user with `/funnel pack <player>`.
+- `pack.send-on-join` is set to `false` in the bundled config and
+  is no longer used by the code, even if an existing config still says true.
+- `/funnel <TAB>`: displays usable subcommands with permission filtering.
+- `/funnel formation <TAB>`: orbit, wings, rear, front, spiral, next.
+- `/funnel give <TAB>`: 1, 2, 3, 4, all (admin only); a third argument
+  suggests online player names.
+- `/funnel pack <TAB>`: online players (admin only), otherwise no target.
+- Existing commands, combat behavior, resource pack bytes, models, and
+  published GitHub ZIP URLs are unchanged.

@@ -5,7 +5,9 @@ beam:
   cooldown-ticks: 12
   particle-step: 0.45
 pack:
-  send-on-join: true
+  # Only /funnel pack sends the resource pack. The old send-on-join
+  # setting is retained for compatibility but is no longer used.
+  send-on-join: false
   require: false
   # Default: GitHub direct raw URL (no signed CDN redirect).
   # A GitHub Actions job pushes ZIPs to the public pack-assets branch.
