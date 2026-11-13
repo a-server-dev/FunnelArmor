@@ -473,8 +473,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             List<BlockDisplay> created = new ArrayList<>(panels.size());
             try {
                 for (int i = 0; i < panels.size(); i++) {
+                    // Do not inherit player yaw/pitch: the block transform
+                    // already contains the wall's full player-relative yaw.
+                    Location spawn = player.getLocation();
+                    spawn.setYaw(0f);
+                    spawn.setPitch(0f);
                     BlockDisplay pane = player.getWorld().spawn(
-                            player.getLocation(), BlockDisplay.class, d -> {
+                            spawn, BlockDisplay.class, d -> {
                         d.setBlock(Bukkit.createBlockData(Material.WHITE_STAINED_GLASS));
                         d.setGravity(false);
                         d.setInvulnerable(true);
@@ -496,20 +501,21 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             }
         }
         double yawDegrees = player.getLocation().getYaw();
-        double yaw = Math.toRadians(yawDegrees);
-        double cos = Math.cos(yaw), sin = Math.sin(yaw);
-        // In BlockDisplay, translation is in world space. Compute the rotated
-        // lower-left corner explicitly; rotate only the scaled unit cube.
+        // Compute each bottom corner and its model yaw using exactly one
+        // coordinate frame. Display entity rotation stays neutral (zero);
+        // the model transform supplies the entire rotation around that corner.
         for (int i = 0; i < panels.size(); i++) {
             FinBarrierGlassGeometry.Panel panel = panels.get(i);
-            Location pos = player.getLocation().add(
-                    cos * panel.right() - sin * panel.forward(), panel.up(),
-                    sin * panel.right() + cos * panel.forward());
+            FinBarrierGlassGeometry.Placement pose =
+                    FinBarrierGlassGeometry.placement(panel, yawDegrees);
+            Location pos = player.getLocation().add(pose.x(), pose.y(), pose.z());
+            pos.setYaw(0f);
+            pos.setPitch(0f);
             BlockDisplay pane = current.get(i);
             pane.teleport(pos);
             pane.setTransformation(new Transformation(
                     new Vector3f(0, 0, 0),
-                    new AxisAngle4f((float) -yaw, 0f, 1f, 0f),
+                    new AxisAngle4f((float) pose.modelYawRadians(), 0f, 1f, 0f),
                     new Vector3f((float) panel.sizeRight(),
                             (float) panel.sizeUp(), (float) panel.sizeForward()),
                     new AxisAngle4f()));

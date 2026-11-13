@@ -18,6 +18,26 @@ public final class FinBarrierGlassGeometry {
         }
     }
 
+    /**
+     * World-space offset of the unit BlockDisplay cube's lower corner and
+     * the yaw of its transformation (NOT the entity's yaw).
+     * The entity itself must have zero yaw/pitch. Otherwise its inherited
+     * player yaw compounds/cancels the transformation and separates the walls.
+     */
+    public record Placement(double x, double y, double z, double modelYawRadians) {}
+
+    public static Placement placement(Panel panel, double playerYawDegrees) {
+        if (panel == null || !Double.isFinite(playerYawDegrees))
+            throw new IllegalArgumentException("Invalid glass placement");
+        double yaw = Math.toRadians(playerYawDegrees);
+        double cos = Math.cos(yaw), sin = Math.sin(yaw);
+        return new Placement(
+                cos * panel.right() - sin * panel.forward(),
+                panel.up(),
+                sin * panel.right() + cos * panel.forward(),
+                -yaw);
+    }
+
     /** Four walls and ceiling, no floor; panels have visual-only thickness. */
     public static List<Panel> panels(double thickness) {
         if (!Double.isFinite(thickness) || thickness < 0.005 || thickness > 0.2)
