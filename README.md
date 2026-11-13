@@ -43,3 +43,6 @@ The four separately obtainable `.bbmodel` source models were redesigned with dif
 All four have unique in-inventory custom models. The hand transforms remain hidden, and the floating ItemDisplay uses the `fixed` transform. These are **original science-fiction designs informed by recognizable funnel silhouettes, not exact copies**.
 
 Gradle produces the embedded resource pack from `resourcepack/` during each build. Use the JAR from a successful Actions run. Reconnect to the server and accept the updated pack (or install the newly generated pack manually). Real in-game rendering still requires visual verification.
+
+## v0.5.0: multi-drone formations
+Each item remains separate. `/funnel give 1` deploys **6** tall fin funnels, `/funnel give 2` deploys **6** heavy red funnels, `/funnel give 3` deploys **12** white petal bits (two rings of 6), and `/funnel give 4` deploys **3** white shield funnels with red glowing frames. These are homage-like original designs, not exact copies. The display scale defaults to **1.45** in `drones.model-scale`, with orbit radius **1.65**; adjust the config on an existing server manually. All visible drones emit particle beams on right-click, but a successful hit still deals **2 HP total** (not 2 HP per drone).\n
