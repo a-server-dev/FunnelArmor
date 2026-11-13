@@ -82,13 +82,22 @@ public final class FormationGeometry {
                 yawOffset = -Math.toDegrees(angle) * 0.4;
             }
             case SPIRAL -> {
-                double angle = ticks * angularSpeed * 1.25
-                        + (2.0 * Math.PI * 2 * index) / count;
-                double r = radius + 0.18 * Math.sin(ticks * 0.035 + index);
+                // A tall twin-helix tower, not an orbit: alternate drones between
+                // opposite strands at distinctly separated vertical levels.
+                // With 3 drones this is two on the bottom and one on the top;
+                // with 6/12 drones it forms 3/6 paired floors.
+                int level = index / 2;
+                int strand = index % 2;
+                int levels = (count + 1) / 2;
+                double levelProgress = levels == 1 ? 0 : level / (double) (levels - 1);
+                double angle = ticks * angularSpeed * 0.6
+                        + level * Math.PI * 0.68 + strand * Math.PI;
+                double r = Math.max(0.55, radius * 0.64);
                 right = Math.cos(angle) * r;
                 forward = Math.sin(angle) * r;
-                up += (index - (count - 1) / 2.0) * (variant == 3 ? 0.20 : 0.32);
-                yawOffset = Math.toDegrees(angle);
+                up = 0.95 + levelProgress * 3.6
+                        + 0.12 * Math.sin(ticks * 0.075 + level * 0.85 + strand * Math.PI);
+                yawOffset = Math.toDegrees(angle) + 90;
             }
             default -> throw new IllegalStateException("Unknown formation: " + mode);
         }

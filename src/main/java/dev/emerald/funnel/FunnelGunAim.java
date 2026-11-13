@@ -30,9 +30,14 @@ public final class FunnelGunAim {
                 Math.acos(Math.max(-1, Math.min(1, -y))));
     }
 
-    /** Firing animation: quickly turn toward target, then ease back to idle. */
+    /**
+     * Snap the barrels to the target on the click frame. Hold that aim through
+     * tick 3, then smoothly return to idle at tick 8 (unchanged end timing).
+     */
     public static double aimWeight(long elapsedTicks) {
-        if (elapsedTicks < 0 || elapsedTicks > 8) return 0;
-        return Math.sin(Math.PI * (elapsedTicks + 1) / 9.0);
+        if (elapsedTicks < 0 || elapsedTicks >= 8) return 0;
+        if (elapsedTicks <= 3) return 1;
+        double x = (elapsedTicks - 3) / 5.0;
+        return 1.0 - x * x * (3.0 - 2.0 * x);
     }
 }

@@ -35,10 +35,13 @@ class FunnelGunAimTest {
     @Test void turnIsTemporaryAndFinite() {
         assertEquals(0,FunnelGunAim.aimWeight(-1));
         assertEquals(0,FunnelGunAim.aimWeight(9));
-        assertTrue(FunnelGunAim.aimWeight(4)>0.9);
-        assertTrue(FunnelGunAim.aimWeight(0)>0.3, "Aiming should start immediately on right click");
+        assertEquals(1,FunnelGunAim.aimWeight(0),1.e-9, "The muzzle must point at the target immediately");
+        for (int tick=1;tick<=3;tick++) assertEquals(1,FunnelGunAim.aimWeight(tick),1.e-9);
+        assertTrue(FunnelGunAim.aimWeight(4) < 1);
+        assertTrue(FunnelGunAim.aimWeight(4) > FunnelGunAim.aimWeight(5));
+        assertTrue(FunnelGunAim.aimWeight(5) > FunnelGunAim.aimWeight(6));
+        assertTrue(FunnelGunAim.aimWeight(6) > FunnelGunAim.aimWeight(7));
         assertEquals(0,FunnelGunAim.aimWeight(8),1.e-9);
-        assertEquals(FunnelGunAim.aimWeight(0),FunnelGunAim.aimWeight(7),1.e-9);
         assertEquals(0,FunnelGunAim.toward(0,0,0,0).radians());
     }
 }

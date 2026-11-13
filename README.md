@@ -122,3 +122,19 @@ external animation plugin, changed bbmodel or resource-pack update is required.
   multiple player yaw angles.
 - A whole-model rotation is used for aiming: moving the twin barrels alone
   would require separating the model into individually controlled displays.
+
+## v0.7.4 — Instant Unicorn muzzle snap and vertical spiral tower
+
+- **Unicorn main-hand firing:** twin barrels now turn to the ray-trace target
+  **immediately on right-click**, instead of easing into the aim over several
+  ticks. Aim is held through tick 3, and eases back during ticks 4–8. The return
+  completion time remains 8 ticks; existing 8-tick firing recoil is unchanged.
+  An immediate `ItemDisplay` update with zero interpolation ensures the initial
+  snap does not wait for the normal drone update loop.
+- **Spiral formation:** redesigned from a mostly flat orbit to a visibly
+  **vertical double-helix tower**. Drones form two opposite rotating strands,
+  with 3.6 blocks of height separation. Variant 4 has 2 tiers, variants 1/2
+  have 3 tiers, and variant 3 has 6 tiers. The `spiral` selection remains
+  available in the same formation cycle.
+- Other formations, offhand three-petal shield defense, model textures, and
+  damage/cooldown values are unchanged.

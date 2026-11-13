@@ -101,7 +101,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.3 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.4 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -504,7 +504,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     break;
                 }
                 d.teleport(droneLocation(p, selectedVariant(p), i));
-                updateGunAim(p, d);
+                updateGunAim(p, d, false);
             }
         }
     }
@@ -513,7 +513,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
      * barrels run along local -Y. Display yaw is retained, then the model is
      * rotated locally so the two muzzles point toward the beam ray-trace hit.
      */
-    private void updateGunAim(Player player, ItemDisplay display) {
+    private void updateGunAim(Player player, ItemDisplay display, boolean snapNow) {
         int variant = selectedVariant(player);
         Vector target = variant == 4 ? shotAimTargets.get(player.getUniqueId()) : null;
         Long start = shotAnimationStart.get(player.getUniqueId());
@@ -529,6 +529,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             rotation = new AxisAngle4f((float) (aim.radians() * weight),
                     (float) aim.axisX(), (float) aim.axisY(), (float) aim.axisZ());
         }
+        // A zero-tick transition on the click frame makes the muzzle snap
+        // to its target instead of easing in over the first few ticks.
+        display.setInterpolationDuration(snapNow ? 0 : 2);
         display.setTransformation(new Transformation(
                 new Vector3f(0, 0, 0), rotation,
                 new Vector3f(scale, scale, scale), new AxisAngle4f()));
@@ -629,6 +632,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Vector target = eye.toVector().add(dir.clone().multiply(dist));
         if (selectedVariant(player) == 4) {
             shotAimTargets.put(player.getUniqueId(), target.clone());
+            // Aim immediately during the click rather than waiting for the
+            // normal 2-tick drone position refresh.
+            List<ItemDisplay> firingDisplays = activeDrones.get(player.getUniqueId());
+            if (firingDisplays != null) {
+                for (ItemDisplay display : firingDisplays) {
+                    if (display.isValid() && display.getWorld() == player.getWorld()) {
+                        updateGunAim(player, display, true);
+                    }
+                }
+            }
         } else {
             shotAimTargets.remove(player.getUniqueId());
         }
