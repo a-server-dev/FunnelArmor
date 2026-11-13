@@ -313,3 +313,13 @@ exception; the server can only see the status, not the client's exact error.
 - `/funnel pack <TAB>`: online players (admin only), otherwise no target.
 - Existing commands, combat behavior, resource pack bytes, models, and
   published GitHub ZIP URLs are unchanged.
+
+## v0.7.13 — Uniform fin orientation + glass BlockDisplay barrier
+
+- Correct all variant-1 (ν fin funnel) ItemDisplay yaw by +90 degrees, including stored, orbit, wings, rear, front, spiral. Variants 2/3/4 are unchanged.
+- All six variant-1 offhand barrier displays now share the same model yaw (no alternating 180-degree pairs).
+- New `fin-funnel.model-yaw-offset: 90` configuration, read dynamically, defaults to 90 for existing installations.
+- During active offhand barrier mode spawn **five** thin WHITE_STAINED_GLASS BlockDisplays: front, back, left, right, and overhead. These are visual-only entities, not real blocks and do not alter world terrain, player movement, or other block entities. No floor to avoid obstructing movement.
+- The glass bounds match `FinBarrierGeometry`: horizontal +/-1.48 blocks, vertical 0.28–3.14 blocks relative to player feet. The glass follows the player's rotation and position, and cleans up on retract, death, quit, dimension change, or plugin disable; orphan cleanup includes BlockDisplay.
+- Configure `fin-barrier.glass-enabled` and `fin-barrier.glass-thickness` (default 0.035, visual thickness).
+- Existing projectile and hitscan beam interception and 0.5 HP beam damage remain unchanged. Resource pack bytes are unchanged.

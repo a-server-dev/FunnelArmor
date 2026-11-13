@@ -18,6 +18,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
@@ -71,6 +72,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private final Set<UUID> finBarrierGuards = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Double> finBarrierProgress = new ConcurrentHashMap<>();
     private final Map<UUID, List<ItemDisplay>> finBarrierDisplays = new ConcurrentHashMap<>();
+    /** Five non-colliding white stained-glass BlockDisplays: 4 walls and a roof. */
+    private final Map<UUID, List<BlockDisplay>> finGlassDisplays = new ConcurrentHashMap<>();
     private final Map<UUID, Long> finBarrierToggleTicks = new ConcurrentHashMap<>();
     /** 0 = docked, 1 = protective wall; retained while closing. */
     private final Map<UUID, Double> shieldProgress = new ConcurrentHashMap<>();
@@ -111,7 +114,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             getCommand("funnel").setExecutor(this);
             getCommand("funnel").setTabCompleter(this);
         }
-        getLogger().info("FunnelArmor 0.7.12 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.13 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -123,6 +126,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         for (UUID uuid : new ArrayList<>(shieldGuards)) stopShield(uuid);
         for (UUID uuid : new ArrayList<>(finBarrierGuards)) stopFinBarrier(uuid);
         for (UUID uuid : new ArrayList<>(finBarrierDisplays.keySet())) stopFinBarrier(uuid);
+        for (UUID uuid : new ArrayList<>(finGlassDisplays.keySet())) stopFinBarrier(uuid);
         for (UUID uuid : new ArrayList<>(shieldDisplays.keySet())) removeShieldDisplays(uuid);
         for (UUID uuid : new ArrayList<>(activeDrones.keySet())) removeDrones(uuid);
     }
@@ -328,6 +332,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             for (ItemDisplay display : world.getEntitiesByClass(ItemDisplay.class)) {
                 if (display.getPersistentDataContainer().has(displayKey, PersistentDataType.BYTE)) display.remove();
             }
+            for (BlockDisplay display : world.getEntitiesByClass(BlockDisplay.class)) {
+                if (display.getPersistentDataContainer().has(displayKey, PersistentDataType.BYTE)) display.remove();
+            }
         }
     }
     private void removeDrones(UUID uuid) {
@@ -352,6 +359,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         finBarrierProgress.remove(id);
         List<ItemDisplay> old = finBarrierDisplays.remove(id);
         if (old != null) for (ItemDisplay d : old) if (d.isValid()) d.remove();
+        removeFinGlass(id);
         finBarrierToggleTicks.remove(id);
     }
     private void toggleFinBarrier(Player player) {
@@ -374,7 +382,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Math.cos(yaw) * pose.right() - Math.sin(yaw) * pose.forward(),
                 pose.up(),
                 Math.sin(yaw) * pose.right() + Math.cos(yaw) * pose.forward());
-        point.setYaw(player.getLocation().getYaw() + (i % 2 == 0 ? -90 : 90));
+        // All six fin models share one local axis. Do not alternate 180 degrees.
+        point.setYaw(FinFunnelOrientation.formationYaw(
+                player.getLocation().getYaw(), 0, 1,
+                getConfig().getDouble("fin-funnel.model-yaw-offset", 90.0)));
         return point;
     }
     private void updateFinBarrierDisplays(Player player, double progress) {
@@ -424,6 +435,76 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
         for (int i = 0; i < 6; i++) displays.get(i).teleport(finBarrierLocation(player, i, progress));
     }
+    private void removeFinGlass(UUID id) {
+        List<BlockDisplay> old = finGlassDisplays.remove(id);
+        if (old != null) for (BlockDisplay pane : old) if (pane.isValid()) pane.remove();
+    }
+
+    private void updateFinGlass(Player player) {
+        UUID id = player.getUniqueId();
+        if (!getConfig().getBoolean("fin-barrier.glass-enabled", true)) {
+            removeFinGlass(id);
+            return;
+        }
+        double thickness = Math.max(0.015, Math.min(0.15,
+                getConfig().getDouble("fin-barrier.glass-thickness", 0.035)));
+        List<FinBarrierGlassGeometry.Panel> panels = FinBarrierGlassGeometry.panels(thickness);
+        List<BlockDisplay> current = finGlassDisplays.get(id);
+        boolean respawn = current == null || current.size() != panels.size();
+        if (!respawn) for (BlockDisplay pane : current) {
+            if (!pane.isValid() || pane.getWorld() != player.getWorld()) {
+                respawn = true;
+                break;
+            }
+        }
+        if (respawn) {
+            removeFinGlass(id);
+            List<BlockDisplay> created = new ArrayList<>(panels.size());
+            try {
+                for (int i = 0; i < panels.size(); i++) {
+                    BlockDisplay pane = player.getWorld().spawn(
+                            player.getLocation(), BlockDisplay.class, d -> {
+                        d.setBlock(Bukkit.createBlockData(Material.WHITE_STAINED_GLASS));
+                        d.setGravity(false);
+                        d.setInvulnerable(true);
+                        d.setPersistent(false);
+                        d.setTeleportDuration(1);
+                        d.setInterpolationDuration(1);
+                        d.getPersistentDataContainer().set(displayKey,
+                                PersistentDataType.BYTE, (byte) 1);
+                    });
+                    created.add(pane);
+                }
+                finGlassDisplays.put(id, created);
+                current = created;
+            } catch (RuntimeException ex) {
+                for (BlockDisplay pane : created) if (pane.isValid()) pane.remove();
+                removeFinGlass(id);
+                getLogger().warning("Cannot create fin-barrier glass: " + ex.getMessage());
+                return;
+            }
+        }
+        double yawDegrees = player.getLocation().getYaw();
+        double yaw = Math.toRadians(yawDegrees);
+        double cos = Math.cos(yaw), sin = Math.sin(yaw);
+        // In BlockDisplay, translation is in world space. Compute the rotated
+        // lower-left corner explicitly; rotate only the scaled unit cube.
+        for (int i = 0; i < panels.size(); i++) {
+            FinBarrierGlassGeometry.Panel panel = panels.get(i);
+            Location pos = player.getLocation().add(
+                    cos * panel.right() - sin * panel.forward(), panel.up(),
+                    sin * panel.right() + cos * panel.forward());
+            BlockDisplay pane = current.get(i);
+            pane.teleport(pos);
+            pane.setTransformation(new Transformation(
+                    new Vector3f(0, 0, 0),
+                    new AxisAngle4f((float) -yaw, 0f, 1f, 0f),
+                    new Vector3f((float) panel.sizeRight(),
+                            (float) panel.sizeUp(), (float) panel.sizeForward()),
+                    new AxisAngle4f()));
+        }
+    }
+
     private void drawFinBarrier(Player player) {
         if (animationTick % 4 != 0) return;
         double yaw = Math.toRadians(player.getLocation().getYaw());
@@ -470,8 +551,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             finBarrierProgress.put(id, progress);
             if (!opening && progress <= 0) { stopFinBarrier(id); continue; }
             updateFinBarrierDisplays(player, progress);
-            if (!finBarrierActive(player)) continue;
-            drawFinBarrier(player);
+            if (!finBarrierActive(player)) {
+                removeFinGlass(id);
+                continue;
+            }
+            updateFinGlass(player);
             for (Projectile projectile : player.getWorld().getNearbyEntitiesByType(
                     Projectile.class, player.getLocation(), 4.0, 4.0, 4.0)) {
                 if (!projectile.isValid() || projectile.getShooter() == player) continue;
@@ -812,7 +896,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     pulse * 0.12,
                     forwardZ * pulse * getConfig().getDouble("drones.shot-recoil-blocks", 0.38));
         }
-        loc.setYaw(p.getLocation().getYaw() + (float) pos.yawOffset());
+        // The variant-1 model's local front is 90 degrees off the shared axis.
+        // Correct all fin formations (including folded/stored); variants 2–4
+        // keep their exact original orientation.
+        loc.setYaw(FinFunnelOrientation.formationYaw(
+                p.getLocation().getYaw(), pos.yawOffset(), variant,
+                getConfig().getDouble("fin-funnel.model-yaw-offset", 90.0)));
         loc.setPitch(variant == 4 ? -12f : 0f);
         return loc;
     }

@@ -59,3 +59,11 @@ shield:
 fin-barrier:
   deploy-ticks: 10
   retract-ticks: 10
+  # Five white stained-glass BlockDisplay panels (front/back/left/right/roof).
+  # Visual only; projectile and beam collision still use the plugin's barrier.
+  glass-enabled: true
+  glass-thickness: 0.035
+
+# ν fin funnel (variant 1) only; common yaw for stored, deployed and barrier.
+fin-funnel:
+  model-yaw-offset: 90
