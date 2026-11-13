@@ -4,10 +4,1883 @@
     "model_format": "free",
     "box_uv": false
   },
+  "name": "funnel_drone_2",
   "resolution": {
     "width": 32,
     "height": 32
   },
+  "elements": [
+    {
+      "name": "Red reactor cylinder",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000020",
+      "from": [
+        6.1,
+        5,
+        5.1
+      ],
+      "to": [
+        9.9,
+        11,
+        10.6
+      ],
+      "origin": [
+        8,
+        8,
+        7.85
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            16,
+            30,
+            20
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Armored upper hex step",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000021",
+      "from": [
+        6.7,
+        11,
+        6.2
+      ],
+      "to": [
+        9.3,
+        12.7,
+        9.5
+      ],
+      "origin": [
+        8,
+        11.85,
+        7.85
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Armored top crown",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000022",
+      "from": [
+        7.25,
+        12.7,
+        6.8
+      ],
+      "to": [
+        8.75,
+        13.4,
+        8.8
+      ],
+      "origin": [
+        8,
+        13.05,
+        7.800000000000001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Canted left armor plate",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000023",
+      "from": [
+        4.6,
+        6.2,
+        5.9
+      ],
+      "to": [
+        6.4,
+        11.2,
+        9.4
+      ],
+      "origin": [
+        5.5,
+        8.7,
+        7.65
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        }
+      },
+      "rotation": {
+        "origin": [
+          5.5,
+          8.7,
+          7.65
+        ],
+        "axis": "z",
+        "angle": -22.5,
+        "rescale": false
+      }
+    },
+    {
+      "name": "Canted right armor plate",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000024",
+      "from": [
+        9.6,
+        6.2,
+        5.9
+      ],
+      "to": [
+        11.4,
+        11.2,
+        9.4
+      ],
+      "origin": [
+        10.5,
+        8.7,
+        7.65
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        }
+      },
+      "rotation": {
+        "origin": [
+          10.5,
+          8.7,
+          7.65
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      }
+    },
+    {
+      "name": "Left golden edge",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000025",
+      "from": [
+        4.9,
+        7.2,
+        5.58
+      ],
+      "to": [
+        5.38,
+        10.5,
+        6.1
+      ],
+      "origin": [
+        5.140000000000001,
+        8.85,
+        5.84
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Right golden edge",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000026",
+      "from": [
+        10.62,
+        7.2,
+        5.58
+      ],
+      "to": [
+        11.1,
+        10.5,
+        6.1
+      ],
+      "origin": [
+        10.86,
+        8.85,
+        5.84
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Red belly",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000027",
+      "from": [
+        6.6,
+        3.6,
+        6.2
+      ],
+      "to": [
+        9.4,
+        5,
+        9.5
+      ],
+      "origin": [
+        8,
+        4.3,
+        7.85
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            16,
+            8,
+            22,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Black rear thruster housing",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000028",
+      "from": [
+        6.4,
+        5.7,
+        10.6
+      ],
+      "to": [
+        9.6,
+        10.8,
+        12
+      ],
+      "origin": [
+        8,
+        8.25,
+        11.3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Blue thrust nozzle",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000029",
+      "from": [
+        7,
+        6.55,
+        11.98
+      ],
+      "to": [
+        9,
+        9.8,
+        12.3
+      ],
+      "origin": [
+        8,
+        8.175,
+        12.14
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Forward long gun",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-00000000002a",
+      "from": [
+        7.1,
+        6.5,
+        3.15
+      ],
+      "to": [
+        8.9,
+        8.6,
+        5.1
+      ],
+      "origin": [
+        8,
+        7.55,
+        4.125
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            6,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Forward lens",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-00000000002b",
+      "from": [
+        7.45,
+        7,
+        2.85
+      ],
+      "to": [
+        8.55,
+        8.1,
+        3.18
+      ],
+      "origin": [
+        8,
+        7.55,
+        3.015
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Upper laser mount",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-00000000002c",
+      "from": [
+        7.2,
+        9.3,
+        4.6
+      ],
+      "to": [
+        8.8,
+        10,
+        5.6
+      ],
+      "origin": [
+        8,
+        9.65,
+        5.1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Left segmented red armor 0",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-00000000002d",
+      "from": [
+        5,
+        5.9,
+        5.4
+      ],
+      "to": [
+        6,
+        6.2,
+        6.2
+      ],
+      "origin": [
+        5.5,
+        6.050000000000001,
+        5.800000000000001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Right segmented red armor 0",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-00000000002e",
+      "from": [
+        10,
+        5.9,
+        5.4
+      ],
+      "to": [
+        11,
+        6.2,
+        6.2
+      ],
+      "origin": [
+        10.5,
+        6.050000000000001,
+        5.800000000000001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Left segmented red armor 1",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-00000000002f",
+      "from": [
+        5,
+        7.550000000000001,
+        5.4
+      ],
+      "to": [
+        6,
+        7.85,
+        6.2
+      ],
+      "origin": [
+        5.5,
+        7.7,
+        5.800000000000001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Right segmented red armor 1",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000030",
+      "from": [
+        10,
+        7.550000000000001,
+        5.4
+      ],
+      "to": [
+        11,
+        7.85,
+        6.2
+      ],
+      "origin": [
+        10.5,
+        7.7,
+        5.800000000000001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Left segmented red armor 2",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000031",
+      "from": [
+        5,
+        9.2,
+        5.4
+      ],
+      "to": [
+        6,
+        9.5,
+        6.2
+      ],
+      "origin": [
+        5.5,
+        9.35,
+        5.800000000000001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Right segmented red armor 2",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000032",
+      "from": [
+        10,
+        9.2,
+        5.4
+      ],
+      "to": [
+        11,
+        9.5,
+        6.2
+      ],
+      "origin": [
+        10.5,
+        9.35,
+        5.800000000000001
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            0,
+            14,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Left side thruster",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000033",
+      "from": [
+        4.75,
+        4.85,
+        9.3
+      ],
+      "to": [
+        6.25,
+        6.25,
+        11.2
+      ],
+      "origin": [
+        5.5,
+        5.55,
+        10.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Right side thruster",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000034",
+      "from": [
+        9.75,
+        4.85,
+        9.3
+      ],
+      "to": [
+        11.25,
+        6.25,
+        11.2
+      ],
+      "origin": [
+        10.5,
+        5.55,
+        10.25
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            8,
+            6,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            0,
+            30,
+            6
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Left rear vent",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000035",
+      "from": [
+        5,
+        7.4,
+        11
+      ],
+      "to": [
+        6,
+        9,
+        11.65
+      ],
+      "origin": [
+        5.5,
+        8.2,
+        11.325
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Right rear vent",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000036",
+      "from": [
+        10,
+        7.4,
+        11
+      ],
+      "to": [
+        11,
+        9,
+        11.65
+      ],
+      "origin": [
+        10.5,
+        8.2,
+        11.325
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            22,
+            30,
+            30
+          ],
+          "texture": 0
+        }
+      }
+    },
+    {
+      "name": "Mid-plate golden marking",
+      "type": "cube",
+      "uuid": "f2ab971c-6e64-4e7c-9000-000000000037",
+      "from": [
+        6.6,
+        9.5,
+        4.82
+      ],
+      "to": [
+        9.4,
+        9.95,
+        5.14
+      ],
+      "origin": [
+        8,
+        9.725,
+        4.98
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            14,
+            14
+          ],
+          "texture": 0
+        }
+      }
+    }
+  ],
+  "outliner": [
+    "f2ab971c-6e64-4e7c-9000-000000000020",
+    "f2ab971c-6e64-4e7c-9000-000000000021",
+    "f2ab971c-6e64-4e7c-9000-000000000022",
+    "f2ab971c-6e64-4e7c-9000-000000000023",
+    "f2ab971c-6e64-4e7c-9000-000000000024",
+    "f2ab971c-6e64-4e7c-9000-000000000025",
+    "f2ab971c-6e64-4e7c-9000-000000000026",
+    "f2ab971c-6e64-4e7c-9000-000000000027",
+    "f2ab971c-6e64-4e7c-9000-000000000028",
+    "f2ab971c-6e64-4e7c-9000-000000000029",
+    "f2ab971c-6e64-4e7c-9000-00000000002a",
+    "f2ab971c-6e64-4e7c-9000-00000000002b",
+    "f2ab971c-6e64-4e7c-9000-00000000002c",
+    "f2ab971c-6e64-4e7c-9000-00000000002d",
+    "f2ab971c-6e64-4e7c-9000-00000000002e",
+    "f2ab971c-6e64-4e7c-9000-00000000002f",
+    "f2ab971c-6e64-4e7c-9000-000000000030",
+    "f2ab971c-6e64-4e7c-9000-000000000031",
+    "f2ab971c-6e64-4e7c-9000-000000000032",
+    "f2ab971c-6e64-4e7c-9000-000000000033",
+    "f2ab971c-6e64-4e7c-9000-000000000034",
+    "f2ab971c-6e64-4e7c-9000-000000000035",
+    "f2ab971c-6e64-4e7c-9000-000000000036",
+    "f2ab971c-6e64-4e7c-9000-000000000037"
+  ],
   "textures": [
     {
       "path": "funnel.png",
@@ -23,703 +1896,5 @@
       "uuid": "40401d6f-51fe-4f99-adcf-1ba58a6fdd52",
       "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAB0UlEQVR4nO2WO0gcURSGvxlHBRsVNYXFrqAYlV3jbohR10JMaSnWW6VQxD4+Wg12CrGwEFIb7ASrkMb4wkfiYlYxELdQ8IGPIooP1mJ3kBnOvQqyajF/M3C+O3P/ueece69xcHKRRKPJqRkdJh6Pafnhwb6WWwBzi79E2Fj/BoCNDXmSmpoAAFubcZFXvq4CILa+JvJAsA5Ta+8J5BnwDBjP3oaJvFztgM72PC1PfNZifBMjegMAgycy7C1IPU93vos8398KwOrsrMhDkQgAO7tHIveXFmGFs5n+VqKxeE6bhj5a1soVbboVCGdydtIp0I+4/Jpf3qyAlwDRzBq4zoneVwOP0bPvAxbcVbtK9/2pXe0q+UuLlMzYTibFjaj4/434wuiXcTE+0B0U43vDc2K8b++MLDM7tQKfDp1wqDj1XHDdE96n7wcrS8uOePjdWwCO//1wxAvLWgBY/TnviIeaGjCzDEzTeEARZkieAYcBO+du2Tl3y865W3bO3Qo1NSgMnGJ87OnXHseRZvmjtqIdH7T8r5am94E/sd8irA7UArCuuNUGg3UAbCfkM7/C9wqAroQ8+ZjvBeyEngHPgGfAgrt+V8nud5XsfldpzKdmt4CrdE/0EWa3AAAAAElFTkSuQmCC"
     }
-  ],
-  "name": "funnel_drone_2",
-  "elements": [
-    {
-      "name": "HeavyBody",
-      "type": "cube",
-      "uuid": "9e914d82-5b95-4e84-9d5d-db5967dde6b3",
-      "from": [
-        6.6,
-        2.6,
-        6
-      ],
-      "to": [
-        9.4,
-        13.3,
-        10
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            16,
-            22,
-            24,
-            32
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            6,
-            16,
-            12,
-            22
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            6,
-            16,
-            12,
-            22
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            24,
-            8,
-            32,
-            16
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            0,
-            22,
-            8,
-            32
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        8,
-        7.95,
-        8
-      ]
-    },
-    {
-      "name": "ShoulderL",
-      "type": "cube",
-      "uuid": "984ff0c3-bf7a-4920-91cd-f52496652f36",
-      "from": [
-        4.8,
-        4,
-        6.6
-      ],
-      "to": [
-        6.6,
-        12.3,
-        9.4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            24,
-            16,
-            30,
-            22
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            16,
-            8,
-            24,
-            16
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            12,
-            16,
-            18,
-            22
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            16,
-            8,
-            24,
-            16
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            18,
-            16,
-            24,
-            22
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            0,
-            22,
-            8,
-            32
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        5.7,
-        8.15,
-        8
-      ]
-    },
-    {
-      "name": "ShoulderR",
-      "type": "cube",
-      "uuid": "f846b9b8-9e63-4aa2-aec8-533561b36ab8",
-      "from": [
-        9.4,
-        4,
-        6.6
-      ],
-      "to": [
-        11.2,
-        12.3,
-        9.4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            24,
-            16,
-            30,
-            22
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            16,
-            8,
-            24,
-            16
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            12,
-            16,
-            18,
-            22
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            16,
-            8,
-            24,
-            16
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            18,
-            16,
-            24,
-            22
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            0,
-            22,
-            8,
-            32
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        10.3,
-        8.15,
-        8
-      ]
-    },
-    {
-      "name": "SpineFin",
-      "type": "cube",
-      "uuid": "21cd6f1f-68f6-46aa-ab36-9ac438434155",
-      "from": [
-        7.1,
-        13.3,
-        7
-      ],
-      "to": [
-        8.9,
-        15.3,
-        9
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            16,
-            22,
-            24,
-            32
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            8,
-            8,
-            16,
-            16
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            8,
-            8,
-            16,
-            16
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            8,
-            8,
-            16,
-            16
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            8,
-            8,
-            16,
-            16
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        8,
-        14.3,
-        8
-      ]
-    },
-    {
-      "name": "TailBooster",
-      "type": "cube",
-      "uuid": "8ac13413-f5e3-4aaf-b080-2f773ce0ab09",
-      "from": [
-        7.15,
-        5,
-        10
-      ],
-      "to": [
-        8.85,
-        11.1,
-        12.4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            12,
-            16,
-            18,
-            22
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            16,
-            0,
-            24,
-            8
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            24,
-            22,
-            32,
-            32
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            16,
-            0,
-            24,
-            8
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            24,
-            16,
-            30,
-            22
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            0,
-            22,
-            8,
-            32
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        8,
-        8.05,
-        11.2
-      ]
-    },
-    {
-      "name": "Muzzle",
-      "type": "cube",
-      "uuid": "d4814334-9e2b-4721-b171-1c3fe56f6589",
-      "from": [
-        7,
-        7.2,
-        4.3
-      ],
-      "to": [
-        9,
-        8.9,
-        6
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            24,
-            22,
-            32,
-            32
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            0,
-            16,
-            6,
-            22
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            16,
-            22,
-            24,
-            32
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            0,
-            16,
-            6,
-            22
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            24,
-            8,
-            32,
-            16
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            18,
-            16,
-            24,
-            22
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        8,
-        8.05,
-        5.15
-      ]
-    },
-    {
-      "name": "VentralFin",
-      "type": "cube",
-      "uuid": "9a35f71f-beb7-4235-bac9-6b71a89c23b1",
-      "from": [
-        7.2,
-        1.2,
-        7
-      ],
-      "to": [
-        8.8,
-        2.6,
-        9
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            24,
-            16,
-            30,
-            22
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            8,
-            0,
-            16,
-            8
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            12,
-            16,
-            18,
-            22
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            8,
-            0,
-            16,
-            8
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            8,
-            0,
-            16,
-            8
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            8,
-            0,
-            16,
-            8
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        8,
-        1.9,
-        8
-      ]
-    },
-    {
-      "name": "CheekL",
-      "type": "cube",
-      "uuid": "f4ff5575-7fb4-42f3-94d6-ff64ec093b2d",
-      "from": [
-        6,
-        6.4,
-        5.5
-      ],
-      "to": [
-        6.8,
-        9.2,
-        6.9
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            18,
-            16,
-            24,
-            22
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            12,
-            16,
-            18,
-            22
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        6.4,
-        7.8,
-        6.2
-      ]
-    },
-    {
-      "name": "CheekR",
-      "type": "cube",
-      "uuid": "354fdebd-bdc5-4e71-9f61-4e9bb8a7a2e9",
-      "from": [
-        9.2,
-        6.4,
-        5.5
-      ],
-      "to": [
-        10,
-        9.2,
-        6.9
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            18,
-            16,
-            24,
-            22
-          ],
-          "texture": 0
-        },
-        "east": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "south": {
-          "uv": [
-            12,
-            16,
-            18,
-            22
-          ],
-          "texture": 0
-        },
-        "west": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "up": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        },
-        "down": {
-          "uv": [
-            8,
-            22,
-            16,
-            32
-          ],
-          "texture": 0
-        }
-      },
-      "origin": [
-        9.6,
-        7.8,
-        6.2
-      ]
-    }
-  ],
-  "outliner": [
-    "9e914d82-5b95-4e84-9d5d-db5967dde6b3",
-    "984ff0c3-bf7a-4920-91cd-f52496652f36",
-    "f846b9b8-9e63-4aa2-aec8-533561b36ab8",
-    "21cd6f1f-68f6-46aa-ab36-9ac438434155",
-    "8ac13413-f5e3-4aaf-b080-2f773ce0ab09",
-    "d4814334-9e2b-4721-b171-1c3fe56f6589",
-    "9a35f71f-beb7-4235-bac9-6b71a89c23b1",
-    "f4ff5575-7fb4-42f3-94d6-ff64ec093b2d",
-    "354fdebd-bdc5-4e71-9f61-4e9bb8a7a2e9"
   ]
 }
