@@ -7,14 +7,19 @@ beam:
 pack:
   send-on-join: true
   require: false
-  # R2 public HTTPS base URL (without a filename); the ZIP hash is appended.
-  # Example: "https://packs.example.com" or a test-only "https://pub-xxxx.r2.dev"
+  # Automatically download the exact resource pack from GitHub Releases.
+  # IMPORTANT: the GitHub repository must be PUBLIC for players to download!
+  # Release tag = pack-<SHA1>, asset = funnel-pack-<SHA1>.zip.
+  github-releases:
+    enabled: true
+    repository: "a-server-dev/FunnelArmor"
+  # Optional external host overrides (leave blank for GitHub Releases).
   external-base-url: ""
-  # Legacy exact pack URL, overrides external-base-url if not blank.
   external-url: ""
   embedded-http:
-    # Set false for Cloudflare R2: no additional port forwarding is required.
-    enabled: true
+    # Local HTTP is disabled by default. No port forwarding is needed.
+    # For emergency fallback, disable github-releases and enable this.
+    enabled: false
     bind-host: "0.0.0.0"
     port: 8765
     # "auto" uses the hostname the client used to connect.

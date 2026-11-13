@@ -25,11 +25,26 @@ public final class ResourcePackUrl {
             if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null
                     || uri.getUserInfo() != null || uri.getQuery() != null
                     || uri.getFragment() != null) {
-                throw new IllegalArgumentException("The R2 public base URL must be plain HTTPS");
+                throw new IllegalArgumentException("The external pack base URL must be plain HTTPS");
             }
         } catch (URISyntaxException ex) {
-            throw new IllegalArgumentException("Invalid R2 public base URL", ex);
+            throw new IllegalArgumentException("Invalid external pack base URL", ex);
         }
         return url.replaceAll("/+$", "") + "/" + fileName(sha1);
+    }
+
+    /**
+     * GitHub's public Release asset URL. The tag is keyed by ZIP SHA-1 so the
+     * exact asset is stable even if the Java plugin changes independently.
+     */
+    public static String githubRelease(String repository, String sha1) {
+        if (repository == null || !repository.matches(
+                "[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}")) {
+            throw new IllegalArgumentException("Invalid public GitHub release repository");
+        }
+        String hash = fileName(sha1).substring("funnel-pack-".length(),
+                "funnel-pack-".length() + 40);
+        return "https://github.com/" + repository
+                + "/releases/download/pack-" + hash + "/" + fileName(hash);
     }
 }

@@ -217,3 +217,55 @@ four formation modes, the main-hand aiming animation, or the offhand
 three-petal defense. No resource-pack or Blockbench edits are needed.
 A geometry test verifies the outward orientation at several ticks
 across all four models.
+
+## v0.7.7 — GitHub Releases distribution, replacing R2
+
+**No credit card, Cloudflare account, R2 API token or Paper port forwarding
+is required** for this distribution method.
+
+GitHub Actions builds the Java JAR, tests and bundled ZIP together. For each
+successful `main` build **in a public repository**, the `publish-release`
+job uses the built-in `GITHUB_TOKEN` (`contents: write`) to publish the
+identical ZIP as a GitHub Release asset:
+
+```text
+https://github.com/a-server-dev/FunnelArmor/releases/download/pack-<SHA1>/funnel-pack-<SHA1>.zip
+```
+
+The `<SHA1>` portion is the lowercase 40-character SHA-1 checksum of the
+**bundled ZIP**, not the JAR. Every URL is immutable and old pack releases can
+be reused without overwrites. The workflow confirms anonymous public ZIP
+download and verifies its SHA-1 against the generated ZIP.
+
+The plugin offers this link automatically on join, without changing model,
+combat, beam, or formation behavior. Set `pack.github-releases.enabled: true`
+and `pack.github-releases.repository: "a-server-dev/FunnelArmor"` (defaults
+also apply to older config files). The existing `pack.external-url` and
+`pack.external-base-url` may override it. Its embedded HTTP listener is
+disabled when GitHub Releases is active. `/funnel pack` sends it again.
+
+### Important: current repository privacy
+
+**a-server-dev/FunnelArmor is currently PRIVATE.** GitHub Release assets
+inside private repositories are **not anonymously accessible** to Minecraft
+clients. Accordingly, `publish-release` is deliberately skipped while
+this repository is private. Its JAR and ZIP build artifacts remain available
+to authorized repository users, but are **NOT playable public pack URLs**.
+The GitHub workflow does not alter visibility. To activate public delivery:
+
+1. **Either** intentionally change this repository to PUBLIC **after auditing
+   all files and historical commits for sensitive information**; then
+   re-run the `Build and publish resource pack` workflow on `main`.
+2. **Or**, to keep the source private, use a separate PUBLIC GitHub repository
+   dedicated to pack releases, and configure an authorized cross-repository
+   write token / GitHub App credential for its release publishing. That
+   cannot be done with this source repository's `GITHUB_TOKEN` alone.
+
+Once a public release has been successfully uploaded and externally verified,
+install **the matching JAR from the same successful workflow** and restart
+Paper. For existing server configs, leave any previous R2 override URL
+fields blank. `/funnel status` shows the actual SHA-1 and URL.
+
+GitHub Release asset downloads use HTTPS redirects. Although the workflow
+checks that a public unauthenticated client can download the ZIP and verify
+its SHA-1, actual Minecraft client compatibility should still be verified.

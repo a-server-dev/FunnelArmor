@@ -1,4 +1,4 @@
-name: Build and test
+name: Build and publish resource pack
 
 on:
   push:
@@ -30,9 +30,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s build/generated/funnel-pack/funnel-pack.zip
-          unzip -t build/generated/funnel-pack/funnel-pack.zip > /dev/null
-          sha1sum build/generated/funnel-pack/funnel-pack.zip
+          zip=build/generated/funnel-pack/funnel-pack.zip
+          test -s "$zip"
+          unzip -t "$zip" > /dev/null
+          sha1sum "$zip"
       - name: Upload plugin JAR
         if: success()
         uses: actions/upload-artifact@v4
@@ -56,50 +57,71 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
           if-no-files-found: ignore
+      - name: Explain why private repositories cannot distribute public packs
+        if: ${{ github.event_name != 'pull_request' && github.event.repository.private == true }}
+        run: |
+          echo "### Resource-pack publishing is not enabled" >> "$GITHUB_STEP_SUMMARY"
+          echo "This source repository is PRIVATE. GitHub Release assets in private" >> "$GITHUB_STEP_SUMMARY"
+          echo "repositories cannot be downloaded by Minecraft players anonymously." >> "$GITHUB_STEP_SUMMARY"
+          echo "No source visibility was changed. Use a public distribution repository" >> "$GITHUB_STEP_SUMMARY"
+          echo "(which requires separate write credentials), or make this repository" >> "$GITHUB_STEP_SUMMARY"
+          echo "public only after reviewing the full source and commit history." >> "$GITHUB_STEP_SUMMARY"
 
-  publish-r2:
+  publish-release:
     needs: build
-    # Never publish pull requests or run without the essential R2 variables.
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.R2_ACCOUNT_ID != '' && vars.R2_BUCKET != '' }}
+    # Only anonymous-accessible PUBLIC releases are usable as Minecraft packs.
+    # NEVER silently change repository visibility or upload public assets from
+    # private source projects without explicit author consent.
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: funnelarmor-pack-release
+      cancel-in-progress: false
+    permissions:
+      contents: write
     steps:
-      - name: Download the same pack that was bundled into the JAR
+      - name: Download the exact resource pack used by the successful JAR build
         uses: actions/download-artifact@v4
         with:
           name: FunnelArmor-resourcepack
           path: pack
-      - name: Upload immutable pack to Cloudflare R2
+      - name: Create or reuse SHA-1 keyed GitHub Release
         shell: bash
         env:
-          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
-          R2_BUCKET: ${{ vars.R2_BUCKET }}
-          R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: auto
-          AWS_EC2_METADATA_DISABLED: 'true'
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          if [[ -z "$AWS_ACCESS_KEY_ID" || -z "$AWS_SECRET_ACCESS_KEY" ]]; then
-            echo "::error::Missing R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY secrets"
-            exit 1
-          fi
-          command -v aws >/dev/null || { echo "::error::AWS CLI not available on runner"; exit 1; }
           test -s pack/funnel-pack.zip
           hash="$(sha1sum pack/funnel-pack.zip | cut -d' ' -f1)"
-          key="funnel-pack-${hash}.zip"
-          aws --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
-            s3api put-object --bucket "$R2_BUCKET" --key "$key" \
-            --body pack/funnel-pack.zip --content-type application/zip \
-            --cache-control "public, max-age=31536000, immutable" \
-            --no-cli-pager >/dev/null
-          echo "R2 object: $key"
-          echo "### R2 resource pack published" >> "$GITHUB_STEP_SUMMARY"
-          echo "Object key: \`$key\`" >> "$GITHUB_STEP_SUMMARY"
-          if [[ -n "$R2_PUBLIC_BASE_URL" ]]; then
-            base="${R2_PUBLIC_BASE_URL%/}"
-            echo "Public URL: \`${base}/${key}\`" >> "$GITHUB_STEP_SUMMARY"
-            echo "Paper config: \`pack.external-base-url: \"$base\"\`" >> "$GITHUB_STEP_SUMMARY"
+          tag="pack-${hash}"
+          filename="funnel-pack-${hash}.zip"
+          cp pack/funnel-pack.zip "pack/${filename}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            if gh release view "$tag" --json assets --jq '.assets[].name' | grep -Fxq "$filename"; then
+              echo "Identical pack already published at $tag"
+            else
+              gh release upload "$tag" "pack/${filename}"
+            fi
           else
-            echo "Set Paper \`pack.external-base-url\` to your R2 public HTTPS base URL." >> "$GITHUB_STEP_SUMMARY"
+            gh release create "$tag" "pack/${filename}" \
+              --target "$GITHUB_SHA" \
+              --title "FunnelArmor resource pack ${hash:0:12}" \
+              --notes "Automatically published Minecraft resource pack. SHA-1: ${hash}" \
+              --prerelease --latest=false
           fi
+          url="https://github.com/${GH_REPO}/releases/download/${tag}/${filename}"
+          echo "### Published resource pack" >> "$GITHUB_STEP_SUMMARY"
+          echo "ZIP SHA-1: \`${hash}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Download URL: ${url}" >> "$GITHUB_STEP_SUMMARY"
+          echo "This URL is automatically generated by FunnelArmor v0.7.7+." >> "$GITHUB_STEP_SUMMARY"
+          # Confirm real public downloads, including GitHub's redirect, and
+          # validate the downloaded bytes rather than trusting a release page.
+          curl --fail --location --retry 5 --retry-delay 2 \
+            --silent --show-error --output pack/public-check.zip "$url"
+          actual="$(sha1sum pack/public-check.zip | cut -d' ' -f1)"
+          if [[ "$actual" != "$hash" ]]; then
+            echo "::error::The public GitHub Release download did not match the bundled pack SHA-1"
+            exit 1
+          fi
+          echo "Public ZIP download verified with matching SHA-1."

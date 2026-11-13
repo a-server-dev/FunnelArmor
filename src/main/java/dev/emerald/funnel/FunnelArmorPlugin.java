@@ -101,7 +101,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.6 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.7 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -117,8 +117,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private void startHttp() {
         if (httpServer != null) httpServer.stop(0);
         httpServer = null;
-        // External R2 hosting does not need a listening port on Paper.
-        if (!getConfig().getBoolean("pack.embedded-http.enabled", true)
+        // GitHub Releases, or another external download host, requires no
+        // inbound HTTP listener (and no port forwarding) on the Paper machine.
+        if (usesGitHubReleases()
+                || !getConfig().getBoolean("pack.embedded-http.enabled", false)
                 || packBytes == null
                 || !getConfig().getString("pack.external-url", "").isBlank()
                 || !getConfig().getString("pack.external-base-url", "").isBlank()) return;
@@ -150,6 +152,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             httpServer = null;
         }
     }
+    private boolean usesGitHubReleases() {
+        // Enabled by default even for existing config.yml files from v0.7.6.
+        // An explicitly configured external host takes precedence.
+        return getConfig().getBoolean("pack.github-releases.enabled", true)
+                && getConfig().getString("pack.external-url", "").isBlank()
+                && getConfig().getString("pack.external-base-url", "").isBlank();
+    }
     private String publicUrl() {
         return publicUrl(null);
     }
@@ -158,6 +167,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (!external.isEmpty()) return external;
         String externalBase = getConfig().getString("pack.external-base-url", "").trim();
         if (!externalBase.isEmpty()) return ResourcePackUrl.fromBase(externalBase, sha1);
+        if (usesGitHubReleases()) {
+            return ResourcePackUrl.githubRelease(
+                    getConfig().getString("pack.github-releases.repository", "a-server-dev/FunnelArmor"),
+                    sha1);
+        }
         String host = getConfig().getString("pack.embedded-http.public-host", "auto").trim();
         if (host.equalsIgnoreCase("auto") || host.isBlank()) {
             // This is the hostname the player used to connect. It avoids accidentally
@@ -174,7 +188,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     private boolean applyPack(Player player) {
         if (sha1 == null) { player.sendMessage("§cリソースパックが生成されていません。"); return false; }
-        if (getConfig().getString("pack.external-url", "").isBlank()
+        if (!usesGitHubReleases()
+                && getConfig().getString("pack.external-url", "").isBlank()
                 && getConfig().getString("pack.external-base-url", "").isBlank()
                 && httpServer == null) {
             player.sendMessage("§cパック配信サーバーが起動していません。plugins/FunnelArmor/FunnelArmor-pack.zip を手動適用してください。");
