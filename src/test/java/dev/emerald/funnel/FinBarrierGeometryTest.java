@@ -3,28 +3,43 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 class FinBarrierGeometryTest {
   @Test void positions(){for(int i=0;i<6;i++){var p=FinBarrierGeometry.pose(i,1);assertEquals(i<4,p.corner());}}
-  @Test void tipsOpenSymmetricallyOnlyDuringBarrierDeployment(){
-    assertEquals(0.0, FinBarrierGeometry.tipSplayYawDegrees(0,0.0,12), 1e-8);
-    assertEquals(0.0, FinBarrierGeometry.tipSplayYawDegrees(5,0.0,12), 1e-8);
-    // Back pair, front pair, then the folded pair: opposite tip yaw.
-    for(int left=0;left<6;left+=2){
-      int right=left+1;
-      double l=FinBarrierGeometry.tipSplayYawDegrees(left,1.0,12);
-      double r=FinBarrierGeometry.tipSplayYawDegrees(right,1.0,12);
-      assertEquals(12.0,Math.abs(l),1e-8);
-      assertEquals(-l,r,1e-8);
-      assertEquals(l*0.5,FinBarrierGeometry.tipSplayYawDegrees(left,0.5,12),1e-8);
+  @Test void openingMovesOnlyIndependentArmTipsNotWholeFunnelYaw(){
+    double scale=1.45;
+    for(double progress : new double[]{0.0,0.25,0.5,0.75,1.0}) {
+      var u=FinBarrierGeometry.armPose(true,progress,6.0,scale);
+      var l=FinBarrierGeometry.armPose(false,progress,6.0,scale);
+      assertEquals(-u.angleDegrees(),l.angleDegrees(),1e-9);
+      if(progress==0) {
+        assertEquals(0,u.angleDegrees(),1e-9);
+        assertEquals(0,u.shiftX(),1e-9);
+        assertEquals(0,u.shiftY(),1e-9);
+      }
+      for(boolean upper : new boolean[]{true,false}){
+        var pose=FinBarrierGeometry.armPose(upper,progress,6.0,scale);
+        double a=Math.toRadians(pose.angleDegrees());
+        double px=(13.83-8.0)/16.0;
+        double py=((upper?9.65:6.40)-8.0)/16.0;
+        // Articulation must keep the rear hinge at the original position.
+        double hingeX=pose.shiftX()+scale*(Math.cos(a)*px-Math.sin(a)*py);
+        double hingeY=pose.shiftY()+scale*(Math.sin(a)*px+Math.cos(a)*py);
+        assertEquals(scale*px,hingeX,1e-9);
+        assertEquals(scale*py,hingeY,1e-9);
+      }
     }
-    // Lower-left and lower-right folded tips face away from each other.
-    assertEquals(-12.0,FinBarrierGeometry.tipSplayYawDegrees(4,1.0,12),1e-8);
-    assertEquals(12.0,FinBarrierGeometry.tipSplayYawDegrees(5,1.0,12),1e-8);
-    // Both face pairs open away from the center rather than converge.
-    assertEquals(12.0,FinBarrierGeometry.tipSplayYawDegrees(0,1.0,12),1e-8);
-    assertEquals(-12.0,FinBarrierGeometry.tipSplayYawDegrees(2,1.0,12),1e-8);
+    var upper=FinBarrierGeometry.armPose(true,1.0,6.0,scale);
+    var lower=FinBarrierGeometry.armPose(false,1.0,6.0,scale);
+    // Negative-X muzzle tip should move up for upper fin and down for lower.
+    double noseX=(1.4-8)/16.0;
+    double uc= Math.cos(Math.toRadians(upper.angleDegrees()));
+    double us= Math.sin(Math.toRadians(upper.angleDegrees()));
+    double lc= Math.cos(Math.toRadians(lower.angleDegrees()));
+    double ls= Math.sin(Math.toRadians(lower.angleDegrees()));
+    double upperNoseY=upper.shiftY()+scale*(us*noseX+uc*((9.8-8)/16.0));
+    double lowerNoseY=lower.shiftY()+scale*(ls*noseX+lc*((6.35-8)/16.0));
+    assertTrue(upperNoseY>scale*((9.8-8)/16.0)+0.10);
+    assertTrue(lowerNoseY<scale*((6.35-8)/16.0)-0.10);
     assertThrows(IllegalArgumentException.class,
-        () -> FinBarrierGeometry.tipSplayYawDegrees(6,1.0,12));
-    assertThrows(IllegalArgumentException.class,
-        () -> FinBarrierGeometry.tipSplayYawDegrees(0,1.0,Double.NaN));
+        () -> FinBarrierGeometry.armPose(true,1.0,25,scale));
   }
   @Test void intercepts(){assertTrue(Double.isFinite(FinBarrierGeometry.entryT(0,5,0,0,1.5,0)));
      assertTrue(Double.isFinite(FinBarrierGeometry.entryT(-5,1.5,0,0,1.5,0)));

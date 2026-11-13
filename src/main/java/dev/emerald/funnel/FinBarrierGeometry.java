@@ -16,22 +16,30 @@ public final class FinBarrierGeometry {
             mix(1.62,TOP,p),mix(-0.72-(index/2)*0.12,back*HALF_WIDTH,p),true);
     }
     /**
-     * A subtle outward fan for the six barrier funnels. In the top four
-     * corners, the two muzzles on each front/back edge spread apart rather
-     * than pointing through the glass. The two folded units also splay
-     * symmetrically (left away from right).
+     * Open just the tips of the upper/lower fin about their rear hinge,
+     * leaving the U-shaped base fixed. Local model units are 1/16 block;
+     * the ItemDisplay pivot is at [8,8,8], so move the rotated model back
+     * to its original hinge position after applying entity model scale.
      *
-     * Only the visual entity yaw changes: glass and hitbox stay untouched.
-     * Opening/closing interpolates the splay using the barrier progress.
+     * Upper arm angle is negative Z; lower arm positive Z. Both bend away
+     * from the middle at local negative X (the open muzzle end).
      */
-    public static double tipSplayYawDegrees(int index, double progress, double degrees) {
-        if (index < 0 || index >= 6 || !Double.isFinite(progress)
-                || !Double.isFinite(degrees) || degrees < 0 || degrees > 35)
-            throw new IllegalArgumentException("Invalid barrier tip splay");
-        double t = ease(progress);
-        double side = index % 2 == 0 ? -1.0 : 1.0;
-        double sign = index < 4 ? side * (index < 2 ? -1.0 : 1.0) : side;
-        return sign * degrees * t;
+    public record ArmPose(double angleDegrees, double shiftX, double shiftY) {}
+
+    public static ArmPose armPose(boolean upper, double progress,
+                                  double maxDegrees, double displayScale) {
+        if (!Double.isFinite(progress) || !Double.isFinite(maxDegrees)
+                || maxDegrees < 0 || maxDegrees > 15
+                || !Double.isFinite(displayScale) || displayScale <= 0)
+            throw new IllegalArgumentException("Invalid barrier arm pose");
+        double degrees = (upper ? -1.0 : 1.0) * maxDegrees * ease(progress);
+        double radians = Math.toRadians(degrees);
+        double pivotX = (13.83 - 8.0) / 16.0;
+        double pivotY = ((upper ? 9.65 : 6.40) - 8.0) / 16.0;
+        double c = Math.cos(radians), s = Math.sin(radians);
+        return new ArmPose(degrees,
+                displayScale * (pivotX - (c * pivotX - s * pivotY)),
+                displayScale * (pivotY - (s * pivotX + c * pivotY)));
     }
     public static double approach(double progress,boolean opening,int ticks){
         if(!Double.isFinite(progress)||ticks<1)throw new IllegalArgumentException("Invalid barrier state");

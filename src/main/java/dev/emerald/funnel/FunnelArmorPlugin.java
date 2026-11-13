@@ -382,50 +382,60 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Math.cos(yaw) * pose.right() - Math.sin(yaw) * pose.forward(),
                 pose.up(),
                 Math.sin(yaw) * pose.right() + Math.cos(yaw) * pose.forward());
-        // Preserve the validated 180-degree model correction; spread the
-        // tips slightly outwards only in the shield-barrier formation.
-        float baseYaw = FinFunnelOrientation.barrierYaw(
+        // Keep the validated formation yaw. The separate upper/lower arm
+        // displays articulate vertically; no whole-funnel yaw splay.
+        point.setYaw(FinFunnelOrientation.barrierYaw(
                 player.getLocation().getYaw(), pose.right(), pose.forward(), i,
-                getConfig().getDouble("fin-funnel.yaw-adjustment-degrees", 180.0));
-        double splay = Math.max(0.0, Math.min(35.0,
-                getConfig().getDouble("fin-barrier.tip-splay-degrees", 12.0)));
-        point.setYaw(baseYaw + (float) FinBarrierGeometry.tipSplayYawDegrees(
-                i, progress, splay));
+                getConfig().getDouble("fin-funnel.yaw-adjustment-degrees", 180.0)));
         return point;
     }
+    /**
+     * Four ν-fin funnels each render as three synchronized display parts:
+     * upper arm, lower arm, and the fixed hinge. The arms open independently
+     * in their vertical model plane, so the U tips spread without yawing the
+     * entire funnel diagonally across the glass roof.
+     * Two folded units remain as ordinary single displays.
+     */
+    private static final int FIN_BARRIER_DISPLAYS = 14;
+
     private void updateFinBarrierDisplays(Player player, double progress) {
         UUID id = player.getUniqueId();
         List<ItemDisplay> displays = finBarrierDisplays.get(id);
-        boolean rebuild = displays == null || displays.size() != 6;
+        boolean rebuild = displays == null || displays.size() != FIN_BARRIER_DISPLAYS;
         if (!rebuild) for (ItemDisplay d : displays) {
             if (!d.isValid() || d.getWorld() != player.getWorld()) { rebuild = true; break; }
         }
         if (rebuild) {
             List<ItemDisplay> old = finBarrierDisplays.remove(id);
             if (old != null) for (ItemDisplay d : old) if (d.isValid()) d.remove();
-            List<ItemDisplay> created = new ArrayList<>(6);
+            List<ItemDisplay> created = new ArrayList<>(FIN_BARRIER_DISPLAYS);
             try {
-                for (int i = 0; i < 6; i++) {
-                    final int number = i;
-                    ItemDisplay display = player.getWorld().spawn(finBarrierLocation(player, i, progress),
+                for (int slot = 0; slot < FIN_BARRIER_DISPLAYS; slot++) {
+                    final int finIndex = slot < 12 ? slot / 3 : slot - 8;
+                    final String model = slot >= 12 ? "funnel_drone_1_folded"
+                            : "funnel_drone_1_barrier_" + switch (slot % 3) {
+                                case 0 -> "upper";
+                                case 1 -> "lower";
+                                default -> "core";
+                            };
+                    ItemDisplay display = player.getWorld().spawn(
+                            finBarrierLocation(player, finIndex, progress),
                             ItemDisplay.class, d -> {
                         ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
                         ItemMeta meta = stack.getItemMeta();
-                        meta.setItemModel(new NamespacedKey("funnel", number < 4
-                                ? "funnel_drone_1" : "funnel_drone_1_folded"));
-                        meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, 1);
+                        meta.setItemModel(new NamespacedKey("funnel", model));
+                        meta.getPersistentDataContainer().set(
+                                variantKey, PersistentDataType.INTEGER, 1);
                         stack.setItemMeta(meta);
                         d.setItemStack(stack);
                         d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                        float scale = (float) Math.max(0.1, Math.min(3.0,
-                                getConfig().getDouble("drones.model-scale", 1.45)));
-                        d.setTransformation(new Transformation(new Vector3f(0, 0, 0),
-                                new AxisAngle4f(), new Vector3f(scale, scale, scale), new AxisAngle4f()));
                         d.setPersistent(false);
                         d.setGravity(false);
                         d.setInvulnerable(true);
                         d.setTeleportDuration(1);
-                        d.getPersistentDataContainer().set(displayKey, PersistentDataType.BYTE, (byte)1);
+                        d.setInterpolationDuration(1);
+                        d.getPersistentDataContainer().set(
+                                displayKey, PersistentDataType.BYTE, (byte) 1);
                     });
                     created.add(display);
                 }
@@ -438,16 +448,27 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 return;
             }
         }
-        for (int i = 0; i < 6; i++) {
-            ItemDisplay display = displays.get(i);
-            display.teleport(finBarrierLocation(player, i, progress));
-            if (i >= 4) {
-                // Two remaining units stay folded, but rest horizontally.
-                float scale = (float) Math.max(0.1, Math.min(3.0,
-                        getConfig().getDouble("drones.model-scale", 1.45)));
+        float scale = (float) Math.max(0.1, Math.min(3.0,
+                getConfig().getDouble("drones.model-scale", 1.45)));
+        double opening = Math.max(0, Math.min(15.0,
+                getConfig().getDouble("fin-barrier.fin-tip-open-degrees", 6.0)));
+        for (int slot = 0; slot < FIN_BARRIER_DISPLAYS; slot++) {
+            ItemDisplay display = displays.get(slot);
+            int finIndex = slot < 12 ? slot / 3 : slot - 8;
+            display.teleport(finBarrierLocation(player, finIndex, progress));
+            if (slot < 12 && slot % 3 != 2) {
+                boolean upper = slot % 3 == 0;
+                FinBarrierGeometry.ArmPose pose = FinBarrierGeometry.armPose(
+                        upper, progress, opening, scale);
                 display.setTransformation(new Transformation(
-                        new Vector3f(), finFoldRotation(), new Vector3f(scale, scale, scale),
-                        new AxisAngle4f()));
+                        new Vector3f((float) pose.shiftX(), (float) pose.shiftY(), 0f),
+                        new AxisAngle4f((float) Math.toRadians(pose.angleDegrees()),
+                                0f, 0f, 1f),
+                        new Vector3f(scale, scale, scale), new AxisAngle4f()));
+            } else {
+                display.setTransformation(new Transformation(
+                        new Vector3f(), slot >= 12 ? finFoldRotation() : new AxisAngle4f(),
+                        new Vector3f(scale, scale, scale), new AxisAngle4f()));
             }
         }
     }

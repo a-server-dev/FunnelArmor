@@ -59,9 +59,11 @@ shield:
 fin-barrier:
   deploy-ticks: 10
   retract-ticks: 10
-  # Spread the barrier funnels' tips outward slightly to avoid glass overlap.
-  # 0 = no fan; 12 is subtle. Maximum allowed is 35 degrees.
-  tip-splay-degrees: 12.0
+  # Bend just the upper/lower U-shaped arm tips vertically away from each
+  # other about their rear hinge; does not yaw the whole funnel diagonally.
+  # 0 = closed, 6 = subtle, maximum allowed = 15 degrees.
+  fin-tip-open-degrees: 6.0
+  # Legacy tip-splay-degrees is deliberately ignored (whole-model yaw looked diagonal).
   # Five white stained-glass BlockDisplay panels (front/back/left/right/roof).
   # Visual only; projectile and beam collision still use the plugin's barrier.
   glass-enabled: true
