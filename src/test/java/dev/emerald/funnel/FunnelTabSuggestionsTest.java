@@ -11,7 +11,7 @@ class FunnelTabSuggestionsTest {
 
     @Test void playerGetsRelevantCommandsButNoAdminActions() {
         var result = FunnelTabSuggestions.complete(new String[] {""}, false, true, ONLINE);
-        assertEquals(List.of("formation", "pack", "shield", "status"), result);
+        assertEquals(List.of("barrier", "formation", "pack", "shield", "status"), result);
         assertEquals(List.of("pack"), FunnelTabSuggestions.complete(new String[]{"Pa"}, false, true, ONLINE));
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"give",""}, false, true, ONLINE));
     }
