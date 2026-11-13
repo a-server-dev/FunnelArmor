@@ -83,7 +83,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.3.4 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.4.0 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -165,7 +165,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         ItemMeta meta = stack.getItemMeta();
         meta.displayName(Component.text("§b◆ ファンネル " + variant));
         meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7独立型ファンネル " + variant),Component.text("§7射程32 / ダメージ2HP")));
-        meta.setItemModel(new NamespacedKey("funnel", "funnel_controller"));
+        meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
         meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1);
         stack.setItemMeta(meta);
