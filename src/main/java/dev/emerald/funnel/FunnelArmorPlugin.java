@@ -68,6 +68,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private final Set<UUID> shieldGuards = ConcurrentHashMap.newKeySet();
     private final Map<UUID, List<ItemDisplay>> shieldDisplays = new ConcurrentHashMap<>();
     private final Map<UUID, Long> shieldToggleTicks = new ConcurrentHashMap<>();
+    private final Set<UUID> finBarrierGuards = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, Double> finBarrierProgress = new ConcurrentHashMap<>();
+    private final Map<UUID, List<ItemDisplay>> finBarrierDisplays = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> finBarrierToggleTicks = new ConcurrentHashMap<>();
     /** 0 = docked, 1 = protective wall; retained while closing. */
     private final Map<UUID, Double> shieldProgress = new ConcurrentHashMap<>();
     private final Map<UUID, Long> shotAnimationStart = new ConcurrentHashMap<>();
@@ -107,7 +111,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             getCommand("funnel").setExecutor(this);
             getCommand("funnel").setTabCompleter(this);
         }
-        getLogger().info("FunnelArmor 0.7.11 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.12 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -117,6 +121,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shotAnimationStart.clear();
         shotAimTargets.clear();
         for (UUID uuid : new ArrayList<>(shieldGuards)) stopShield(uuid);
+        for (UUID uuid : new ArrayList<>(finBarrierGuards)) stopFinBarrier(uuid);
+        for (UUID uuid : new ArrayList<>(finBarrierDisplays.keySet())) stopFinBarrier(uuid);
         for (UUID uuid : new ArrayList<>(shieldDisplays.keySet())) removeShieldDisplays(uuid);
         for (UUID uuid : new ArrayList<>(activeDrones.keySet())) removeDrones(uuid);
     }
@@ -240,7 +246,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             case 3 -> "ペタル・ビット（12基）";
             default -> "シールド・ファンネル（3基）";
         }));
-        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7周囲に " + droneCount(variant) + " 基展開"),Component.text("§7展開：" + (variant == 1 ? "格納" : "周回")),Component.text("§7しゃがみ＋右クリックで展開切替"),Component.text("§7射程32 / ダメージ2HP")));
+        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7周囲に " + droneCount(variant) + " 基展開"),Component.text("§7展開：" + (variant == 1 ? "格納" : "周回")),Component.text("§7しゃがみ＋右クリックで展開切替"),Component.text("§7射程32 / ダメージ0.5HP")));
         meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
         meta.getPersistentDataContainer().set(formationKey, PersistentDataType.STRING, FormationMode.ORBIT.id());
@@ -286,7 +292,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Component.text("§7周囲に 6 基展開"),
                 Component.text("§7展開：" + mode.displayName()),
                 Component.text("§7しゃがみ＋右クリックで展開切替"),
-                Component.text("§7射程32 / ダメージ2HP")));
+                Component.text("§7射程32 / ダメージ0.5HP")));
         stack.setItemMeta(meta);
         player.getInventory().setItemInMainHand(stack);
     }
@@ -305,7 +311,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Component.text("§7周囲に " + droneCount(variant) + " 基展開"),
                 Component.text("§7展開：" + mode.displayName()),
                 Component.text("§7しゃがみ＋右クリックで展開切替"),
-                Component.text("§7射程32 / ダメージ2HP")));
+                Component.text("§7射程32 / ダメージ0.5HP")));
         stack.setItemMeta(meta);
         player.getInventory().setItemInMainHand(stack);
         // player.sendActionBar(Component.text("§b[FunnelArmor] 展開：" + mode.displayName()));
@@ -328,6 +334,150 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         List<ItemDisplay> displays = activeDrones.remove(uuid);
         if (displays == null) return;
         for (ItemDisplay d : displays) if (d.isValid()) d.remove();
+    }
+    private boolean hasFinOffhand(Player player) {
+        ItemStack item = player.getInventory().getItemInOffHand();
+        if (!isWeapon(item)) return false;
+        Integer variant = item.getItemMeta().getPersistentDataContainer()
+                .get(variantKey, PersistentDataType.INTEGER);
+        return variant != null && variant == 1;
+    }
+    private boolean finBarrierActive(Player player) {
+        return player.isOnline() && !player.isDead() && hasFinOffhand(player)
+                && finBarrierGuards.contains(player.getUniqueId())
+                && finBarrierProgress.getOrDefault(player.getUniqueId(), 0.0) >= 0.999;
+    }
+    private void stopFinBarrier(UUID id) {
+        finBarrierGuards.remove(id);
+        finBarrierProgress.remove(id);
+        List<ItemDisplay> old = finBarrierDisplays.remove(id);
+        if (old != null) for (ItemDisplay d : old) if (d.isValid()) d.remove();
+        finBarrierToggleTicks.remove(id);
+    }
+    private void toggleFinBarrier(Player player) {
+        if (!hasFinOffhand(player)) {
+            player.sendMessage("§cフィン・ファンネルをオフハンドに持ってください。");
+            return;
+        }
+        UUID id = player.getUniqueId();
+        long tick = player.getWorld().getGameTime();
+        Long prev = finBarrierToggleTicks.get(id);
+        if (prev != null && tick >= prev && tick - prev < 5) return;
+        finBarrierToggleTicks.put(id, tick);
+        if (!finBarrierGuards.add(id)) finBarrierGuards.remove(id);
+        updateFinBarrierDisplays(player, finBarrierProgress.getOrDefault(id, 0.0));
+    }
+    private Location finBarrierLocation(Player player, int i, double progress) {
+        FinBarrierGeometry.Pose pose = FinBarrierGeometry.pose(i, progress);
+        double yaw = Math.toRadians(player.getLocation().getYaw());
+        Location point = player.getLocation().add(
+                Math.cos(yaw) * pose.right() - Math.sin(yaw) * pose.forward(),
+                pose.up(),
+                Math.sin(yaw) * pose.right() + Math.cos(yaw) * pose.forward());
+        point.setYaw(player.getLocation().getYaw() + (i % 2 == 0 ? -90 : 90));
+        return point;
+    }
+    private void updateFinBarrierDisplays(Player player, double progress) {
+        UUID id = player.getUniqueId();
+        List<ItemDisplay> displays = finBarrierDisplays.get(id);
+        boolean rebuild = displays == null || displays.size() != 6;
+        if (!rebuild) for (ItemDisplay d : displays) {
+            if (!d.isValid() || d.getWorld() != player.getWorld()) { rebuild = true; break; }
+        }
+        if (rebuild) {
+            List<ItemDisplay> old = finBarrierDisplays.remove(id);
+            if (old != null) for (ItemDisplay d : old) if (d.isValid()) d.remove();
+            List<ItemDisplay> created = new ArrayList<>(6);
+            try {
+                for (int i = 0; i < 6; i++) {
+                    final int number = i;
+                    ItemDisplay display = player.getWorld().spawn(finBarrierLocation(player, i, progress),
+                            ItemDisplay.class, d -> {
+                        ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+                        ItemMeta meta = stack.getItemMeta();
+                        meta.setItemModel(new NamespacedKey("funnel", number < 4
+                                ? "funnel_drone_1" : "funnel_drone_1_folded"));
+                        meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, 1);
+                        stack.setItemMeta(meta);
+                        d.setItemStack(stack);
+                        d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                        float scale = (float) Math.max(0.1, Math.min(3.0,
+                                getConfig().getDouble("drones.model-scale", 1.45)));
+                        d.setTransformation(new Transformation(new Vector3f(0, 0, 0),
+                                new AxisAngle4f(), new Vector3f(scale, scale, scale), new AxisAngle4f()));
+                        d.setPersistent(false);
+                        d.setGravity(false);
+                        d.setInvulnerable(true);
+                        d.setTeleportDuration(1);
+                        d.getPersistentDataContainer().set(displayKey, PersistentDataType.BYTE, (byte)1);
+                    });
+                    created.add(display);
+                }
+                finBarrierDisplays.put(id, created);
+                displays = created;
+            } catch (RuntimeException ex) {
+                for (ItemDisplay d : created) if (d.isValid()) d.remove();
+                stopFinBarrier(id);
+                getLogger().warning("Fin barrier display failed: " + ex.getMessage());
+                return;
+            }
+        }
+        for (int i = 0; i < 6; i++) displays.get(i).teleport(finBarrierLocation(player, i, progress));
+    }
+    private void drawFinBarrier(Player player) {
+        if (animationTick % 4 != 0) return;
+        double yaw = Math.toRadians(player.getLocation().getYaw());
+        double hw = FinBarrierGeometry.HALF_WIDTH;
+        double top = FinBarrierGeometry.TOP;
+        Particle.DustOptions mist = new Particle.DustOptions(Color.fromRGB(100, 235, 255), 0.7f);
+        for (int ix = -4; ix <= 4; ix++) for (int iz = -4; iz <= 4; iz++) {
+            if (Math.abs(ix) % 2 != 0 && Math.abs(iz) % 2 != 0) continue;
+            double right = hw * ix / 4.0, forward = hw * iz / 4.0;
+            Location pt = player.getLocation().add(
+                    Math.cos(yaw) * right - Math.sin(yaw) * forward, top,
+                    Math.sin(yaw) * right + Math.cos(yaw) * forward);
+            player.getWorld().spawnParticle(Particle.DUST, pt, 1, 0, 0, 0, 0, mist);
+        }
+    }
+    private boolean finBarrierIntersects(Player player, Projectile projectile) {
+        Vector motion = projectile.getVelocity();
+        if (motion.lengthSquared() < 1.0e-8) return false;
+        Location base = player.getLocation();
+        double yaw = Math.toRadians(base.getYaw());
+        Vector right = new Vector(Math.cos(yaw), 0, Math.sin(yaw));
+        Vector front = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+        Vector rel = projectile.getLocation().toVector().subtract(base.toVector());
+        Vector from = rel.clone().subtract(motion);
+        Vector to = rel.clone().add(motion.clone().multiply(1.5));
+        return Double.isFinite(FinBarrierGeometry.entryT(
+                from.dot(right), from.getY(), from.dot(front),
+                to.dot(right), to.getY(), to.dot(front)));
+    }
+    private void updateFinBarriers() {
+        Set<UUID> tracked = new HashSet<>(finBarrierGuards);
+        tracked.addAll(finBarrierDisplays.keySet());
+        for (UUID id : tracked) {
+            Player player = Bukkit.getPlayer(id);
+            if (player == null || !player.isOnline() || player.isDead() || !hasFinOffhand(player)) {
+                stopFinBarrier(id);
+                continue;
+            }
+            boolean opening = finBarrierGuards.contains(id);
+            double previous = finBarrierProgress.getOrDefault(id, 0.0);
+            int duration = Math.max(1, Math.min(60, getConfig().getInt(
+                    opening ? "fin-barrier.deploy-ticks" : "fin-barrier.retract-ticks", 10)));
+            double progress = FinBarrierGeometry.approach(previous, opening, duration);
+            finBarrierProgress.put(id, progress);
+            if (!opening && progress <= 0) { stopFinBarrier(id); continue; }
+            updateFinBarrierDisplays(player, progress);
+            if (!finBarrierActive(player)) continue;
+            drawFinBarrier(player);
+            for (Projectile projectile : player.getWorld().getNearbyEntitiesByType(
+                    Projectile.class, player.getLocation(), 4.0, 4.0, 4.0)) {
+                if (!projectile.isValid() || projectile.getShooter() == player) continue;
+                if (finBarrierIntersects(player, projectile)) interceptProjectile(player, projectile);
+            }
+        }
     }
     private boolean hasUnicornOffhand(Player player) {
         ItemStack item = player.getInventory().getItemInOffHand();
@@ -469,6 +619,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     private void updateShields() {
         animationTick++;
+        updateFinBarriers();
         Set<UUID> tracked = new HashSet<>(shieldGuards);
         tracked.addAll(shieldDisplays.keySet());
         for (UUID uuid : tracked) {
@@ -503,7 +654,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     public void onProjectileDamage(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player player)
                 || !(event.getDamager() instanceof Projectile projectile)
-                || !shieldActive(player) || projectile.getShooter() == player) return;
+                || projectile.getShooter() == player) return;
+        if (finBarrierActive(player)) {
+            if (finBarrierIntersects(player, projectile)
+                    || projectile.getLocation().distanceSquared(player.getLocation().add(0, 1.25, 0)) < 3.5) {
+                event.setCancelled(true);
+                interceptProjectile(player, projectile);
+                return;
+            }
+        }
+        if (!shieldActive(player)) return;
         double yaw = Math.toRadians(player.getLocation().getYaw());
         Vector front = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
         Vector relative = projectile.getLocation().toVector().subtract(player.getLocation().toVector());
@@ -658,17 +818,20 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     @EventHandler public void onQuit(PlayerQuitEvent e) {
         stopShield(e.getPlayer().getUniqueId());
+        stopFinBarrier(e.getPlayer().getUniqueId());
         shieldToggleTicks.remove(e.getPlayer().getUniqueId());
         shotAnimationStart.remove(e.getPlayer().getUniqueId());
         shotAimTargets.remove(e.getPlayer().getUniqueId());
         removeDrones(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onChangedWorld(PlayerChangedWorldEvent e) {
+        stopFinBarrier(e.getPlayer().getUniqueId());
         stopShield(e.getPlayer().getUniqueId());
         removeDrones(e.getPlayer().getUniqueId());
         shotAnimationStart.remove(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onDeath(PlayerDeathEvent e) {
+        stopFinBarrier(e.getEntity().getUniqueId());
         stopShield(e.getEntity().getUniqueId());
         removeDrones(e.getEntity().getUniqueId());
         shotAnimationStart.remove(e.getEntity().getUniqueId());
@@ -691,6 +854,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (event.getAction() != Action.RIGHT_CLICK_AIR
                 && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            if (hasFinOffhand(event.getPlayer())) {
+                event.setCancelled(true);
+                toggleFinBarrier(event.getPlayer());
+                return;
+            }
             if (!hasUnicornOffhand(event.getPlayer())) return;
             event.setCancelled(true);
             toggleShield(event.getPlayer());
@@ -715,6 +883,33 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shotAnimationStart.put(player.getUniqueId(), animationTick);
         fire(player);
     }
+    private double firstBeamShieldHit(Player shooter, Location eye, Vector dir, double length) {
+        double closest = Double.POSITIVE_INFINITY;
+        if (length <= 0) return closest;
+        Vector a = eye.toVector();
+        Vector b = a.clone().add(dir.clone().multiply(length));
+        for (Player owner : Bukkit.getOnlinePlayers()) {
+            if (owner == shooter || owner.getWorld() != shooter.getWorld() || owner.isDead()) continue;
+            Location origin = owner.getLocation();
+            double yaw = Math.toRadians(origin.getYaw());
+            Vector right = new Vector(Math.cos(yaw), 0, Math.sin(yaw));
+            Vector front = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+            Vector ra = a.clone().subtract(origin.toVector());
+            Vector rb = b.clone().subtract(origin.toVector());
+            double aR = ra.dot(right), aF = ra.dot(front), aY = ra.getY();
+            double bR = rb.dot(right), bF = rb.dot(front), bY = rb.getY();
+            if (shieldActive(owner) && ShieldGuardGeometry.intercepts(aR, aY, aF, bR, bY, bF)) {
+                double t = (aF - ShieldGuardGeometry.PLANE_DISTANCE) / (aF - bF);
+                closest = Math.min(closest, t * length);
+            }
+            if (finBarrierActive(owner)) {
+                double t = FinBarrierGeometry.entryT(aR, aY, aF, bR, bY, bF);
+                if (Double.isFinite(t)) closest = Math.min(closest, t * length);
+            }
+        }
+        return closest;
+    }
+
     private void fire(Player player) {
         World world = player.getWorld();
         Location eye = player.getEyeLocation();
@@ -725,6 +920,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         RayTraceResult entityHit = world.rayTraceEntities(eye, dir, blockDist, 0.3,
                 entity -> entity instanceof LivingEntity && entity != player && !entity.isDead());
         double dist = entityHit == null ? blockDist : eye.toVector().distance(entityHit.getHitPosition());
+        double interception = firstBeamShieldHit(player, eye, dir, dist);
+        boolean blockedByBarrier = Double.isFinite(interception) && interception <= dist + 1.0e-6;
+        if (blockedByBarrier) dist = Math.max(0, interception);
         Vector target = eye.toVector().add(dir.clone().multiply(dist));
         if (selectedVariant(player) == 4) {
             shotAimTargets.put(player.getUniqueId(), target.clone());
@@ -760,8 +958,15 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
         world.spawnParticle(Particle.END_ROD,target.getX(),target.getY(),target.getZ(),8,0.15,0.15,0.15,0.02);
         world.playSound(eye, Sound.ENTITY_GUARDIAN_ATTACK, 0.45f, 1.65f);
+        if (blockedByBarrier) {
+            world.spawnParticle(Particle.ELECTRIC_SPARK, target.getX(), target.getY(), target.getZ(),
+                    10, 0.12, 0.12, 0.12, 0.04);
+            world.playSound(target.toLocation(world), Sound.ITEM_SHIELD_BLOCK, 0.6f, 1.35f);
+            return;
+        }
         Entity hit = entityHit == null ? null : entityHit.getHitEntity();
-        if (hit instanceof LivingEntity living) living.damage(Math.max(0, getConfig().getDouble("beam.damage",2.0)), player);
+        if (hit instanceof LivingEntity living) living.damage(
+                Math.min(0.5, Math.max(0, getConfig().getDouble("beam.damage", 0.5))), player);
     }
 
     @Override
@@ -776,7 +981,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel reload §7| §b/funnel status"); return true; }
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
@@ -838,6 +1043,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     }
                     changeFormation(player, mode);
                 }
+            }
+            case "barrier" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage("§cバリアはプレイヤー専用です。");
+                    return true;
+                }
+                toggleFinBarrier(player);
             }
             case "shield" -> {
                 if (!(sender instanceof Player player)) {

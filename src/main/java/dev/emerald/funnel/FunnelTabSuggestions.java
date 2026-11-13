@@ -29,6 +29,7 @@ public final class FunnelTabSuggestions {
             if (player) {
                 candidates.add("formation");
                 candidates.add("shield");
+                candidates.add("barrier");
             }
             if (admin) {
                 candidates.add("give");

@@ -1,6 +1,6 @@
 # Changes require /funnel reload or a server restart.
 beam:
-  damage: 2.0
+  damage: 0.5
   range: 32.0
   cooldown-ticks: 12
   particle-step: 0.45
@@ -55,3 +55,7 @@ shield:
   facing-yaw-offset: 0
   deploy-ticks: 12
   retract-ticks: 12
+
+fin-barrier:
+  deploy-ticks: 10
+  retract-ticks: 10
