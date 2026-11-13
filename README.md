@@ -323,3 +323,23 @@ exception; the server can only see the status, not the client's exact error.
 - The glass bounds match `FinBarrierGeometry`: horizontal +/-1.48 blocks, vertical 0.28–3.14 blocks relative to player feet. The glass follows the player's rotation and position, and cleans up on retract, death, quit, dimension change, or plugin disable; orphan cleanup includes BlockDisplay.
 - Configure `fin-barrier.glass-enabled` and `fin-barrier.glass-thickness` (default 0.035, visual thickness).
 - Existing projectile and hitscan beam interception and 0.5 HP beam damage remain unchanged. Resource pack bytes are unchanged.
+
+## v0.7.14 — fin-funnel orientation and immediate muzzle aim
+
+- Model's two different reference axes are now handled independently: the
+  unfolded U-shaped model fires toward local -X; the folded rod runs along local
+  +Y. Previously, a single +90-degree yaw adjustment was applied to both.
+- Fin funnel stored and stationary formations use forward-facing yaw. ORBIT and
+  SPIRAL face radially outward; barrier corners face inward, and the remaining
+  two folded units stay behind the player.
+- Folded rods lie horizontally thanks to a model-local Z rotation, configurable
+  using fin-funnel.folded-roll-degrees (default 90 degrees).
+- Six shooting fin funnels snap their -X muzzles to the actual ray trace hit,
+  hold for 3 ticks, then ease back to the formation heading by tick 8 (the same
+  timing as the existing variant-4 Unicorn barrels). Stored funnels cannot fire.
+- fin-funnel.yaw-adjustment-degrees (default 0) applies a user-adjustable
+  horizontal correction if a custom model uses a different local axis.
+  The legacy model-yaw-offset setting is ignored; this avoids loading a stale
+  +90 correction from previous plugin configs.
+- Beam damage cap, manual /funnel pack, 4-unit barrier collision and the other
+  three variants are unchanged.

@@ -114,7 +114,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             getCommand("funnel").setExecutor(this);
             getCommand("funnel").setTabCompleter(this);
         }
-        getLogger().info("FunnelArmor 0.7.13 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.14 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -383,9 +383,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 pose.up(),
                 Math.sin(yaw) * pose.right() + Math.cos(yaw) * pose.forward());
         // All six fin models share one local axis. Do not alternate 180 degrees.
-        point.setYaw(FinFunnelOrientation.formationYaw(
-                player.getLocation().getYaw(), 0, 1,
-                getConfig().getDouble("fin-funnel.model-yaw-offset", 90.0)));
+        point.setYaw(FinFunnelOrientation.barrierYaw(
+                player.getLocation().getYaw(), pose.right(), pose.forward(), i,
+                getConfig().getDouble("fin-funnel.yaw-adjustment-degrees", 0.0)));
         return point;
     }
     private void updateFinBarrierDisplays(Player player, double progress) {
@@ -433,7 +433,18 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 return;
             }
         }
-        for (int i = 0; i < 6; i++) displays.get(i).teleport(finBarrierLocation(player, i, progress));
+        for (int i = 0; i < 6; i++) {
+            ItemDisplay display = displays.get(i);
+            display.teleport(finBarrierLocation(player, i, progress));
+            if (i >= 4) {
+                // Two remaining units stay folded, but rest horizontally.
+                float scale = (float) Math.max(0.1, Math.min(3.0,
+                        getConfig().getDouble("drones.model-scale", 1.45)));
+                display.setTransformation(new Transformation(
+                        new Vector3f(), finFoldRotation(), new Vector3f(scale, scale, scale),
+                        new AxisAngle4f()));
+            }
+        }
     }
     private void removeFinGlass(UUID id) {
         List<BlockDisplay> old = finGlassDisplays.remove(id);
@@ -842,29 +853,46 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         display.setItemStack(stack);
     }
 
+    private AxisAngle4f finFoldRotation() {
+        return new AxisAngle4f((float) Math.toRadians(
+                getConfig().getDouble("fin-funnel.folded-roll-degrees", 90.0)),
+                0f, 0f, 1f);
+    }
+
     /**
-     * Aim the entire Unicorn shield during its firing animation. The Blockbench
-     * barrels run along local -Y. Display yaw is retained, then the model is
-     * rotated locally so the two muzzles point toward the beam ray-trace hit.
+     * Variant 1: deployed fin funnel's beam emitter is on local -X.
+     * Variant 4: unicorn shield gun barrels are on local -Y.
+     * Both snap toward the actual ray-trace result on the click frame,
+     * stay aimed through tick 3, and return to the normal formation by tick 8.
+     * Stored variant-1 funnels instead rest horizontal and cannot shoot.
      */
     private void updateGunAim(Player player, ItemDisplay display, boolean snapNow) {
         int variant = selectedVariant(player);
-        Vector target = variant == 4 ? shotAimTargets.get(player.getUniqueId()) : null;
+        Vector target = (variant == 1 || variant == 4)
+                ? shotAimTargets.get(player.getUniqueId()) : null;
         Long start = shotAnimationStart.get(player.getUniqueId());
         float scale = (float) Math.max(0.1, Math.min(3.0,
                 getConfig().getDouble("drones.model-scale", 1.45)));
         AxisAngle4f rotation = new AxisAngle4f();
-        if (target != null && start != null) {
+        if (variant == 1 && selectedFinFormation(player) == FinFormationMode.STORED) {
+            rotation = finFoldRotation();
+        } else if (target != null && start != null) {
             Vector toward = target.clone().subtract(display.getLocation().toVector());
-            FunnelGunAim.Rotation aim = FunnelGunAim.toward(
-                    toward.getX(), toward.getY(), toward.getZ(),
-                    display.getLocation().getYaw());
             double weight = FunnelGunAim.aimWeight(animationTick - start);
-            rotation = new AxisAngle4f((float) (aim.radians() * weight),
-                    (float) aim.axisX(), (float) aim.axisY(), (float) aim.axisZ());
+            if (variant == 1) {
+                FinFunnelGunAim.Rotation aim = FinFunnelGunAim.toward(
+                        toward.getX(), toward.getY(), toward.getZ(),
+                        display.getLocation().getYaw());
+                rotation = new AxisAngle4f((float) (aim.radians() * weight),
+                        (float) aim.axisX(), (float) aim.axisY(), (float) aim.axisZ());
+            } else if (variant == 4) {
+                FunnelGunAim.Rotation aim = FunnelGunAim.toward(
+                        toward.getX(), toward.getY(), toward.getZ(),
+                        display.getLocation().getYaw());
+                rotation = new AxisAngle4f((float) (aim.radians() * weight),
+                        (float) aim.axisX(), (float) aim.axisY(), (float) aim.axisZ());
+            }
         }
-        // A zero-tick transition on the click frame makes the muzzle snap
-        // to its target instead of easing in over the first few ticks.
         display.setInterpolationDuration(snapNow ? 0 : 2);
         display.setTransformation(new Transformation(
                 new Vector3f(0, 0, 0), rotation,
@@ -896,12 +924,14 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     pulse * 0.12,
                     forwardZ * pulse * getConfig().getDouble("drones.shot-recoil-blocks", 0.38));
         }
-        // The variant-1 model's local front is 90 degrees off the shared axis.
-        // Correct all fin formations (including folded/stored); variants 2–4
-        // keep their exact original orientation.
-        loc.setYaw(FinFunnelOrientation.formationYaw(
-                p.getLocation().getYaw(), pos.yawOffset(), variant,
-                getConfig().getDouble("fin-funnel.model-yaw-offset", 90.0)));
+        if (variant == 1) {
+            loc.setYaw(FinFunnelOrientation.finFormationYaw(
+                    p.getLocation().getYaw(), selectedFinFormation(p),
+                    pos.right(), pos.forward(),
+                    getConfig().getDouble("fin-funnel.yaw-adjustment-degrees", 0.0)));
+        } else {
+            loc.setYaw(p.getLocation().getYaw() + (float) pos.yawOffset());
+        }
         loc.setPitch(variant == 4 ? -12f : 0f);
         return loc;
     }
@@ -1013,7 +1043,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         boolean blockedByBarrier = Double.isFinite(interception) && interception <= dist + 1.0e-6;
         if (blockedByBarrier) dist = Math.max(0, interception);
         Vector target = eye.toVector().add(dir.clone().multiply(dist));
-        if (selectedVariant(player) == 4) {
+        if (selectedVariant(player) == 1 || selectedVariant(player) == 4) {
             shotAimTargets.put(player.getUniqueId(), target.clone());
             // Aim immediately during the click rather than waiting for the
             // normal 2-tick drone position refresh.
