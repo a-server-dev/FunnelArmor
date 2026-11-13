@@ -1,7 +1,8 @@
 {
   "parent": "minecraft:block/block",
   "textures": {
-    "0": "funnel:item/funnel"
+    "0": "funnel:block/funnel",
+    "particle": "funnel:block/funnel"
   },
   "elements": [
     {
