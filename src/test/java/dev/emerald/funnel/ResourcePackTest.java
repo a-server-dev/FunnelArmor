@@ -40,6 +40,8 @@ class ResourcePackTest {
             assertTrue(entries.contains("assets/funnel/textures/block/funnel.png"));
             assertTrue(entries.contains("assets/minecraft/atlases/items.json"));
             assertTrue(entries.contains("assets/funnel/textures/item/funnel.png"));
+            assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_4.png"),
+                    "Unicorn-style shield needs its own 256px paint texture");
             for (int i = 1; i <= 4; i++) {
                 assertTrue(entries.contains("assets/funnel/items/funnel_drone_" + i + ".json"));
                 assertTrue(entries.contains("assets/funnel/models/item/funnel_drone_" + i + ".json"));
@@ -62,8 +64,13 @@ class ResourcePackTest {
                         JsonObject model = parse(zip.readAllBytes());
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
-                                textureId.equals("funnel:block/funnel"),
+                                textureId.equals("funnel:block/funnel") ||
+                                textureId.equals("funnel:item/funnel_drone_4"),
                                 "Unexpected texture " + textureId);
+                        if (entry.getName().endsWith("/funnel_drone_4.json")) {
+                            assertEquals("funnel:item/funnel_drone_4", textureId);
+                            assertEquals(137, model.getAsJsonArray("elements").size());
+                        }
                         for (var element : model.getAsJsonArray("elements")) {
                             for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet()) {
                                 assertEquals("#0", face.getValue().getAsJsonObject()
@@ -106,6 +113,44 @@ class ResourcePackTest {
         }
         assertEquals(4, signatures.size(), "All 4 drones must be present");
         assertEquals(4, new HashSet<>(signatures.values()).size(), "All 4 drones need unique shapes");
+    }
+
+    @Test
+    void unicornShieldUvsUseMinecraftTextureSpaceAndValidRotations() throws Exception {
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(stream);
+            boolean verified = false;
+            try (ZipInputStream zip = new ZipInputStream(stream)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    if (entry.getName().equals("assets/funnel/models/item/funnel_drone_4.json")) {
+                        JsonObject model = parse(zip.readAllBytes());
+                        assertEquals("funnel:item/funnel_drone_4",
+                                model.getAsJsonObject("textures").get("0").getAsString());
+                        for (var element : model.getAsJsonArray("elements")) {
+                            JsonObject cuboid = element.getAsJsonObject();
+                            for (var face : cuboid.getAsJsonObject("faces").entrySet()) {
+                                var uv = face.getValue().getAsJsonObject().getAsJsonArray("uv");
+                                assertEquals(4, uv.size());
+                                for (var coord : uv) {
+                                    assertTrue(coord.getAsDouble() >= 0 && coord.getAsDouble() <= 16,
+                                            "UV must be scaled from 256px to 16-unit Minecraft space");
+                                }
+                            }
+                            if (cuboid.has("rotation")) {
+                                JsonObject rotation = cuboid.getAsJsonObject("rotation");
+                                assertEquals("z", rotation.get("axis").getAsString());
+                                assertTrue(Math.abs(rotation.get("angle").getAsDouble()) == 22.5 ||
+                                        Math.abs(rotation.get("angle").getAsDouble()) == 45);
+                            }
+                        }
+                        verified = true;
+                    }
+                    zip.closeEntry();
+                }
+            }
+            assertTrue(verified, "Shield model missing from generated pack");
+        }
     }
 
     @Test

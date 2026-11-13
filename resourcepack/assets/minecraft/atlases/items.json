@@ -9,6 +9,11 @@
       "type": "single",
       "resource": "funnel:block/funnel",
       "sprite": "funnel:block/funnel"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/funnel_drone_4",
+      "sprite": "funnel:item/funnel_drone_4"
     }
   ]
 }

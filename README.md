@@ -74,3 +74,20 @@ Place the **variant 4 Unicorn-style shield funnel controller** in the offhand an
 - The normal five deployment patterns and main-hand funnel shooting remain available, but variant 4's normal orbiting displays are suppressed when its offhand guard is active for the same player.
 
 The shield uses the **existing** variant 4 model: only the JAR needs updating. Verify in-game with arrows/tridents and check for conflicts with other projectile-control plugins.
+
+## v0.7.1 — Unicorn shield model v5
+
+The fourth (Unicorn-style) funnel has been replaced by the user's edited
+`models/funnel_drone_4.bbmodel` (137 cubes). The model uses a dedicated
+256x256 texture (`assets/funnel/textures/item/funnel_drone_4.png`) and
+grouped UV regions for editable coloring.
+
+The corresponding game model `assets/funnel/models/item/funnel_drone_4.json`
+is exported from the Blockbench model, with coordinates and rotations preserved
+and UV coordinates converted from pixels (0–256) to Minecraft's 0–16 units.
+The resource-pack build includes it automatically, including both item and
+block atlases.
+
+Existing v0.6.0 formations and v0.7.0 offhand shield interception are unchanged.
+Replacing the JAR updates the embedded resource pack; no separate GitHub
+resource-pack upload is required.
