@@ -46,3 +46,18 @@ Gradle produces the embedded resource pack from `resourcepack/` during each buil
 
 ## v0.5.0: multi-drone formations
 Each item remains separate. `/funnel give 1` deploys **6** tall fin funnels, `/funnel give 2` deploys **6** heavy red funnels, `/funnel give 3` deploys **12** white petal bits (two rings of 6), and `/funnel give 4` deploys **3** white shield funnels with red glowing frames. These are homage-like original designs, not exact copies. The display scale defaults to **1.45** in `drones.model-scale`, with orbit radius **1.65**; adjust the config on an existing server manually. All visible drones emit particle beams on right-click, but a successful hit still deals **2 HP total** (not 2 HP per drone).\n
+## v0.6.0: five selectable formations
+
+All four funnel types support these independent, per-item layouts:
+
+| Mode | Japanese | Behavior |
+| --- | --- | --- |
+| `orbit` | 周回 | Circle the player; 12 bits use two staggered rings |
+| `wings` | 左右展開 | Escort the player's left and right flanks |
+| `rear` | 背面待機 | Fan formation behind the player |
+| `front` | 前方防御 | Arc in front, especially suitable for three shield drones |
+| `spiral` | 螺旋 | Rotating three-dimensional helix |
+
+Hold the controller, then **sneak + right-click** to cycle styles (normal right-click still shoots). Use `/funnel formation <orbit|wings|rear|front|spiral|next>` for a named style, and `/funnel formation` to display current selection. The mode is stored in item metadata and survives reconnects. The action bar and item lore reflect the selection. Only the server plugin needs updating; the models and resource pack did not change.
+
+JUnit tests cover formation geometry and all drone counts.

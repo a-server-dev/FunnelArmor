@@ -24,6 +24,7 @@ drones:
   # Scale multiplier for each orbiting ItemDisplay model
   model-scale: 1.45
   # Variant 1: 6, Variant 2: 6, Variant 3: 12, Variant 4: 3
+  # Mode is saved per item: orbit/wings/rear/front/spiral
   angular-speed: 0.055
   update-ticks: 2
   teleport-duration: 2
