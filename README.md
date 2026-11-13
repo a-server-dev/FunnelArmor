@@ -28,3 +28,18 @@ The v0.3.1 Java source, all five Blockbench model source files, resource-pack JS
 - The controller model remains hidden in hand. Each drone uses a unique PDC variant value.
 - Fixed missing textures caused by 3D block models referencing item-atlas textures. The resource pack now places its PNG at `assets/funnel/textures/block/funnel.png` with a `funnel:block/funnel` reference.
 - The updated resource pack is bundled into `src/main/resources/funnel-pack.zip`. Clients must accept the new pack and reload resources (F3+T). For troubleshooting, inspect `.minecraft/logs/latest.log` after loading.
+
+## Four distinct drone designs (v0.4.0)
+
+The four separately obtainable `.bbmodel` source models were redesigned with different silhouettes:
+
+| Item | Look | Cubes |
+| --- | --- | ---: |
+| `/funnel give 1` | Tall articulated white-and-navy fin with long parallel panels and a forward emitter | 31 |
+| `/funnel give 2` | Compact heavy red armored pod with central cannon and rear thruster | 24 |
+| `/funnel give 3` | Wide pearl-white winged petal/butterfly unit with swept wing tips | 22 |
+| `/funnel give 4` | Dark-blue X-shaped interceptor with cyan wing edges and long gun | 22 |
+
+All four have unique in-inventory custom models. The hand transforms remain hidden, and the floating ItemDisplay uses the `fixed` transform. These are **original science-fiction designs informed by recognizable funnel silhouettes, not exact copies**.
+
+Gradle produces the embedded resource pack from `resourcepack/` during each build. Use the JAR from a successful Actions run. Reconnect to the server and accept the updated pack (or install the newly generated pack manually). Real in-game rendering still requires visual verification.
