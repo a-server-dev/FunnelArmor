@@ -1,0 +1,314 @@
+package dev.emerald.funnel;
+
+import com.sun.net.httpserver.HttpServer;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.util.HexFormat;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+public final class FunnelArmorPlugin extends JavaPlugin implements Listener, CommandExecutor {
+    private NamespacedKey itemKey;
+    private NamespacedKey displayKey;
+    private final Map<UUID, List<ItemDisplay>> activeDrones = new ConcurrentHashMap<>();
+    private long visualTick = 0;
+    private final Map<UUID, Long> lastShots = new ConcurrentHashMap<>();
+    private HttpServer httpServer;
+    private byte[] packBytes;
+    private String sha1;
+    private Path packPath;
+
+    @Override public void onEnable() {
+        saveDefaultConfig();
+        itemKey = new NamespacedKey(this, "funnel_weapon");
+        displayKey = new NamespacedKey(this, "funnel_drone_display");
+        try {
+            Path folder = getDataFolder().toPath();
+            Files.createDirectories(folder);
+            packPath = folder.resolve("FunnelArmor-pack.zip");
+            try (InputStream stream = getResource("funnel-pack.zip")) {
+                if (stream == null) throw new IOException("Bundled funnel-pack.zip not found");
+                Files.copy(stream, packPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            packBytes = Files.readAllBytes(packPath);
+            sha1 = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(packBytes));
+            startHttp();
+        } catch (Exception ex) {
+            getLogger().severe("Resource pack initialization failed: " + ex.getMessage());
+        }
+        Bukkit.getPluginManager().registerEvents(this, this);
+        cleanupOrphans();
+        Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
+        if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
+        getLogger().info("FunnelArmor 0.3.1 ready. Built-in resource pack SHA1: " + sha1);
+    }
+    @Override public void onDisable() {
+        if (httpServer != null) httpServer.stop(0);
+        lastShots.clear();
+        for (UUID uuid : new ArrayList<>(activeDrones.keySet())) removeDrones(uuid);
+    }
+    private void startHttp() {
+        if (httpServer != null) httpServer.stop(0);
+        httpServer = null;
+        if (!getConfig().getBoolean("pack.embedded-http.enabled", true) || packBytes == null) return;
+        try {
+            String bind = getConfig().getString("pack.embedded-http.bind-host", "0.0.0.0");
+            int port = getConfig().getInt("pack.embedded-http.port", 8765);
+            httpServer = HttpServer.create(new InetSocketAddress(bind, port), 0);
+            httpServer.createContext("/funnel-pack.zip", exchange -> {
+                try {
+                    if (!"GET".equals(exchange.getRequestMethod()) && !"HEAD".equals(exchange.getRequestMethod())) {
+                        exchange.sendResponseHeaders(405, -1); return;
+                    }
+                    exchange.getResponseHeaders().set("Content-Type", "application/zip");
+                    exchange.getResponseHeaders().set("Cache-Control", "no-cache");
+                    if ("HEAD".equals(exchange.getRequestMethod())) {
+                        exchange.getResponseHeaders().set("Content-Length", Integer.toString(packBytes.length));
+                        exchange.sendResponseHeaders(200, -1);
+                    } else {
+                        exchange.sendResponseHeaders(200, packBytes.length);
+                        exchange.getResponseBody().write(packBytes);
+                    }
+                } finally { exchange.close(); }
+            });
+            httpServer.start();
+            getLogger().info("Serving pack at " + publicUrl());
+        } catch (IOException ex) {
+            getLogger().warning("Cannot start pack HTTP server: " + ex.getMessage());
+        }
+    }
+    private String publicUrl() {
+        String external = getConfig().getString("pack.external-url", "").trim();
+        if (!external.isEmpty()) return external;
+        String host = getConfig().getString("pack.embedded-http.public-host", "127.0.0.1").trim();
+        return "http://" + host + ":" + getConfig().getInt("pack.embedded-http.port", 8765) + "/funnel-pack.zip";
+    }
+    private boolean applyPack(Player player) {
+        if (sha1 == null) { player.sendMessage("§cリソースパックが生成されていません。"); return false; }
+        if (getConfig().getString("pack.external-url", "").isBlank() && httpServer == null) {
+            player.sendMessage("§cパック配信サーバーが起動していません。plugins/FunnelArmor/FunnelArmor-pack.zip を手動適用してください。");
+            return false;
+        }
+        player.setResourcePack(publicUrl(), sha1, getConfig().getBoolean("pack.require", false),
+                Component.text("ファンネル用3Dモデルを表示するリソースパックです。"));
+        player.sendMessage("§bファンネルのリソースパック適用を要求しました: §7" + publicUrl());
+        return true;
+    }
+    private ItemStack weapon() {
+        ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+        ItemMeta meta = stack.getItemMeta();
+        meta.displayName(Component.text("§b◆ クアッド・ファンネル"));
+        meta.lore(java.util.List.of(Component.text("§7右クリック: 4基のビームを照射"),Component.text("§7射程32 / ダメージ2HP")));
+        meta.setItemModel(new NamespacedKey("funnel", "funnel_controller"));
+        meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1);
+        stack.setItemMeta(meta);
+        return stack;
+    }
+    private boolean isWeapon(ItemStack stack) {
+        return stack != null && stack.getType() == Material.LEATHER_HORSE_ARMOR && stack.hasItemMeta()
+                && stack.getItemMeta().getPersistentDataContainer().has(itemKey, PersistentDataType.BYTE);
+    }
+    private void cleanupOrphans() {
+        for (World world : Bukkit.getWorlds()) {
+            for (ItemDisplay display : world.getEntitiesByClass(ItemDisplay.class)) {
+                if (display.getPersistentDataContainer().has(displayKey, PersistentDataType.BYTE)) display.remove();
+            }
+        }
+    }
+    private void removeDrones(UUID uuid) {
+        List<ItemDisplay> displays = activeDrones.remove(uuid);
+        if (displays == null) return;
+        for (ItemDisplay d : displays) if (d.isValid()) d.remove();
+    }
+    private boolean hasController(Player player) {
+        return player.isOnline() && !player.isDead() && isWeapon(player.getInventory().getItemInMainHand());
+    }
+    private List<ItemDisplay> spawnDrones(Player player) {
+        List<ItemDisplay> displays = new ArrayList<>(4);
+        try {
+            for (int i = 0; i < 4; i++) {
+                final int number = i;
+                ItemDisplay d = player.getWorld().spawn(player.getLocation().add(0, 1.4, 0), ItemDisplay.class, display -> {
+                    ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+                    ItemMeta meta = item.getItemMeta();
+                    meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + (number + 1)));
+                    item.setItemMeta(meta);
+                    display.setItemStack(item);
+                    display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                    display.setPersistent(false);
+                    display.setGravity(false);
+                    display.setInvulnerable(true);
+                    display.setTeleportDuration(Math.min(59, Math.max(0, getConfig().getInt("drones.teleport-duration", 2))));
+                    display.getPersistentDataContainer().set(displayKey, PersistentDataType.BYTE, (byte)1);
+                });
+                displays.add(d);
+            }
+        } catch (RuntimeException ex) {
+            for (ItemDisplay d : displays) if (d.isValid()) d.remove();
+            throw ex;
+        }
+        return displays;
+    }
+    private void updateDrones() {
+        visualTick += Math.max(1L, getConfig().getLong("drones.update-ticks", 2L));
+        for (UUID uuid : new ArrayList<>(activeDrones.keySet())) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null || !hasController(p) || !getConfig().getBoolean("drones.enabled", true)) {
+                removeDrones(uuid);
+            }
+        }
+        if (!getConfig().getBoolean("drones.enabled", true)) return;
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (!hasController(p)) continue;
+            List<ItemDisplay> displays = activeDrones.get(p.getUniqueId());
+            if (displays == null) {
+                displays = spawnDrones(p);
+                activeDrones.put(p.getUniqueId(), displays);
+            }
+            for (int i = 0; i < displays.size(); i++) {
+                ItemDisplay d = displays.get(i);
+                if (!d.isValid() || d.getWorld() != p.getWorld()) { removeDrones(p.getUniqueId()); break; }
+                d.teleport(droneLocation(p, i));
+            }
+        }
+    }
+    private Location droneLocation(Player p, int index) {
+        double speed = getConfig().getDouble("drones.angular-speed", 0.055);
+        double angle = visualTick * speed + Math.PI * 2 * index / 4.0;
+        double radius = getConfig().getDouble("drones.orbit-radius", 1.25);
+        double y = getConfig().getDouble("drones.height", 1.45)
+            + getConfig().getDouble("drones.bob-amplitude", 0.18) * Math.sin(visualTick * 0.09 + index * 1.5);
+        Location loc = p.getLocation().add(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+        loc.setYaw((float)Math.toDegrees(-angle + Math.PI / 2));
+        loc.setPitch(0);
+        return loc;
+    }
+    @EventHandler public void onQuit(PlayerQuitEvent e) { removeDrones(e.getPlayer().getUniqueId()); }
+    @EventHandler public void onChangedWorld(PlayerChangedWorldEvent e) { removeDrones(e.getPlayer().getUniqueId()); }
+    @EventHandler public void onDeath(PlayerDeathEvent e) { removeDrones(e.getEntity().getUniqueId()); }
+    @EventHandler public void onJoin(PlayerJoinEvent e) {
+        if (getConfig().getBoolean("pack.send-on-join", true))
+            Bukkit.getScheduler().runTaskLater(this, () -> { if (e.getPlayer().isOnline()) applyPack(e.getPlayer()); }, 30L);
+    }
+    @EventHandler public void onPack(PlayerResourcePackStatusEvent e) {
+        getLogger().info("Resource pack " + e.getPlayer().getName() + ": " + e.getStatus());
+    }
+    @EventHandler public void onInteract(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND ||
+            (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) ||
+            !isWeapon(event.getPlayer().getInventory().getItemInMainHand())) return;
+        event.setCancelled(true);
+        Player player = event.getPlayer();
+        long tick = player.getWorld().getGameTime();
+        int cooldown = Math.max(1, getConfig().getInt("beam.cooldown-ticks", 12));
+        Long previous = lastShots.get(player.getUniqueId());
+        if (previous != null && tick >= previous && tick - previous < cooldown) return;
+        lastShots.put(player.getUniqueId(), tick);
+        fire(player);
+    }
+    private void fire(Player player) {
+        World world = player.getWorld();
+        Location eye = player.getEyeLocation();
+        Vector dir = eye.getDirection().normalize();
+        double range = getConfig().getDouble("beam.range", 32.0);
+        RayTraceResult blockHit = world.rayTraceBlocks(eye, dir, range, FluidCollisionMode.NEVER, true);
+        double blockDist = blockHit == null ? range : Math.sqrt(eye.toVector().distanceSquared(blockHit.getHitPosition()));
+        RayTraceResult entityHit = world.rayTraceEntities(eye, dir, blockDist, 0.3,
+                entity -> entity instanceof LivingEntity && entity != player && !entity.isDead());
+        double dist = entityHit == null ? blockDist : eye.toVector().distance(entityHit.getHitPosition());
+        Vector target = eye.toVector().add(dir.clone().multiply(dist));
+        double step = Math.max(0.1, getConfig().getDouble("beam.particle-step", 0.45));
+        Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(75,224,255), 1.1f);
+        List<ItemDisplay> drones = activeDrones.get(player.getUniqueId());
+        for (int i = 0; i < 4; i++) {
+            Vector start = drones != null && drones.size() == 4 && drones.get(i).isValid()
+                ? drones.get(i).getLocation().toVector()
+                : droneLocation(player, i).toVector();
+            Vector beam = target.clone().subtract(start);
+            double len = beam.length();
+            for (double t=0; t<=len; t+=step) {
+                Vector point = start.clone().add(beam.clone().multiply(t/Math.max(len,0.0001)));
+                world.spawnParticle(Particle.DUST, point.getX(), point.getY(), point.getZ(), 1, 0,0,0,0, dust);
+                if (t > 60) break;
+            }
+        }
+        world.spawnParticle(Particle.END_ROD,target.getX(),target.getY(),target.getZ(),8,0.15,0.15,0.15,0.02);
+        world.playSound(eye, Sound.ENTITY_GUARDIAN_ATTACK, 0.45f, 1.65f);
+        Entity hit = entityHit == null ? null : entityHit.getHitEntity();
+        if (hit instanceof LivingEntity living) living.damage(Math.max(0, getConfig().getDouble("beam.damage",2.0)), player);
+    }
+    @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) { sender.sendMessage("§b/funnel give [player] §7| §b/funnel pack [player] §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
+            case "give" -> {
+                if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
+                Player target = args.length > 1 ? Bukkit.getPlayerExact(args[1]) : sender instanceof Player p ? p : null;
+                if (target == null) { sender.sendMessage("§cプレイヤーが見つかりません。"); return true; }
+                target.getInventory().addItem(weapon());
+                sender.sendMessage("§a"+target.getName()+" にファンネルを渡しました。");
+            }
+            case "pack" -> {
+                Player target;
+                if (args.length > 1) {
+                    if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
+                    target = Bukkit.getPlayerExact(args[1]);
+                } else target = sender instanceof Player p ? p : null;
+                if (target == null) { sender.sendMessage("§c対象プレイヤーが見つかりません。"); return true; }
+                applyPack(target);
+            }
+            case "reload" -> {
+                if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
+                reloadConfig(); startHttp(); sender.sendMessage("§a設定を再読み込みしました。モデル変更はJAR更新とサーバー再起動が必要です。");
+            }
+            case "status" -> {
+                sender.sendMessage("§bPack SHA1: §f" + sha1);
+                sender.sendMessage("§bPack URL: §f" + publicUrl());
+                sender.sendMessage("§bEmbedded HTTP: §f" + (httpServer == null ? "OFF" : "ON"));
+                sender.sendMessage("§bPack file: §f" + packPath);
+            }
+            default -> sender.sendMessage("§c不明なサブコマンドです。");
+        }
+        return true;
+    }
+}
