@@ -34,6 +34,9 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.bukkit.util.Transformation;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,7 +86,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.4.0 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.5.0 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -163,8 +166,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (variant < 1 || variant > 4) throw new IllegalArgumentException("Invalid drone variant");
         ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Component.text("§b◆ ファンネル " + variant));
-        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7独立型ファンネル " + variant),Component.text("§7射程32 / ダメージ2HP")));
+        meta.displayName(Component.text("§b◆ " + switch (variant) {
+            case 1 -> "フィン・ファンネル（6基）";
+            case 2 -> "重装ファンネル（6基）";
+            case 3 -> "ペタル・ビット（12基）";
+            default -> "シールド・ファンネル（3基）";
+        }));
+        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7周囲に " + droneCount(variant) + " 基展開"),Component.text("§7射程32 / ダメージ2HP")));
         meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
         meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1);
@@ -202,13 +210,21 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private boolean hasController(Player player) {
         return player.isOnline() && !player.isDead() && isWeapon(player.getInventory().getItemInMainHand());
     }
+    private int droneCount(int variant) {
+        return switch (variant) {
+            case 1, 2 -> 6;
+            case 3 -> 12;
+            case 4 -> 3;
+            default -> 0;
+        };
+    }
     private List<ItemDisplay> spawnDrones(Player player) {
-        List<ItemDisplay> displays = new ArrayList<>(1);
+        List<ItemDisplay> displays = new ArrayList<>(droneCount(selectedVariant(player)));
         try {
             final int number = selectedVariant(player);
             if (number == 0) return displays;
-            {
-                ItemDisplay d = player.getWorld().spawn(player.getLocation().add(0, 1.4, 0), ItemDisplay.class, display -> {
+            for (int index = 0; index < droneCount(number); index++) {
+                ItemDisplay d = player.getWorld().spawn(droneLocation(player, number, index), ItemDisplay.class, display -> {
                     ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
                     ItemMeta meta = item.getItemMeta();
                     meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + number));
@@ -216,6 +232,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     item.setItemMeta(meta);
                     display.setItemStack(item);
                     display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                    float visualScale = (float)Math.max(0.1, Math.min(3.0, getConfig().getDouble("drones.model-scale", 1.45)));
+                    display.setTransformation(new Transformation(
+                        new Vector3f(0, 0, 0), new AxisAngle4f(),
+                        new Vector3f(visualScale, visualScale, visualScale), new AxisAngle4f()));
                     display.setPersistent(false);
                     display.setGravity(false);
                     display.setInvulnerable(true);
@@ -248,20 +268,35 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             }
             for (int i = 0; i < displays.size(); i++) {
                 ItemDisplay d = displays.get(i);
-                if (!d.isValid() || d.getWorld() != p.getWorld() || displayedVariant(d) != selectedVariant(p)) { removeDrones(p.getUniqueId()); break; }
-                d.teleport(droneLocation(p, selectedVariant(p)-1));
+                if (!d.isValid() || d.getWorld() != p.getWorld()
+                        || displayedVariant(d) != selectedVariant(p)
+                        || displays.size() != droneCount(selectedVariant(p))) {
+                    removeDrones(p.getUniqueId());
+                    break;
+                }
+                d.teleport(droneLocation(p, selectedVariant(p), i));
             }
         }
     }
-    private Location droneLocation(Player p, int index) {
+    private Location droneLocation(Player p, int variant, int index) {
+        int count = Math.max(1, droneCount(variant));
+        // 12 petal bits fly in two interleaved rings of six; other variants
+        // use one ring, with 3 shield drones forming a larger triangle.
+        int perRing = variant == 3 ? 6 : count;
+        int ring = index / perRing;
+        int slot = index % perRing;
         double speed = getConfig().getDouble("drones.angular-speed", 0.055);
-        double angle = visualTick * speed + Math.PI * 2 * index / 4.0;
-        double radius = getConfig().getDouble("drones.orbit-radius", 1.25);
-        double y = getConfig().getDouble("drones.height", 1.45)
-            + getConfig().getDouble("drones.bob-amplitude", 0.18) * Math.sin(visualTick * 0.09 + index * 1.5);
-        Location loc = p.getLocation().add(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
-        loc.setYaw((float)Math.toDegrees(-angle + Math.PI / 2));
-        loc.setPitch(0);
+        double phase = (ring == 0 ? 0 : Math.PI / perRing);
+        double angle = visualTick * speed + 2 * Math.PI * slot / perRing + phase;
+        double radius = getConfig().getDouble("drones.orbit-radius", 1.65)
+                + (variant == 4 ? 0.45 : 0.0) + ring * 0.45;
+        double altitude = getConfig().getDouble("drones.height", 1.55)
+                + ring * 0.75
+                + getConfig().getDouble("drones.bob-amplitude", 0.22)
+                    * Math.sin(visualTick * 0.09 + index * 1.47);
+        Location loc = p.getLocation().add(Math.cos(angle) * radius, altitude, Math.sin(angle) * radius);
+        loc.setYaw((float) Math.toDegrees(-angle + Math.PI / 2));
+        loc.setPitch(variant == 4 ? -12f : (ring == 1 ? 10f : 0f));
         return loc;
     }
     @EventHandler public void onQuit(PlayerQuitEvent e) { removeDrones(e.getPlayer().getUniqueId()); }
@@ -307,10 +342,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         double step = Math.max(0.1, getConfig().getDouble("beam.particle-step", 0.45));
         Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(75,224,255), 1.1f);
         List<ItemDisplay> drones = activeDrones.get(player.getUniqueId());
-        for (int i = 0; i < 1; i++) {
-            Vector start = drones != null && drones.size() == 1 && drones.get(i).isValid()
+        int variant = selectedVariant(player);
+        int count = droneCount(variant);
+        for (int i = 0; i < count; i++) {
+            Vector start = drones != null && drones.size() == count && drones.get(i).isValid()
                 ? drones.get(i).getLocation().toVector()
-                : droneLocation(player, selectedVariant(player)-1).toVector();
+                : droneLocation(player, variant, i).toVector();
             Vector beam = target.clone().subtract(start);
             double len = beam.length();
             for (double t=0; t<=len; t+=step) {
