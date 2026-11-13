@@ -1,0 +1,70 @@
+package dev.emerald.funnel;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class FormationGeometryTest {
+    @Test
+    void preservesEachVariantDroneCount() {
+        assertEquals(6, FormationGeometry.countForVariant(1));
+        assertEquals(6, FormationGeometry.countForVariant(2));
+        assertEquals(12, FormationGeometry.countForVariant(3));
+        assertEquals(3, FormationGeometry.countForVariant(4));
+    }
+
+    @Test
+    void cyclesAndParsesFormationChoices() {
+        assertEquals(5, FormationMode.values().length);
+        assertEquals(FormationMode.WINGS, FormationMode.ORBIT.next());
+        assertEquals(FormationMode.ORBIT, FormationMode.SPIRAL.next());
+        for (FormationMode mode : FormationMode.values()) {
+            assertEquals(mode, FormationMode.parse(mode.id()));
+        }
+        assertEquals(FormationMode.ORBIT, FormationMode.orDefault("unknown"));
+        assertNull(FormationMode.parse("unknown"));
+    }
+
+    @Test
+    void positionsAreFiniteAndDistinctForEveryStyleAndVariant() {
+        for (FormationMode mode : FormationMode.values()) {
+            for (int variant = 1; variant <= 4; variant++) {
+                int count = FormationGeometry.countForVariant(variant);
+                Set<String> places = new HashSet<>();
+                for (int i = 0; i < count; i++) {
+                    var p = FormationGeometry.position(mode, variant, i, 12, 0.055, 1.65, 1.55, 0.22);
+                    assertTrue(Double.isFinite(p.right()) && Double.isFinite(p.forward())
+                            && Double.isFinite(p.up()) && Double.isFinite(p.yawOffset()));
+                    places.add(String.format(java.util.Locale.ROOT,"%.4f/%.4f/%.4f",p.right(),p.forward(),p.up()));
+                }
+                assertEquals(count, places.size(), mode + " variant " + variant + " overlaps");
+            }
+        }
+    }
+
+    @Test
+    void rearAndFrontStayOnExpectedSides() {
+        for (int variant = 1; variant <= 4; variant++) {
+            for (int i = 0; i < FormationGeometry.countForVariant(variant); i++) {
+                var rear = FormationGeometry.position(FormationMode.REAR, variant, i, 0, 0.055, 1.65, 1.55, 0);
+                var front = FormationGeometry.position(FormationMode.FRONT, variant, i, 0, 0.055, 1.65, 1.55, 0);
+                assertTrue(rear.forward() < 0);
+                assertTrue(front.forward() > 0);
+            }
+        }
+    }
+
+    @Test
+    void differentModesProduceDifferentPositions() {
+        Set<String> shapes = new HashSet<>();
+        for (FormationMode mode : FormationMode.values()) {
+            var p = FormationGeometry.position(mode, 1, 0, 10, 0.055, 1.65, 1.55, 0);
+            shapes.add(p.right() + "/" + p.forward());
+        }
+        assertEquals(FormationMode.values().length, shapes.size());
+    }
+}
