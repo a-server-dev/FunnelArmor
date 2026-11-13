@@ -21,3 +21,6 @@ Those require a test Paper server and Minecraft client. A green CI result does n
 
 ## Local
 In IntelliJ use Gradle 9.2.1 (not old Gradle 8.8), Java 25, then `gradle clean build`. Check the Actions tab for the workflow run and download the resulting JAR from the successful run's artifacts.
+
+## v0.3.2
+The 3D models use the block texture atlas (`funnel:block/funnel`) rather than the item texture atlas. The four variants are separate items obtained with `/funnel give <1-4>` or `/funnel give all`.
