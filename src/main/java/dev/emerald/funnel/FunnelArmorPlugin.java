@@ -101,7 +101,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.7 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.8 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -205,8 +205,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
         player.setResourcePack(url, sha1, getConfig().getBoolean("pack.require", false),
                 Component.text("ファンネル用3Dモデルを表示するリソースパックです。"));
-        player.sendMessage("§bファンネルのパックを要求しました: §7" + url);
-        getLogger().info("Requested resource pack for " + player.getName() + " from " + url);
+        // player.sendMessage("§bファンネルのパックを要求しました: §7" + url);
+        // getLogger().info("Requested resource pack for " + player.getName() + " from " + url);
         if (url.contains("127.0.0.1") && player.getAddress() != null
                 && !player.getAddress().getAddress().isLoopbackAddress()) {
             player.sendMessage("§e警告: URLが127.0.0.1です。別PCの場合は config.yml の pack.embedded-http.public-host にサーバーの到達可能なホスト名/IPを設定してください。");
@@ -265,8 +265,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Component.text("§7射程32 / ダメージ2HP")));
         stack.setItemMeta(meta);
         player.getInventory().setItemInMainHand(stack);
-        player.sendActionBar(Component.text("§b[FunnelArmor] 展開：" + mode.displayName()));
-        player.sendMessage("§bファンネル展開モード: §f" + mode.displayName());
+        // player.sendActionBar(Component.text("§b[FunnelArmor] 展開：" + mode.displayName()));
+        // player.sendMessage("§bファンネル展開モード: §f" + mode.displayName());
     }
     private int displayedVariant(ItemDisplay display) {
         ItemStack stack = display.getItemStack();
@@ -319,15 +319,15 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shieldToggleTicks.put(player.getUniqueId(), tick);
         if (shieldGuards.contains(player.getUniqueId())) {
             shieldGuards.remove(player.getUniqueId());
-            player.sendActionBar(Component.text("§7シールド防御：収納中"));
-            player.sendMessage("§7シールドファンネルを収納します。");
+            // player.sendActionBar(Component.text("§7シールド防御：収納中"));
+            // player.sendMessage("§7シールドファンネルを収納します。");
         } else {
             shieldGuards.add(player.getUniqueId());
             shieldProgress.putIfAbsent(player.getUniqueId(), 0.0);
             // Spawn behind the shoulders, then glide forward over several ticks.
             updateShieldDisplays(player, shieldProgress.get(player.getUniqueId()));
-            player.sendActionBar(Component.text("§bシールド防御：展開中"));
-            player.sendMessage("§b3枚のシールドファンネルを前方に展開します。");
+            // player.sendActionBar(Component.text("§bシールド防御：展開中"));
+            // player.sendMessage("§b3枚のシールドファンネルを前方に展開します。");
         }
     }
     private Location shieldLocation(Player player, int index, double progress) {
@@ -616,10 +616,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             Bukkit.getScheduler().runTaskLater(this, () -> { if (e.getPlayer().isOnline()) applyPack(e.getPlayer()); }, 30L);
     }
     @EventHandler public void onPack(PlayerResourcePackStatusEvent e) {
-        getLogger().info("Resource pack " + e.getPlayer().getName() + ": " + e.getStatus());
+        // getLogger().info("Resource pack " + e.getPlayer().getName() + ": " + e.getStatus());
         switch (e.getStatus()) {
-            case SUCCESSFULLY_LOADED -> e.getPlayer().sendMessage("§a[FunnelArmor] リソースパックの適用に成功しました。");
-            case FAILED_DOWNLOAD -> e.getPlayer().sendMessage("§c[FunnelArmor] リソースパックのダウンロードに失敗しました。/funnel status の配布URLと8765/TCPの接続を確認してください。");
+            case SUCCESSFULLY_LOADED -> { /* e.getPlayer().sendMessage("§a[FunnelArmor] リソースパックの適用に成功しました。"); */ }
+            case FAILED_DOWNLOAD -> e.getPlayer().sendMessage("§c[FunnelArmor] リソースパックのダウンロードに失敗しました。/funnel status のURLが公開されているか確認してください。");
             case DECLINED -> e.getPlayer().sendMessage("§e[FunnelArmor] リソースパックが拒否されました。サーバー一覧のリソースパック設定を確認してください。");
             default -> { }
         }

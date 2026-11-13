@@ -269,3 +269,11 @@ fields blank. `/funnel status` shows the actual SHA-1 and URL.
 GitHub Release asset downloads use HTTPS redirects. Although the workflow
 checks that a public unauthenticated client can download the ZIP and verify
 its SHA-1, actual Minecraft client compatibility should still be verified.
+
+## v0.7.8 — Public GitHub Releases and quiet runtime messages
+
+- Once the repository is public, a successful GitHub Actions build on main automatically uploads the exact resource-pack ZIP to a publicly accessible GitHub Release.
+- Commented out repeated in-game formation-switch and shield deploy/return action-bar and chat notices.
+- The player can still explicitly query a mode with /funnel formation. Errors remain visible.
+- Routine pack-offer, success and server-log messages are commented out. Download failures remain visible and direct users to /funnel status.
+- No changes to models, gameplay, flight paths or resource-pack bytes.
