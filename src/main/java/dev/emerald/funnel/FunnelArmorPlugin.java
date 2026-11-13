@@ -55,6 +55,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private NamespacedKey itemKey;
     private NamespacedKey displayKey;
     private NamespacedKey variantKey;
+    private NamespacedKey formationKey;
     private final Map<UUID, List<ItemDisplay>> activeDrones = new ConcurrentHashMap<>();
     private long visualTick = 0;
     private final Map<UUID, Long> lastShots = new ConcurrentHashMap<>();
@@ -68,6 +69,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         itemKey = new NamespacedKey(this, "funnel_weapon");
         displayKey = new NamespacedKey(this, "funnel_drone_display");
         variantKey = new NamespacedKey(this, "funnel_variant");
+        formationKey = new NamespacedKey(this, "funnel_formation");
         try {
             Path folder = getDataFolder().toPath();
             Files.createDirectories(folder);
@@ -86,7 +88,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.5.0 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.6.0 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -172,9 +174,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             case 3 -> "ペタル・ビット（12基）";
             default -> "シールド・ファンネル（3基）";
         }));
-        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7周囲に " + droneCount(variant) + " 基展開"),Component.text("§7射程32 / ダメージ2HP")));
+        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7周囲に " + droneCount(variant) + " 基展開"),Component.text("§7展開：周回"),Component.text("§7しゃがみ＋右クリックで展開切替"),Component.text("§7射程32 / ダメージ2HP")));
         meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
+        meta.getPersistentDataContainer().set(formationKey, PersistentDataType.STRING, FormationMode.ORBIT.id());
         meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1);
         stack.setItemMeta(meta);
         return stack;
@@ -188,6 +191,33 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (!isWeapon(stack)) return 0;
         Integer variant = stack.getItemMeta().getPersistentDataContainer().get(variantKey, PersistentDataType.INTEGER);
         return variant == null ? 1 : Math.max(1, Math.min(4, variant));
+    }
+    private FormationMode selectedFormation(Player player) {
+        ItemStack stack = player.getInventory().getItemInMainHand();
+        if (!isWeapon(stack)) return FormationMode.ORBIT;
+        String saved = stack.getItemMeta().getPersistentDataContainer()
+                .get(formationKey, PersistentDataType.STRING);
+        return FormationMode.orDefault(saved);
+    }
+    private void changeFormation(Player player, FormationMode mode) {
+        ItemStack stack = player.getInventory().getItemInMainHand();
+        if (!isWeapon(stack)) {
+            player.sendMessage("§cファンネルをメインハンドに持ってください。");
+            return;
+        }
+        ItemMeta meta = stack.getItemMeta();
+        meta.getPersistentDataContainer().set(formationKey, PersistentDataType.STRING, mode.id());
+        int variant = selectedVariant(player);
+        meta.lore(java.util.List.of(
+                Component.text("§7右クリック: ビーム攻撃"),
+                Component.text("§7周囲に " + droneCount(variant) + " 基展開"),
+                Component.text("§7展開：" + mode.displayName()),
+                Component.text("§7しゃがみ＋右クリックで展開切替"),
+                Component.text("§7射程32 / ダメージ2HP")));
+        stack.setItemMeta(meta);
+        player.getInventory().setItemInMainHand(stack);
+        player.sendActionBar(Component.text("§b[FunnelArmor] 展開：" + mode.displayName()));
+        player.sendMessage("§bファンネル展開モード: §f" + mode.displayName());
     }
     private int displayedVariant(ItemDisplay display) {
         ItemStack stack = display.getItemStack();
@@ -211,12 +241,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         return player.isOnline() && !player.isDead() && isWeapon(player.getInventory().getItemInMainHand());
     }
     private int droneCount(int variant) {
-        return switch (variant) {
-            case 1, 2 -> 6;
-            case 3 -> 12;
-            case 4 -> 3;
-            default -> 0;
-        };
+        return FormationGeometry.countForVariant(variant);
     }
     private List<ItemDisplay> spawnDrones(Player player) {
         List<ItemDisplay> displays = new ArrayList<>(droneCount(selectedVariant(player)));
@@ -279,24 +304,23 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
     }
     private Location droneLocation(Player p, int variant, int index) {
-        int count = Math.max(1, droneCount(variant));
-        // 12 petal bits fly in two interleaved rings of six; other variants
-        // use one ring, with 3 shield drones forming a larger triangle.
-        int perRing = variant == 3 ? 6 : count;
-        int ring = index / perRing;
-        int slot = index % perRing;
-        double speed = getConfig().getDouble("drones.angular-speed", 0.055);
-        double phase = (ring == 0 ? 0 : Math.PI / perRing);
-        double angle = visualTick * speed + 2 * Math.PI * slot / perRing + phase;
-        double radius = getConfig().getDouble("drones.orbit-radius", 1.65)
-                + (variant == 4 ? 0.45 : 0.0) + ring * 0.45;
-        double altitude = getConfig().getDouble("drones.height", 1.55)
-                + ring * 0.75
-                + getConfig().getDouble("drones.bob-amplitude", 0.22)
-                    * Math.sin(visualTick * 0.09 + index * 1.47);
-        Location loc = p.getLocation().add(Math.cos(angle) * radius, altitude, Math.sin(angle) * radius);
-        loc.setYaw((float) Math.toDegrees(-angle + Math.PI / 2));
-        loc.setPitch(variant == 4 ? -12f : (ring == 1 ? 10f : 0f));
+        FormationGeometry.Position pos = FormationGeometry.position(
+                selectedFormation(p), variant, index, visualTick,
+                getConfig().getDouble("drones.angular-speed", 0.055),
+                getConfig().getDouble("drones.orbit-radius", 1.65),
+                getConfig().getDouble("drones.height", 1.55),
+                getConfig().getDouble("drones.bob-amplitude", 0.22));
+        double yaw = Math.toRadians(p.getLocation().getYaw());
+        double forwardX = -Math.sin(yaw);
+        double forwardZ = Math.cos(yaw);
+        double rightX = Math.cos(yaw);
+        double rightZ = Math.sin(yaw);
+        Location loc = p.getLocation().add(
+                rightX * pos.right() + forwardX * pos.forward(),
+                pos.up(),
+                rightZ * pos.right() + forwardZ * pos.forward());
+        loc.setYaw(p.getLocation().getYaw() + (float) pos.yawOffset());
+        loc.setPitch(variant == 4 ? -12f : 0f);
         return loc;
     }
     @EventHandler public void onQuit(PlayerQuitEvent e) { removeDrones(e.getPlayer().getUniqueId()); }
@@ -321,6 +345,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             !isWeapon(event.getPlayer().getInventory().getItemInMainHand())) return;
         event.setCancelled(true);
         Player player = event.getPlayer();
+        if (player.isSneaking()) {
+            changeFormation(player, selectedFormation(player).next());
+            return;
+        }
         long tick = player.getWorld().getGameTime();
         int cooldown = Math.max(1, getConfig().getInt("beam.cooldown-ticks", 12));
         Long previous = lastShots.get(player.getUniqueId());
@@ -362,7 +390,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (hit instanceof LivingEntity living) living.damage(Math.max(0, getConfig().getDouble("beam.damage",2.0)), player);
     }
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel pack [player] §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel reload §7| §b/funnel status"); return true; }
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
@@ -388,6 +416,29 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     target.getInventory().addItem(weapon(variant));
                     sender.sendMessage("§a" + target.getName() + " にファンネル" + variant + "を渡しました。");
                 }
+            }
+            case "formation" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage("§c展開モード変更はプレイヤーのみ利用できます。");
+                    return true;
+                }
+                if (!hasController(player)) {
+                    sender.sendMessage("§cファンネルをメインハンドに持ってください。");
+                    return true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage("§b現在の展開: §f" + selectedFormation(player).displayName());
+                    sender.sendMessage("§7/orbit 周回 /wings 左右展開 /rear 背面 /front 前方 /spiral 螺旋");
+                    sender.sendMessage("§7/funnel formation <orbit|wings|rear|front|spiral|next>");
+                    return true;
+                }
+                FormationMode mode = args[1].equalsIgnoreCase("next")
+                        ? selectedFormation(player).next() : FormationMode.parse(args[1]);
+                if (mode == null) {
+                    sender.sendMessage("§c不明な展開モードです。orbit / wings / rear / front / spiral");
+                    return true;
+                }
+                changeFormation(player, mode);
             }
             case "pack" -> {
                 Player target;
