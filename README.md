@@ -91,3 +91,12 @@ block atlases.
 Existing v0.6.0 formations and v0.7.0 offhand shield interception are unchanged.
 Replacing the JAR updates the embedded resource pack; no separate GitHub
 resource-pack upload is required.
+
+## v0.7.2 — Shield facing and animated actions
+
+- **Offhand Unicorn guard** now faces the opposite way from v0.7.1, fixing the reversed front/back face. Set `shield.facing-yaw-offset: 180` to switch it back for custom models.
+- Right-click with the Unicorn controller in the offhand: the three shields glide from near the shoulders into a front defense wall over `shield.deploy-ticks: 12` (ease-in/out), turning to face front as they move.
+- Right-click again: the shields return to the shoulders and disappear over `shield.retract-ticks: 12`. If you switch modes mid-animation they smoothly reverse.
+- Projectile protection activates after the wall finishes deploying, and is immediately disabled when retraction starts. Defense is not active during the initial deployment, making the visual and gameplay states consistent.
+- Normal **main-hand right-click shooting** now gives deployed drones a brief forward firing-pulse motion (8 ticks, up to `drones.shot-recoil-blocks`). The beam damage and cooldown are unchanged.
+- The five formations, all model files and the embedded pack remain otherwise unchanged.

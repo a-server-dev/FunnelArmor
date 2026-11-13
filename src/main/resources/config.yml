@@ -26,5 +26,14 @@ drones:
   # Variant 1: 6, Variant 2: 6, Variant 3: 12, Variant 4: 3
   # Mode is saved per item: orbit/wings/rear/front/spiral
   angular-speed: 0.055
+  shot-recoil-blocks: 0.38
   update-ticks: 2
   teleport-duration: 2
+
+# Unicorn-style shield offhand animation and front facing.
+shield:
+  # The default 0 flips the previous defense stance, exposing the other side.
+  # Change to 180 if the installed custom model faces the opposite direction.
+  facing-yaw-offset: 0
+  deploy-ticks: 12
+  retract-ticks: 12

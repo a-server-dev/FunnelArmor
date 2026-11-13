@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class FunnelArmorPlugin extends JavaPlugin implements Listener, CommandExecutor {
@@ -65,6 +66,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private final Set<UUID> shieldGuards = ConcurrentHashMap.newKeySet();
     private final Map<UUID, List<ItemDisplay>> shieldDisplays = new ConcurrentHashMap<>();
     private final Map<UUID, Long> shieldToggleTicks = new ConcurrentHashMap<>();
+    /** 0 = docked, 1 = protective wall; retained while closing. */
+    private final Map<UUID, Double> shieldProgress = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> shotAnimationStart = new ConcurrentHashMap<>();
+    private long animationTick = 0;
     private HttpServer httpServer;
     private byte[] packBytes;
     private String sha1;
@@ -95,12 +100,14 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.1 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.2 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
         lastShots.clear();
         shieldToggleTicks.clear();
+        shieldProgress.clear();
+        shotAnimationStart.clear();
         for (UUID uuid : new ArrayList<>(shieldGuards)) stopShield(uuid);
         for (UUID uuid : new ArrayList<>(shieldDisplays.keySet())) removeShieldDisplays(uuid);
         for (UUID uuid : new ArrayList<>(activeDrones.keySet())) removeDrones(uuid);
@@ -256,7 +263,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     private boolean shieldActive(Player player) {
         return player.isOnline() && !player.isDead() && hasUnicornOffhand(player)
-                && shieldGuards.contains(player.getUniqueId());
+                && shieldGuards.contains(player.getUniqueId())
+                && shieldProgress.getOrDefault(player.getUniqueId(), 0.0) >= 0.999;
     }
     private void removeShieldDisplays(UUID uuid) {
         List<ItemDisplay> displays = shieldDisplays.remove(uuid);
@@ -265,6 +273,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     private void stopShield(UUID uuid) {
         shieldGuards.remove(uuid);
+        shieldProgress.remove(uuid);
         removeShieldDisplays(uuid);
     }
     private void toggleShield(Player player) {
@@ -277,34 +286,37 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (last != null && tick >= last && tick - last < 5) return;
         shieldToggleTicks.put(player.getUniqueId(), tick);
         if (shieldGuards.contains(player.getUniqueId())) {
-            stopShield(player.getUniqueId());
-            player.sendActionBar(Component.text("§7シールド防御：解除"));
-            player.sendMessage("§7シールドファンネル防御を解除しました。");
+            shieldGuards.remove(player.getUniqueId());
+            player.sendActionBar(Component.text("§7シールド防御：収納中"));
+            player.sendMessage("§7シールドファンネルを収納します。");
         } else {
             shieldGuards.add(player.getUniqueId());
-            // Spawn the defensive formation immediately; the 1-tick task updates it.
-            updateShieldDisplays(player);
-            player.sendActionBar(Component.text("§bシールド防御：展開"));
-            player.sendMessage("§b3枚のシールドファンネルを前方に展開しました。矢などを防御します。");
+            shieldProgress.putIfAbsent(player.getUniqueId(), 0.0);
+            // Spawn behind the shoulders, then glide forward over several ticks.
+            updateShieldDisplays(player, shieldProgress.get(player.getUniqueId()));
+            player.sendActionBar(Component.text("§bシールド防御：展開中"));
+            player.sendMessage("§b3枚のシールドファンネルを前方に展開します。");
         }
     }
-    private Location shieldLocation(Player player, int index) {
+    private Location shieldLocation(Player player, int index, double progress) {
         double yaw = Math.toRadians(player.getLocation().getYaw());
         double forwardX = -Math.sin(yaw);
         double forwardZ = Math.cos(yaw);
         double rightX = Math.cos(yaw);
         double rightZ = Math.sin(yaw);
-        double right = (index - 1) * 1.08;
-        double up = index == 1 ? 1.50 : 1.32;
+        ShieldAnimationGeometry.Pose pose = ShieldAnimationGeometry.pose(index, progress);
         Location pos = player.getLocation().add(
-                rightX * right + forwardX * ShieldGuardGeometry.PLANE_DISTANCE,
-                up, rightZ * right + forwardZ * ShieldGuardGeometry.PLANE_DISTANCE);
-        // The model's north/front surface points toward the incoming shot.
-        pos.setYaw(player.getLocation().getYaw() + 180f);
+                rightX * pose.right() + forwardX * pose.forward(),
+                pose.up(), rightZ * pose.right() + forwardZ * pose.forward());
+        // v0.7.1 model was shown back-to-front with +180. Use the opposite side.
+        // If a user-defined model swaps faces, this offset is configurable.
+        pos.setYaw(player.getLocation().getYaw()
+                + (float) getConfig().getDouble("shield.facing-yaw-offset", 0.0)
+                + (float) pose.yawOffset());
         pos.setPitch(0);
         return pos;
     }
-    private void updateShieldDisplays(Player player) {
+    private void updateShieldDisplays(Player player, double progress) {
         UUID id = player.getUniqueId();
         List<ItemDisplay> displays = shieldDisplays.get(id);
         boolean respawn = displays == null || displays.size() != 3;
@@ -317,7 +329,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             try {
                 for (int i = 0; i < 3; i++) {
                     final int index = i;
-                    ItemDisplay display = player.getWorld().spawn(shieldLocation(player, index), ItemDisplay.class, d -> {
+                    ItemDisplay display = player.getWorld().spawn(shieldLocation(player, index, progress), ItemDisplay.class, d -> {
                         ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
                         ItemMeta meta = item.getItemMeta();
                         meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_4"));
@@ -332,8 +344,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                         d.setPersistent(false);
                         d.setGravity(false);
                         d.setInvulnerable(true);
-                        d.setTeleportDuration(Math.min(59, Math.max(0,
-                                getConfig().getInt("drones.teleport-duration", 2))));
+                        // One-tick interpolation avoids trailing noticeably behind the moving player.
+                        d.setTeleportDuration(1);
                         d.getPersistentDataContainer().set(displayKey, PersistentDataType.BYTE, (byte) 1);
                     });
                     created.add(display);
@@ -347,7 +359,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 return;
             }
         }
-        for (int i = 0; i < 3; i++) displays.get(i).teleport(shieldLocation(player, i));
+        for (int i = 0; i < 3; i++) displays.get(i).teleport(shieldLocation(player, i, progress));
     }
     private boolean shieldIntersects(Player player, Projectile projectile) {
         Vector motion = projectile.getVelocity();
@@ -371,20 +383,35 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         player.getWorld().playSound(hit, Sound.ITEM_SHIELD_BLOCK, 0.6f, 1.3f);
     }
     private void updateShields() {
-        for (UUID uuid : new ArrayList<>(shieldGuards)) {
+        animationTick++;
+        Set<UUID> tracked = new HashSet<>(shieldGuards);
+        tracked.addAll(shieldDisplays.keySet());
+        for (UUID uuid : tracked) {
             Player player = Bukkit.getPlayer(uuid);
-            if (player == null || !shieldActive(player)) {
+            if (player == null || !player.isOnline() || player.isDead() || !hasUnicornOffhand(player)) {
                 stopShield(uuid);
                 continue;
             }
-            updateShieldDisplays(player);
-            if (!shieldGuards.contains(uuid)) continue;
+            boolean opening = shieldGuards.contains(uuid);
+            double previous = shieldProgress.getOrDefault(uuid, 0.0);
+            int duration = Math.max(1, Math.min(60, getConfig().getInt(
+                    opening ? "shield.deploy-ticks" : "shield.retract-ticks", 12)));
+            double progress = ShieldAnimationGeometry.approach(previous, opening, duration);
+            shieldProgress.put(uuid, progress);
+            if (!opening && progress <= 0.0) {
+                stopShield(uuid);
+                continue;
+            }
+            updateShieldDisplays(player, progress);
+            if (!shieldActive(player)) continue;
             for (Projectile projectile : player.getWorld().getNearbyEntitiesByType(
                     Projectile.class, player.getLocation(), 5.0, 3.5, 5.0)) {
                 if (!projectile.isValid() || projectile.getShooter() == player) continue;
                 if (shieldIntersects(player, projectile)) interceptProjectile(player, projectile);
             }
         }
+        // Remove completed recoil animations; one tick update cadence.
+        shotAnimationStart.entrySet().removeIf(entry -> animationTick - entry.getValue() > 8);
     }
     @EventHandler(ignoreCancelled = true)
     public void onProjectileDamage(EntityDamageByEntityEvent event) {
@@ -442,13 +469,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         for (UUID uuid : new ArrayList<>(activeDrones.keySet())) {
             Player p = Bukkit.getPlayer(uuid);
             if (p == null || !hasController(p) || !getConfig().getBoolean("drones.enabled", true)
-                    || (shieldGuards.contains(uuid) && selectedVariant(p) == 4)) {
+                    || (shieldDisplays.containsKey(uuid) && selectedVariant(p) == 4)) {
                 removeDrones(uuid);
             }
         }
         if (!getConfig().getBoolean("drones.enabled", true)) return;
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!hasController(p) || (shieldGuards.contains(p.getUniqueId()) && selectedVariant(p) == 4)) continue;
+            if (!hasController(p) || (shieldDisplays.containsKey(p.getUniqueId()) && selectedVariant(p) == 4)) continue;
             List<ItemDisplay> displays = activeDrones.get(p.getUniqueId());
             if (displays == null) {
                 displays = spawnDrones(p);
@@ -482,6 +509,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 rightX * pos.right() + forwardX * pos.forward(),
                 pos.up(),
                 rightZ * pos.right() + forwardZ * pos.forward());
+        Long shotStart = shotAnimationStart.get(p.getUniqueId());
+        if (shotStart != null) {
+            double pulse = ShieldAnimationGeometry.shotPulse(animationTick - shotStart);
+            loc.add(forwardX * pulse * getConfig().getDouble("drones.shot-recoil-blocks", 0.38),
+                    pulse * 0.12,
+                    forwardZ * pulse * getConfig().getDouble("drones.shot-recoil-blocks", 0.38));
+        }
         loc.setYaw(p.getLocation().getYaw() + (float) pos.yawOffset());
         loc.setPitch(variant == 4 ? -12f : 0f);
         return loc;
@@ -489,15 +523,18 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     @EventHandler public void onQuit(PlayerQuitEvent e) {
         stopShield(e.getPlayer().getUniqueId());
         shieldToggleTicks.remove(e.getPlayer().getUniqueId());
+        shotAnimationStart.remove(e.getPlayer().getUniqueId());
         removeDrones(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onChangedWorld(PlayerChangedWorldEvent e) {
         stopShield(e.getPlayer().getUniqueId());
         removeDrones(e.getPlayer().getUniqueId());
+        shotAnimationStart.remove(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onDeath(PlayerDeathEvent e) {
         stopShield(e.getEntity().getUniqueId());
         removeDrones(e.getEntity().getUniqueId());
+        shotAnimationStart.remove(e.getEntity().getUniqueId());
     }
     @EventHandler public void onJoin(PlayerJoinEvent e) {
         if (getConfig().getBoolean("pack.send-on-join", true))
@@ -534,6 +571,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Long previous = lastShots.get(player.getUniqueId());
         if (previous != null && tick >= previous && tick - previous < cooldown) return;
         lastShots.put(player.getUniqueId(), tick);
+        shotAnimationStart.put(player.getUniqueId(), animationTick);
         fire(player);
     }
     private void fire(Player player) {
