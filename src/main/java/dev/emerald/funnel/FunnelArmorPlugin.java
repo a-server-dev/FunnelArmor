@@ -450,8 +450,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
         float scale = (float) Math.max(0.1, Math.min(3.0,
                 getConfig().getDouble("drones.model-scale", 1.45)));
-        double opening = Math.max(0, Math.min(15.0,
-                getConfig().getDouble("fin-barrier.fin-tip-open-degrees", 6.0)));
+        // Signed: positive opens in the corrected direction; negative reverses.
+        double configuredOpening = getConfig().getDouble(
+                "fin-barrier.fin-tip-open-degrees", 6.0);
+        double opening = Double.isFinite(configuredOpening)
+                ? Math.max(-15.0, Math.min(15.0, configuredOpening)) : 6.0;
         for (int slot = 0; slot < FIN_BARRIER_DISPLAYS; slot++) {
             ItemDisplay display = displays.get(slot);
             int finIndex = slot < 12 ? slot / 3 : slot - 8;

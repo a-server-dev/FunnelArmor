@@ -28,7 +28,8 @@ class FinBarrierGeometryTest {
     }
     var upper=FinBarrierGeometry.armPose(true,1.0,6.0,scale);
     var lower=FinBarrierGeometry.armPose(false,1.0,6.0,scale);
-    // Negative-X muzzle tip should move up for upper fin and down for lower.
+    // Regression for the corrected sign after the in-game screenshot:
+    // positive setting rotates upper +Z and lower -Z (opposite v0.7.18).
     double noseX=(1.4-8)/16.0;
     double uc= Math.cos(Math.toRadians(upper.angleDegrees()));
     double us= Math.sin(Math.toRadians(upper.angleDegrees()));
@@ -36,10 +37,23 @@ class FinBarrierGeometryTest {
     double ls= Math.sin(Math.toRadians(lower.angleDegrees()));
     double upperNoseY=upper.shiftY()+scale*(us*noseX+uc*((9.8-8)/16.0));
     double lowerNoseY=lower.shiftY()+scale*(ls*noseX+lc*((6.35-8)/16.0));
-    assertTrue(upperNoseY>scale*((9.8-8)/16.0)+0.10);
-    assertTrue(lowerNoseY<scale*((6.35-8)/16.0)-0.10);
+    assertEquals(6.0, upper.angleDegrees(), 1e-9);
+    assertEquals(-6.0, lower.angleDegrees(), 1e-9);
+    assertTrue(upperNoseY<scale*((9.8-8)/16.0)-0.10);
+    assertTrue(lowerNoseY>scale*((6.35-8)/16.0)+0.10);
+    var reversedUpper=FinBarrierGeometry.armPose(true,1.0,-6.0,scale);
+    var reversedLower=FinBarrierGeometry.armPose(false,1.0,-6.0,scale);
+    assertEquals(-6.0, reversedUpper.angleDegrees(), 1e-9);
+    assertEquals(6.0, reversedLower.angleDegrees(), 1e-9);
+    assertEquals(0.0, FinBarrierGeometry.armPose(true,1.0,0.0,scale).angleDegrees(), 1e-9);
+    assertEquals(15.0, FinBarrierGeometry.armPose(true,1.0,15.0,scale).angleDegrees(), 1e-9);
+    assertEquals(-15.0, FinBarrierGeometry.armPose(true,1.0,-15.0,scale).angleDegrees(), 1e-9);
     assertThrows(IllegalArgumentException.class,
-        () -> FinBarrierGeometry.armPose(true,1.0,25,scale));
+        () -> FinBarrierGeometry.armPose(true,1.0,15.01,scale));
+    assertThrows(IllegalArgumentException.class,
+        () -> FinBarrierGeometry.armPose(true,1.0,-15.01,scale));
+    assertThrows(IllegalArgumentException.class,
+        () -> FinBarrierGeometry.armPose(true,1.0,Double.NaN,scale));
   }
   @Test void intercepts(){assertTrue(Double.isFinite(FinBarrierGeometry.entryT(0,5,0,0,1.5,0)));
      assertTrue(Double.isFinite(FinBarrierGeometry.entryT(-5,1.5,0,0,1.5,0)));

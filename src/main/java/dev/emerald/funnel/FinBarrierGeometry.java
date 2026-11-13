@@ -21,18 +21,19 @@ public final class FinBarrierGeometry {
      * the ItemDisplay pivot is at [8,8,8], so move the rotated model back
      * to its original hinge position after applying entity model scale.
      *
-     * Upper arm angle is negative Z; lower arm positive Z. Both bend away
-     * from the middle at local negative X (the open muzzle end).
+     * User-validated display direction: positive configuration angles use
+     * positive local-Z for the upper arm and negative local-Z for the lower.
+     * Negative configuration angles reverse both arms. The hinge stays fixed.
      */
     public record ArmPose(double angleDegrees, double shiftX, double shiftY) {}
 
     public static ArmPose armPose(boolean upper, double progress,
                                   double maxDegrees, double displayScale) {
         if (!Double.isFinite(progress) || !Double.isFinite(maxDegrees)
-                || maxDegrees < 0 || maxDegrees > 15
+                || maxDegrees < -15 || maxDegrees > 15
                 || !Double.isFinite(displayScale) || displayScale <= 0)
             throw new IllegalArgumentException("Invalid barrier arm pose");
-        double degrees = (upper ? -1.0 : 1.0) * maxDegrees * ease(progress);
+        double degrees = (upper ? 1.0 : -1.0) * maxDegrees * ease(progress);
         double radians = Math.toRadians(degrees);
         double pivotX = (13.83 - 8.0) / 16.0;
         double pivotY = ((upper ? 9.65 : 6.40) - 8.0) / 16.0;

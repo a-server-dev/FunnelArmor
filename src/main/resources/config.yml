@@ -61,7 +61,8 @@ fin-barrier:
   retract-ticks: 10
   # Bend just the upper/lower U-shaped arm tips vertically away from each
   # other about their rear hinge; does not yaw the whole funnel diagonally.
-  # 0 = closed, 6 = subtle, maximum allowed = 15 degrees.
+  # Range -15..15: positive opens in the corrected direction;
+  # 0 keeps the arms straight; negative reverses the bend.
   fin-tip-open-degrees: 6.0
   # Legacy tip-splay-degrees is deliberately ignored (whole-model yaw looked diagonal).
   # Five white stained-glass BlockDisplay panels (front/back/left/right/roof).
