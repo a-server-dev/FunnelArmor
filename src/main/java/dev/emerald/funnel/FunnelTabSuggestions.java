@@ -33,6 +33,7 @@ public final class FunnelTabSuggestions {
             }
             if (admin) {
                 candidates.add("give");
+                candidates.add("angle");
                 candidates.add("reload");
             }
         } else {
@@ -52,6 +53,10 @@ public final class FunnelTabSuggestions {
                 case "pack" -> {
                     if (!admin || args.length != 2) return List.of();
                     candidates.addAll(onlineNames);
+                }
+                case "angle" -> {
+                    if (!admin || args.length != 2) return List.of();
+                    candidates.addAll(List.of("-15", "-10", "-6", "0", "6", "10", "15"));
                 }
                 default -> { return List.of(); }
             }

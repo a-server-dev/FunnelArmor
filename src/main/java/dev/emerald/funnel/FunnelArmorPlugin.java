@@ -114,7 +114,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             getCommand("funnel").setExecutor(this);
             getCommand("funnel").setTabCompleter(this);
         }
-        getLogger().info("FunnelArmor 0.7.14 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor " + getPluginMeta().getVersion()
+                + " ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -451,10 +452,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         float scale = (float) Math.max(0.1, Math.min(3.0,
                 getConfig().getDouble("drones.model-scale", 1.45)));
         // Signed: positive opens in the corrected direction; negative reverses.
-        double configuredOpening = getConfig().getDouble(
-                "fin-barrier.fin-tip-open-degrees", 6.0);
-        double opening = Double.isFinite(configuredOpening)
-                ? Math.max(-15.0, Math.min(15.0, configuredOpening)) : 6.0;
+        double opening = FinTipAngleSetting.effective(
+                getConfig().get("fin-barrier.fin-tip-open-degrees"));
         for (int slot = 0; slot < FIN_BARRIER_DISPLAYS; slot++) {
             ItemDisplay display = displays.get(slot);
             int finIndex = slot < 12 ? slot / 3 : slot - 8;
@@ -1135,7 +1134,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
@@ -1221,11 +1220,48 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 if (target == null) { sender.sendMessage("§c対象プレイヤーが見つかりません。"); return true; }
                 applyPack(target);
             }
+            case "angle" -> {
+                if (!sender.hasPermission("funnel.admin")) {
+                    sender.sendMessage("§c権限がありません。");
+                    return true;
+                }
+                if (args.length == 1) {
+                    Object raw = getConfig().get("fin-barrier.fin-tip-open-degrees");
+                    sender.sendMessage("§b現在のフィン先端角度: §f"
+                            + FinTipAngleSetting.effective(raw)
+                            + "° §7(config: " + raw + ")");
+                    sender.sendMessage("§7/funnel angle <-15..15> で変更・保存できます。");
+                    return true;
+                }
+                if (args.length != 2) {
+                    sender.sendMessage("§c使用法: /funnel angle <-15..15>");
+                    return true;
+                }
+                final double value;
+                try {
+                    value = FinTipAngleSetting.validate(args[1]);
+                } catch (IllegalArgumentException ex) {
+                    sender.sendMessage("§c角度は -15～15 の数値で指定してください。例: /funnel angle -6");
+                    return true;
+                }
+                getConfig().set("fin-barrier.fin-tip-open-degrees", value);
+                saveConfig();
+                sender.sendMessage("§aフィン先端角度を §f" + value
+                        + "° §aに変更・保存しました（展開中のバリアにも反映）。");
+            }
             case "reload" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
-                reloadConfig(); startHttp(); sender.sendMessage("§a設定を再読み込みしました。モデル変更はJAR更新とサーバー再起動が必要です。");
+                reloadConfig(); startHttp();
+                Object raw = getConfig().get("fin-barrier.fin-tip-open-degrees");
+                sender.sendMessage("§a設定を再読み込みしました。フィン先端角度: §f"
+                        + FinTipAngleSetting.effective(raw) + "° §7(config: " + raw + ")");
+                sender.sendMessage("§7モデル変更はJAR更新とサーバー再起動が必要です。");
             }
             case "status" -> {
+                sender.sendMessage("§bFunnelArmor version: §f" + getPluginMeta().getVersion());
+                Object raw = getConfig().get("fin-barrier.fin-tip-open-degrees");
+                sender.sendMessage("§bFin tip angle: §f" + FinTipAngleSetting.effective(raw)
+                        + "° §7(config: " + raw + ")");
                 sender.sendMessage("§bPack SHA1: §f" + sha1);
                 sender.sendMessage("§bPack URL: §f" + (sender instanceof Player p ? publicUrl(p) : publicUrl()));
                 sender.sendMessage("§bConfigured public host: §f" + getConfig().getString("pack.embedded-http.public-host", "auto"));
