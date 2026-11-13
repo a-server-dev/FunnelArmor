@@ -1,7 +1,7 @@
 plugins { java }
 
 group = "dev.emerald"
-version = "0.3.2-SNAPSHOT"
+version = "0.3.3-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -35,4 +35,27 @@ tasks.processResources {
     filesMatching("plugin.yml") {
         expand("version" to project.version)
     }
+}
+
+/**
+ * Always rebuild the client pack from the tracked resourcepack/ files.
+ * Never depend on a stale committed binary ZIP.
+ */
+val packageResourcePack by tasks.registering(Zip::class) {
+    from(layout.projectDirectory.dir("resourcepack"))
+    archiveFileName.set("funnel-pack.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("generated/funnel-pack"))
+    isReproducibleFileOrder = true
+    isPreserveFileTimestamps = false
+}
+
+sourceSets {
+    main {
+        resources.exclude("funnel-pack.zip")
+    }
+}
+
+tasks.processResources {
+    from(packageResourcePack)
+    dependsOn(packageResourcePack)
 }
