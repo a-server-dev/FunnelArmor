@@ -1,8 +1,38 @@
 plugins { java }
+
 group = "dev.emerald"
 version = "0.3.1-SNAPSHOT"
-repositories { mavenCentral(); maven("https://repo.papermc.io/repository/maven-public/") }
-dependencies { compileOnly("io.papermc.paper:paper-api:26.3.build.+") }
-java { toolchain.languageVersion.set(JavaLanguageVersion.of(25)) }
-tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8"; options.release.set(25) }
-tasks.processResources { filesMatching("plugin.yml") { expand("version" to project.version) } }
+
+repositories {
+    mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/")
+}
+
+dependencies {
+    compileOnly("io.papermc.paper:paper-api:26.3.build.218-stable")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("com.google.code.gson:gson:2.11.0")
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(25))
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(25)
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+tasks.processResources {
+    filesMatching("plugin.yml") {
+        expand("version" to project.version)
+    }
+}
