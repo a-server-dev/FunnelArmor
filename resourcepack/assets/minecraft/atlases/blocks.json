@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "funnel:block/funnel",
+      "sprite": "funnel:block/funnel"
+    }
+  ]
+}
