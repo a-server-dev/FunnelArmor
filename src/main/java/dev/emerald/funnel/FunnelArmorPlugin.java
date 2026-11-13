@@ -18,12 +18,14 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
@@ -49,6 +51,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class FunnelArmorPlugin extends JavaPlugin implements Listener, CommandExecutor {
@@ -59,6 +62,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private final Map<UUID, List<ItemDisplay>> activeDrones = new ConcurrentHashMap<>();
     private long visualTick = 0;
     private final Map<UUID, Long> lastShots = new ConcurrentHashMap<>();
+    private final Set<UUID> shieldGuards = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, List<ItemDisplay>> shieldDisplays = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> shieldToggleTicks = new ConcurrentHashMap<>();
     private HttpServer httpServer;
     private byte[] packBytes;
     private String sha1;
@@ -87,12 +93,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getPluginManager().registerEvents(this, this);
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
+        Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.6.0 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.0 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
         lastShots.clear();
+        shieldToggleTicks.clear();
+        for (UUID uuid : new ArrayList<>(shieldGuards)) stopShield(uuid);
+        for (UUID uuid : new ArrayList<>(shieldDisplays.keySet())) removeShieldDisplays(uuid);
         for (UUID uuid : new ArrayList<>(activeDrones.keySet())) removeDrones(uuid);
     }
     private void startHttp() {
@@ -237,6 +247,158 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (displays == null) return;
         for (ItemDisplay d : displays) if (d.isValid()) d.remove();
     }
+    private boolean hasUnicornOffhand(Player player) {
+        ItemStack item = player.getInventory().getItemInOffHand();
+        if (!isWeapon(item)) return false;
+        Integer variant = item.getItemMeta().getPersistentDataContainer()
+                .get(variantKey, PersistentDataType.INTEGER);
+        return variant != null && variant == 4;
+    }
+    private boolean shieldActive(Player player) {
+        return player.isOnline() && !player.isDead() && hasUnicornOffhand(player)
+                && shieldGuards.contains(player.getUniqueId());
+    }
+    private void removeShieldDisplays(UUID uuid) {
+        List<ItemDisplay> displays = shieldDisplays.remove(uuid);
+        if (displays == null) return;
+        for (ItemDisplay display : displays) if (display.isValid()) display.remove();
+    }
+    private void stopShield(UUID uuid) {
+        shieldGuards.remove(uuid);
+        removeShieldDisplays(uuid);
+    }
+    private void toggleShield(Player player) {
+        if (!hasUnicornOffhand(player)) {
+            player.sendMessage("§cユニコーン風シールドファンネルをオフハンドに持ってください。");
+            return;
+        }
+        long tick = player.getWorld().getGameTime();
+        Long last = shieldToggleTicks.get(player.getUniqueId());
+        if (last != null && tick >= last && tick - last < 5) return;
+        shieldToggleTicks.put(player.getUniqueId(), tick);
+        if (shieldGuards.contains(player.getUniqueId())) {
+            stopShield(player.getUniqueId());
+            player.sendActionBar(Component.text("§7シールド防御：解除"));
+            player.sendMessage("§7シールドファンネル防御を解除しました。");
+        } else {
+            shieldGuards.add(player.getUniqueId());
+            // Spawn the defensive formation immediately; the 1-tick task updates it.
+            updateShieldDisplays(player);
+            player.sendActionBar(Component.text("§bシールド防御：展開"));
+            player.sendMessage("§b3枚のシールドファンネルを前方に展開しました。矢などを防御します。");
+        }
+    }
+    private Location shieldLocation(Player player, int index) {
+        double yaw = Math.toRadians(player.getLocation().getYaw());
+        double forwardX = -Math.sin(yaw);
+        double forwardZ = Math.cos(yaw);
+        double rightX = Math.cos(yaw);
+        double rightZ = Math.sin(yaw);
+        double right = (index - 1) * 1.08;
+        double up = index == 1 ? 1.50 : 1.32;
+        Location pos = player.getLocation().add(
+                rightX * right + forwardX * ShieldGuardGeometry.PLANE_DISTANCE,
+                up, rightZ * right + forwardZ * ShieldGuardGeometry.PLANE_DISTANCE);
+        // The model's north/front surface points toward the incoming shot.
+        pos.setYaw(player.getLocation().getYaw() + 180f);
+        pos.setPitch(0);
+        return pos;
+    }
+    private void updateShieldDisplays(Player player) {
+        UUID id = player.getUniqueId();
+        List<ItemDisplay> displays = shieldDisplays.get(id);
+        boolean respawn = displays == null || displays.size() != 3;
+        if (!respawn) for (ItemDisplay d : displays) {
+            if (!d.isValid() || d.getWorld() != player.getWorld()) { respawn = true; break; }
+        }
+        if (respawn) {
+            removeShieldDisplays(id);
+            List<ItemDisplay> created = new ArrayList<>(3);
+            try {
+                for (int i = 0; i < 3; i++) {
+                    final int index = i;
+                    ItemDisplay display = player.getWorld().spawn(shieldLocation(player, index), ItemDisplay.class, d -> {
+                        ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+                        ItemMeta meta = item.getItemMeta();
+                        meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_4"));
+                        meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, 4);
+                        item.setItemMeta(meta);
+                        d.setItemStack(item);
+                        d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                        float scale = (float) Math.max(0.1, Math.min(3.0,
+                                getConfig().getDouble("drones.model-scale", 1.45) * 1.1));
+                        d.setTransformation(new Transformation(new Vector3f(0, 0, 0),
+                                new AxisAngle4f(), new Vector3f(scale, scale, scale), new AxisAngle4f()));
+                        d.setPersistent(false);
+                        d.setGravity(false);
+                        d.setInvulnerable(true);
+                        d.setTeleportDuration(Math.min(59, Math.max(0,
+                                getConfig().getInt("drones.teleport-duration", 2))));
+                        d.getPersistentDataContainer().set(displayKey, PersistentDataType.BYTE, (byte) 1);
+                    });
+                    created.add(display);
+                }
+                shieldDisplays.put(id, created);
+                displays = created;
+            } catch (RuntimeException ex) {
+                for (ItemDisplay d : created) if (d.isValid()) d.remove();
+                stopShield(id);
+                getLogger().warning("Failed to spawn shield funnels: " + ex.getMessage());
+                return;
+            }
+        }
+        for (int i = 0; i < 3; i++) displays.get(i).teleport(shieldLocation(player, i));
+    }
+    private boolean shieldIntersects(Player player, Projectile projectile) {
+        Vector motion = projectile.getVelocity();
+        if (motion.lengthSquared() < 1.0e-6) return false;
+        Location owner = player.getLocation();
+        double yaw = Math.toRadians(owner.getYaw());
+        Vector front = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+        Vector right = new Vector(Math.cos(yaw), 0, Math.sin(yaw));
+        Vector relative = projectile.getLocation().toVector().subtract(owner.toVector());
+        Vector from = relative.clone().subtract(motion);
+        Vector to = relative.clone().add(motion.clone().multiply(1.5));
+        return ShieldGuardGeometry.intercepts(
+                from.dot(right), from.getY(), from.dot(front),
+                to.dot(right), to.getY(), to.dot(front));
+    }
+    private void interceptProjectile(Player player, Projectile projectile) {
+        if (!projectile.isValid()) return;
+        Location hit = projectile.getLocation();
+        projectile.remove();
+        player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, hit, 9, 0.18, 0.18, 0.18, 0.04);
+        player.getWorld().playSound(hit, Sound.ITEM_SHIELD_BLOCK, 0.6f, 1.3f);
+    }
+    private void updateShields() {
+        for (UUID uuid : new ArrayList<>(shieldGuards)) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null || !shieldActive(player)) {
+                stopShield(uuid);
+                continue;
+            }
+            updateShieldDisplays(player);
+            if (!shieldGuards.contains(uuid)) continue;
+            for (Projectile projectile : player.getWorld().getNearbyEntitiesByType(
+                    Projectile.class, player.getLocation(), 5.0, 3.5, 5.0)) {
+                if (!projectile.isValid() || projectile.getShooter() == player) continue;
+                if (shieldIntersects(player, projectile)) interceptProjectile(player, projectile);
+            }
+        }
+    }
+    @EventHandler(ignoreCancelled = true)
+    public void onProjectileDamage(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player player)
+                || !(event.getDamager() instanceof Projectile projectile)
+                || !shieldActive(player) || projectile.getShooter() == player) return;
+        double yaw = Math.toRadians(player.getLocation().getYaw());
+        Vector front = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+        Vector relative = projectile.getLocation().toVector().subtract(player.getLocation().toVector());
+        if (ShieldGuardGeometry.blocksImpact(relative.dot(front), projectile.getVelocity().dot(front))) {
+            event.setCancelled(true);
+            interceptProjectile(player, projectile);
+        }
+    }
     private boolean hasController(Player player) {
         return player.isOnline() && !player.isDead() && isWeapon(player.getInventory().getItemInMainHand());
     }
@@ -279,13 +441,14 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         visualTick += Math.max(1L, getConfig().getLong("drones.update-ticks", 2L));
         for (UUID uuid : new ArrayList<>(activeDrones.keySet())) {
             Player p = Bukkit.getPlayer(uuid);
-            if (p == null || !hasController(p) || !getConfig().getBoolean("drones.enabled", true)) {
+            if (p == null || !hasController(p) || !getConfig().getBoolean("drones.enabled", true)
+                    || (shieldGuards.contains(uuid) && selectedVariant(p) == 4)) {
                 removeDrones(uuid);
             }
         }
         if (!getConfig().getBoolean("drones.enabled", true)) return;
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!hasController(p)) continue;
+            if (!hasController(p) || (shieldGuards.contains(p.getUniqueId()) && selectedVariant(p) == 4)) continue;
             List<ItemDisplay> displays = activeDrones.get(p.getUniqueId());
             if (displays == null) {
                 displays = spawnDrones(p);
@@ -323,9 +486,19 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         loc.setPitch(variant == 4 ? -12f : 0f);
         return loc;
     }
-    @EventHandler public void onQuit(PlayerQuitEvent e) { removeDrones(e.getPlayer().getUniqueId()); }
-    @EventHandler public void onChangedWorld(PlayerChangedWorldEvent e) { removeDrones(e.getPlayer().getUniqueId()); }
-    @EventHandler public void onDeath(PlayerDeathEvent e) { removeDrones(e.getEntity().getUniqueId()); }
+    @EventHandler public void onQuit(PlayerQuitEvent e) {
+        stopShield(e.getPlayer().getUniqueId());
+        shieldToggleTicks.remove(e.getPlayer().getUniqueId());
+        removeDrones(e.getPlayer().getUniqueId());
+    }
+    @EventHandler public void onChangedWorld(PlayerChangedWorldEvent e) {
+        stopShield(e.getPlayer().getUniqueId());
+        removeDrones(e.getPlayer().getUniqueId());
+    }
+    @EventHandler public void onDeath(PlayerDeathEvent e) {
+        stopShield(e.getEntity().getUniqueId());
+        removeDrones(e.getEntity().getUniqueId());
+    }
     @EventHandler public void onJoin(PlayerJoinEvent e) {
         if (getConfig().getBoolean("pack.send-on-join", true))
             Bukkit.getScheduler().runTaskLater(this, () -> { if (e.getPlayer().isOnline()) applyPack(e.getPlayer()); }, 30L);
@@ -340,9 +513,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
     }
     @EventHandler public void onInteract(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_AIR
+                && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            if (!hasUnicornOffhand(event.getPlayer())) return;
+            event.setCancelled(true);
+            toggleShield(event.getPlayer());
+            return;
+        }
         if (event.getHand() != EquipmentSlot.HAND ||
-            (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) ||
-            !isWeapon(event.getPlayer().getInventory().getItemInMainHand())) return;
+                !isWeapon(event.getPlayer().getInventory().getItemInMainHand())) return;
         event.setCancelled(true);
         Player player = event.getPlayer();
         if (player.isSneaking()) {
@@ -390,7 +570,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (hit instanceof LivingEntity living) living.damage(Math.max(0, getConfig().getDouble("beam.damage",2.0)), player);
     }
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel reload §7| §b/funnel status"); return true; }
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
@@ -439,6 +619,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     return true;
                 }
                 changeFormation(player, mode);
+            }
+            case "shield" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage("§cシールド防御はプレイヤー専用です。");
+                    return true;
+                }
+                toggleShield(player);
             }
             case "pack" -> {
                 Player target;
