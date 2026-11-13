@@ -313,16 +313,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          5.5,
-          8.7,
-          7.65
-        ],
-        "axis": "z",
-        "angle": -22.5,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -22.5
+      ]
     },
     {
       "name": "Canted right armor plate",
@@ -399,16 +394,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          10.5,
-          8.7,
-          7.65
-        ],
-        "axis": "z",
-        "angle": 22.5,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        22.5
+      ]
     },
     {
       "name": "Left golden edge",

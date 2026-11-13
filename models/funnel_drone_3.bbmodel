@@ -389,16 +389,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          4.625,
-          8.625,
-          7.35
-        ],
-        "axis": "z",
-        "angle": 18,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        18
+      ]
     },
     {
       "name": "Flared right wing main",
@@ -475,16 +470,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          11.375,
-          8.625,
-          7.35
-        ],
-        "axis": "z",
-        "angle": -18,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -18
+      ]
     },
     {
       "name": "Left wing fan root",
@@ -561,16 +551,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          5.15,
-          7.15,
-          8.1
-        ],
-        "axis": "z",
-        "angle": -12,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -12
+      ]
     },
     {
       "name": "Right wing fan root",
@@ -647,16 +632,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          10.85,
-          7.15,
-          8.1
-        ],
-        "axis": "z",
-        "angle": 12,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        12
+      ]
     },
     {
       "name": "Left wing upper feather",
@@ -733,16 +713,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          2.825,
-          10.275,
-          7.425
-        ],
-        "axis": "z",
-        "angle": 27,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        27
+      ]
     },
     {
       "name": "Right wing upper feather",
@@ -819,16 +794,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          13.175,
-          10.275,
-          7.425
-        ],
-        "axis": "z",
-        "angle": -27,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -27
+      ]
     },
     {
       "name": "Left wing curved end",
@@ -905,16 +875,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          1.65,
-          9.75,
-          7.175
-        ],
-        "axis": "z",
-        "angle": 15,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        15
+      ]
     },
     {
       "name": "Right wing curved end",
@@ -991,16 +956,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          14.35,
-          9.75,
-          7.175
-        ],
-        "axis": "z",
-        "angle": -15,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -15
+      ]
     },
     {
       "name": "Left inner wing accent",
@@ -1381,16 +1341,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          5.475,
-          5.95,
-          7.75
-        ],
-        "axis": "z",
-        "angle": -32,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -32
+      ]
     },
     {
       "name": "Lower right swept wing",
@@ -1467,16 +1422,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          10.525,
-          5.95,
-          7.75
-        ],
-        "axis": "z",
-        "angle": 32,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        32
+      ]
     },
     {
       "name": "Left black intake",

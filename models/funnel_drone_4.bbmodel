@@ -389,16 +389,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          4.725,
-          11.3,
-          7.375
-        ],
-        "axis": "z",
-        "angle": -34,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -34
+      ]
     },
     {
       "name": "Larger right top swept interceptor",
@@ -475,16 +470,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          11.274999999999999,
-          11.3,
-          7.375
-        ],
-        "axis": "z",
-        "angle": 34,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        34
+      ]
     },
     {
       "name": "Lower left fin",
@@ -561,16 +551,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          5.05,
-          5.025,
-          7.5
-        ],
-        "axis": "z",
-        "angle": 35,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        35
+      ]
     },
     {
       "name": "Lower right fin",
@@ -647,16 +632,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          10.95,
-          5.025,
-          7.5
-        ],
-        "axis": "z",
-        "angle": -35,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -35
+      ]
     },
     {
       "name": "Left glowing wing-edge",
@@ -733,16 +713,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          4.55,
-          12,
-          6.7
-        ],
-        "axis": "z",
-        "angle": -34,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -34
+      ]
     },
     {
       "name": "Right glowing wing-edge",
@@ -819,16 +794,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          11.45,
-          12,
-          6.7
-        ],
-        "axis": "z",
-        "angle": 34,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        34
+      ]
     },
     {
       "name": "Left lower red tip",

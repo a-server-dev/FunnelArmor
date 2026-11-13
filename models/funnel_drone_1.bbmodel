@@ -161,16 +161,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          5.975,
-          9.05,
-          7.325
-        ],
-        "axis": "z",
-        "angle": -8,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        -8
+      ]
     },
     {
       "name": "Right white long panel",
@@ -247,16 +242,11 @@
           "texture": 0
         }
       },
-      "rotation": {
-        "origin": [
-          9.975,
-          8.35,
-          7.325
-        ],
-        "axis": "z",
-        "angle": 8,
-        "rescale": false
-      }
+      "rotation": [
+        0,
+        0,
+        8
+      ]
     },
     {
       "name": "Top armored tip left",
