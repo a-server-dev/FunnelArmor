@@ -36,6 +36,7 @@ class ResourcePackTest {
                 }
             }
             assertTrue(entries.contains("pack.mcmeta"));
+            assertTrue(entries.contains("assets/minecraft/atlases/blocks.json"), "Explicit funnel atlas registration must be bundled");
             assertTrue(entries.contains("assets/funnel/textures/block/funnel.png"));
             for (int i = 1; i <= 4; i++) {
                 assertTrue(entries.contains("assets/funnel/items/funnel_drone_" + i + ".json"));
