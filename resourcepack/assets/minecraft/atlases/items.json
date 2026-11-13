@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "funnel:item/funnel",
+      "sprite": "funnel:item/funnel"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:block/funnel",
+      "sprite": "funnel:block/funnel"
+    }
+  ]
+}
