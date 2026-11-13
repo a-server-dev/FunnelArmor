@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class FunnelArmorPlugin extends JavaPlugin implements Listener, CommandExecutor {
     private NamespacedKey itemKey;
     private NamespacedKey displayKey;
+    private NamespacedKey variantKey;
     private final Map<UUID, List<ItemDisplay>> activeDrones = new ConcurrentHashMap<>();
     private long visualTick = 0;
     private final Map<UUID, Long> lastShots = new ConcurrentHashMap<>();
@@ -63,6 +64,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         saveDefaultConfig();
         itemKey = new NamespacedKey(this, "funnel_weapon");
         displayKey = new NamespacedKey(this, "funnel_drone_display");
+        variantKey = new NamespacedKey(this, "funnel_variant");
         try {
             Path folder = getDataFolder().toPath();
             Files.createDirectories(folder);
@@ -81,7 +83,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.3.1 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.3.2 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -135,12 +137,14 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         player.sendMessage("§bファンネルのリソースパック適用を要求しました: §7" + publicUrl());
         return true;
     }
-    private ItemStack weapon() {
+    private ItemStack weapon(int variant) {
+        if (variant < 1 || variant > 4) throw new IllegalArgumentException("Invalid drone variant");
         ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = stack.getItemMeta();
-        meta.displayName(Component.text("§b◆ クアッド・ファンネル"));
-        meta.lore(java.util.List.of(Component.text("§7右クリック: 4基のビームを照射"),Component.text("§7射程32 / ダメージ2HP")));
-        meta.setItemModel(new NamespacedKey("funnel", "funnel_controller"));
+        meta.displayName(Component.text("§b◆ ファンネル " + variant));
+        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7独立型ファンネル " + variant),Component.text("§7射程32 / ダメージ2HP")));
+        meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
+        meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
         meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1);
         stack.setItemMeta(meta);
         return stack;
@@ -148,6 +152,18 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private boolean isWeapon(ItemStack stack) {
         return stack != null && stack.getType() == Material.LEATHER_HORSE_ARMOR && stack.hasItemMeta()
                 && stack.getItemMeta().getPersistentDataContainer().has(itemKey, PersistentDataType.BYTE);
+    }
+    private int selectedVariant(Player player) {
+        ItemStack stack = player.getInventory().getItemInMainHand();
+        if (!isWeapon(stack)) return 0;
+        Integer variant = stack.getItemMeta().getPersistentDataContainer().get(variantKey, PersistentDataType.INTEGER);
+        return variant == null ? 1 : Math.max(1, Math.min(4, variant));
+    }
+    private int displayedVariant(ItemDisplay display) {
+        ItemStack stack = display.getItemStack();
+        if (stack == null || !stack.hasItemMeta()) return 0;
+        Integer variant = stack.getItemMeta().getPersistentDataContainer().get(variantKey, PersistentDataType.INTEGER);
+        return variant == null ? 0 : variant;
     }
     private void cleanupOrphans() {
         for (World world : Bukkit.getWorlds()) {
@@ -165,14 +181,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         return player.isOnline() && !player.isDead() && isWeapon(player.getInventory().getItemInMainHand());
     }
     private List<ItemDisplay> spawnDrones(Player player) {
-        List<ItemDisplay> displays = new ArrayList<>(4);
+        List<ItemDisplay> displays = new ArrayList<>(1);
         try {
-            for (int i = 0; i < 4; i++) {
-                final int number = i;
+            final int number = selectedVariant(player);
+            if (number == 0) return displays;
+            {
                 ItemDisplay d = player.getWorld().spawn(player.getLocation().add(0, 1.4, 0), ItemDisplay.class, display -> {
                     ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
                     ItemMeta meta = item.getItemMeta();
-                    meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + (number + 1)));
+                    meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + number));
+                    meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, number);
                     item.setItemMeta(meta);
                     display.setItemStack(item);
                     display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
@@ -208,8 +226,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             }
             for (int i = 0; i < displays.size(); i++) {
                 ItemDisplay d = displays.get(i);
-                if (!d.isValid() || d.getWorld() != p.getWorld()) { removeDrones(p.getUniqueId()); break; }
-                d.teleport(droneLocation(p, i));
+                if (!d.isValid() || d.getWorld() != p.getWorld() || displayedVariant(d) != selectedVariant(p)) { removeDrones(p.getUniqueId()); break; }
+                d.teleport(droneLocation(p, selectedVariant(p)-1));
             }
         }
     }
@@ -261,10 +279,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         double step = Math.max(0.1, getConfig().getDouble("beam.particle-step", 0.45));
         Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(75,224,255), 1.1f);
         List<ItemDisplay> drones = activeDrones.get(player.getUniqueId());
-        for (int i = 0; i < 4; i++) {
-            Vector start = drones != null && drones.size() == 4 && drones.get(i).isValid()
+        for (int i = 0; i < 1; i++) {
+            Vector start = drones != null && drones.size() == 1 && drones.get(i).isValid()
                 ? drones.get(i).getLocation().toVector()
-                : droneLocation(player, i).toVector();
+                : droneLocation(player, selectedVariant(player)-1).toVector();
             Vector beam = target.clone().subtract(start);
             double len = beam.length();
             for (double t=0; t<=len; t+=step) {
@@ -279,14 +297,32 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (hit instanceof LivingEntity living) living.damage(Math.max(0, getConfig().getDouble("beam.damage",2.0)), player);
     }
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel give [player] §7| §b/funnel pack [player] §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel pack [player] §7| §b/funnel reload §7| §b/funnel status"); return true; }
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
-                Player target = args.length > 1 ? Bukkit.getPlayerExact(args[1]) : sender instanceof Player p ? p : null;
+                int variant = 1;
+                boolean all = args.length > 1 && args[1].equalsIgnoreCase("all");
+                if (args.length > 1 && !all) {
+                    try { variant = Integer.parseInt(args[1]); }
+                    catch (NumberFormatException ex) {
+                        sender.sendMessage("§c指定: /funnel give <1-4|all> [player]");
+                        return true;
+                    }
+                    if (variant < 1 || variant > 4) {
+                        sender.sendMessage("§cファンネル番号は1～4です。");
+                        return true;
+                    }
+                }
+                Player target = args.length > 2 ? Bukkit.getPlayerExact(args[2]) : sender instanceof Player p ? p : null;
                 if (target == null) { sender.sendMessage("§cプレイヤーが見つかりません。"); return true; }
-                target.getInventory().addItem(weapon());
-                sender.sendMessage("§a"+target.getName()+" にファンネルを渡しました。");
+                if (all) {
+                    for (int n = 1; n <= 4; n++) target.getInventory().addItem(weapon(n));
+                    sender.sendMessage("§a" + target.getName() + " に4種類のファンネルを渡しました。");
+                } else {
+                    target.getInventory().addItem(weapon(variant));
+                    sender.sendMessage("§a" + target.getName() + " にファンネル" + variant + "を渡しました。");
+                }
             }
             case "pack" -> {
                 Player target;
