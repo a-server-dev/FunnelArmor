@@ -59,6 +59,9 @@ shield:
 fin-barrier:
   deploy-ticks: 10
   retract-ticks: 10
+  # Spread the barrier funnels' tips outward slightly to avoid glass overlap.
+  # 0 = no fan; 12 is subtle. Maximum allowed is 35 degrees.
+  tip-splay-degrees: 12.0
   # Five white stained-glass BlockDisplay panels (front/back/left/right/roof).
   # Visual only; projectile and beam collision still use the plugin's barrier.
   glass-enabled: true

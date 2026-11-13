@@ -15,6 +15,24 @@ public final class FinBarrierGeometry {
         return new Pose(mix(side*0.55,side*HALF_WIDTH,p),
             mix(1.62,TOP,p),mix(-0.72-(index/2)*0.12,back*HALF_WIDTH,p),true);
     }
+    /**
+     * A subtle outward fan for the six barrier funnels. In the top four
+     * corners, the two muzzles on each front/back edge spread apart rather
+     * than pointing through the glass. The two folded units also splay
+     * symmetrically (left away from right).
+     *
+     * Only the visual entity yaw changes: glass and hitbox stay untouched.
+     * Opening/closing interpolates the splay using the barrier progress.
+     */
+    public static double tipSplayYawDegrees(int index, double progress, double degrees) {
+        if (index < 0 || index >= 6 || !Double.isFinite(progress)
+                || !Double.isFinite(degrees) || degrees < 0 || degrees > 35)
+            throw new IllegalArgumentException("Invalid barrier tip splay");
+        double t = ease(progress);
+        double side = index % 2 == 0 ? -1.0 : 1.0;
+        double sign = index < 4 ? side * (index < 2 ? -1.0 : 1.0) : side;
+        return sign * degrees * t;
+    }
     public static double approach(double progress,boolean opening,int ticks){
         if(!Double.isFinite(progress)||ticks<1)throw new IllegalArgumentException("Invalid barrier state");
         return Math.max(0,Math.min(1,progress+(opening?1:-1)/(double)ticks));

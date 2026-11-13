@@ -382,10 +382,15 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Math.cos(yaw) * pose.right() - Math.sin(yaw) * pose.forward(),
                 pose.up(),
                 Math.sin(yaw) * pose.right() + Math.cos(yaw) * pose.forward());
-        // All six fin models share one local axis. Do not alternate 180 degrees.
-        point.setYaw(FinFunnelOrientation.barrierYaw(
+        // Preserve the validated 180-degree model correction; spread the
+        // tips slightly outwards only in the shield-barrier formation.
+        float baseYaw = FinFunnelOrientation.barrierYaw(
                 player.getLocation().getYaw(), pose.right(), pose.forward(), i,
-                getConfig().getDouble("fin-funnel.yaw-adjustment-degrees", 0.0)));
+                getConfig().getDouble("fin-funnel.yaw-adjustment-degrees", 180.0));
+        double splay = Math.max(0.0, Math.min(35.0,
+                getConfig().getDouble("fin-barrier.tip-splay-degrees", 12.0)));
+        point.setYaw(baseYaw + (float) FinBarrierGeometry.tipSplayYawDegrees(
+                i, progress, splay));
         return point;
     }
     private void updateFinBarrierDisplays(Player player, double progress) {
