@@ -14,6 +14,11 @@
       "type": "single",
       "resource": "funnel:item/funnel_drone_4",
       "sprite": "funnel:item/funnel_drone_4"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/funnel_drone_1",
+      "sprite": "funnel:item/funnel_drone_1"
     }
   ]
 }

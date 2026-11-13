@@ -40,6 +40,9 @@ class ResourcePackTest {
             assertTrue(entries.contains("assets/funnel/textures/block/funnel.png"));
             assertTrue(entries.contains("assets/minecraft/atlases/items.json"));
             assertTrue(entries.contains("assets/funnel/textures/item/funnel.png"));
+            assertTrue(entries.contains("assets/funnel/models/item/funnel_drone_1_folded.json"));
+            assertTrue(entries.contains("assets/funnel/items/funnel_drone_1_folded.json"));
+            assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_1.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_4.png"),
                     "Unicorn-style shield needs its own 256px paint texture");
             for (int i = 1; i <= 4; i++) {
@@ -65,7 +68,8 @@ class ResourcePackTest {
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
-                                textureId.equals("funnel:item/funnel_drone_4"),
+                                textureId.equals("funnel:item/funnel_drone_4") ||
+                                textureId.equals("funnel:item/funnel_drone_1"),
                                 "Unexpected texture " + textureId);
                         if (entry.getName().endsWith("/funnel_drone_4.json")) {
                             assertEquals("funnel:item/funnel_drone_4", textureId);
@@ -83,7 +87,7 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(6, checked, "4 drones + quad + controller");
+            assertEquals(7, checked, "4 drones + folded fin + quad + controller");
         }
     }
 
