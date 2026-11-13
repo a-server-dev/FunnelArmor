@@ -83,7 +83,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.3.2 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.3.3 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
