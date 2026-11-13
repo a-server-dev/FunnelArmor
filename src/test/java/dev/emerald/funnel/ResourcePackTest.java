@@ -87,7 +87,35 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(7, checked, "4 drones + folded fin + quad + controller");
+            assertEquals(10, checked,
+                    "4 drones + folded fin + quad + controller + 3 barrier arm segments");
+        }
+    }
+
+    @Test
+    void barrierSegmentsPreserveAll145FinModelCubes() throws Exception {
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(stream);
+            java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+            try (ZipInputStream zip = new ZipInputStream(stream)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    String path = entry.getName();
+                    if (path.matches("assets/funnel/models/item/funnel_drone_1_barrier_(upper|lower|core)\\.json")) {
+                        JsonObject model = parse(zip.readAllBytes());
+                        counts.put(path, model.getAsJsonArray("elements").size());
+                        assertEquals("funnel:item/funnel_drone_1",
+                                model.getAsJsonObject("textures").get("0").getAsString());
+                    }
+                    zip.closeEntry();
+                }
+            }
+            assertEquals(3, counts.size(), "The barrier requires all three models");
+            assertEquals(62, counts.get("assets/funnel/models/item/funnel_drone_1_barrier_upper.json"));
+            assertEquals(55, counts.get("assets/funnel/models/item/funnel_drone_1_barrier_lower.json"));
+            assertEquals(28, counts.get("assets/funnel/models/item/funnel_drone_1_barrier_core.json"));
+            assertEquals(145, counts.values().stream().mapToInt(Integer::intValue).sum(),
+                    "Split models must not lose or duplicate fin geometry");
         }
     }
 
