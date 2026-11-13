@@ -98,4 +98,22 @@ class FormationGeometryTest {
                     "Spiral must visibly differ in vertical spread from orbit");
         }
     }
+
+    @Test
+    void spiralModelsFaceOutwardInsteadOfTowardPlayer() {
+        for (int variant = 1; variant <= 4; variant++) {
+            for (double ticks : new double[] {0, 12, 100}) {
+                for (int i = 0; i < FormationGeometry.countForVariant(variant); i++) {
+                    var p = FormationGeometry.position(FormationMode.SPIRAL, variant, i,
+                            ticks, 0.055, 1.65, 1.55, 0);
+                    // Local +forward, converted from Minecraft yaw convention.
+                    double yaw = Math.toRadians(p.yawOffset());
+                    double faceRight = -Math.sin(yaw);
+                    double faceForward = Math.cos(yaw);
+                    double dot = faceRight * p.right() + faceForward * p.forward();
+                    assertTrue(dot > 0.5, "A spiral funnel must face away from the helix axis");
+                }
+            }
+        }
+    }
 }

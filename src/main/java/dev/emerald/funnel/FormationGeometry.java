@@ -97,7 +97,11 @@ public final class FormationGeometry {
                 forward = Math.sin(angle) * r;
                 up = 0.95 + levelProgress * 3.6
                         + 0.12 * Math.sin(ticks * 0.075 + level * 0.85 + strand * Math.PI);
-                yawOffset = Math.toDegrees(angle) + 90;
+                // Minecraft yaw 0 faces +forward; +90 faces -right.
+                // With the drone at (+cos(angle) right, +sin(angle) forward),
+                // angle + 90 makes its front face point *inward* at the player.
+                // Turn the shield 180 degrees to face out of the spiral.
+                yawOffset = Math.toDegrees(angle) - 90;
             }
             default -> throw new IllegalStateException("Unknown formation: " + mode);
         }

@@ -204,3 +204,16 @@ to your Cloudflare R2 bucket without opening a port on the Paper/Velocity PCs.
   so **no new port forwarding** is needed.
 - Publishing is intentionally skipped for pull requests and remains inactive
   until your own Cloudflare account is configured.
+
+## v0.7.6 — Spiral model facing fix
+
+The tall double-helix path and 3.6-block height stay the same. Correct
+the model-facing yaw from `angle + 90°` to `angle - 90°`: the previous
+tangent formula accidentally pointed the funnels **inward** toward the
+helix center, showing their backs/edges. They now face **outward**.
+
+This does not change the direction of travel / helix winding, the other
+four formation modes, the main-hand aiming animation, or the offhand
+three-petal defense. No resource-pack or Blockbench edits are needed.
+A geometry test verifies the outward orientation at several ticks
+across all four models.
