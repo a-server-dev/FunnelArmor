@@ -7,8 +7,13 @@ beam:
 pack:
   send-on-join: true
   require: false
+  # R2 public HTTPS base URL (without a filename); the ZIP hash is appended.
+  # Example: "https://packs.example.com" or a test-only "https://pub-xxxx.r2.dev"
+  external-base-url: ""
+  # Legacy exact pack URL, overrides external-base-url if not blank.
   external-url: ""
   embedded-http:
+    # Set false for Cloudflare R2: no additional port forwarding is required.
     enabled: true
     bind-host: "0.0.0.0"
     port: 8765

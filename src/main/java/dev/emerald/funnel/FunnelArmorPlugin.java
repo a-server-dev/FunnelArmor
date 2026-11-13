@@ -101,7 +101,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.4 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.5 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -117,7 +117,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private void startHttp() {
         if (httpServer != null) httpServer.stop(0);
         httpServer = null;
-        if (!getConfig().getBoolean("pack.embedded-http.enabled", true) || packBytes == null) return;
+        // External R2 hosting does not need a listening port on Paper.
+        if (!getConfig().getBoolean("pack.embedded-http.enabled", true)
+                || packBytes == null
+                || !getConfig().getString("pack.external-url", "").isBlank()
+                || !getConfig().getString("pack.external-base-url", "").isBlank()) return;
         try {
             String bind = getConfig().getString("pack.embedded-http.bind-host", "0.0.0.0");
             int port = getConfig().getInt("pack.embedded-http.port", 8765);
@@ -152,6 +156,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private String publicUrl(Player player) {
         String external = getConfig().getString("pack.external-url", "").trim();
         if (!external.isEmpty()) return external;
+        String externalBase = getConfig().getString("pack.external-base-url", "").trim();
+        if (!externalBase.isEmpty()) return ResourcePackUrl.fromBase(externalBase, sha1);
         String host = getConfig().getString("pack.embedded-http.public-host", "auto").trim();
         if (host.equalsIgnoreCase("auto") || host.isBlank()) {
             // This is the hostname the player used to connect. It avoids accidentally
@@ -168,11 +174,20 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     private boolean applyPack(Player player) {
         if (sha1 == null) { player.sendMessage("§cリソースパックが生成されていません。"); return false; }
-        if (getConfig().getString("pack.external-url", "").isBlank() && httpServer == null) {
+        if (getConfig().getString("pack.external-url", "").isBlank()
+                && getConfig().getString("pack.external-base-url", "").isBlank()
+                && httpServer == null) {
             player.sendMessage("§cパック配信サーバーが起動していません。plugins/FunnelArmor/FunnelArmor-pack.zip を手動適用してください。");
             return false;
         }
-        String url = publicUrl(player);
+        String url;
+        try {
+            url = publicUrl(player);
+        } catch (IllegalArgumentException ex) {
+            player.sendMessage("§cリソースパックの公開URL設定が不正です: " + ex.getMessage());
+            getLogger().warning("Invalid resource-pack URL: " + ex.getMessage());
+            return false;
+        }
         player.setResourcePack(url, sha1, getConfig().getBoolean("pack.require", false),
                 Component.text("ファンネル用3Dモデルを表示するリソースパックです。"));
         player.sendMessage("§bファンネルのパックを要求しました: §7" + url);

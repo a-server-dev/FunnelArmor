@@ -138,3 +138,69 @@ external animation plugin, changed bbmodel or resource-pack update is required.
   available in the same formation cycle.
 - Other formations, offhand three-petal shield defense, model textures, and
   damage/cooldown values are unchanged.
+
+## v0.7.5 — Cloudflare R2 automatic resource-pack publishing
+
+GitHub Actions creates the JAR and the **exact same** resource-pack ZIP from
+`resourcepack/`. After a successful build on `main`, it can upload the ZIP
+to your Cloudflare R2 bucket without opening a port on the Paper/Velocity PCs.
+
+### Cloudflare one-time setup
+
+1. In Cloudflare R2, create a bucket (e.g. `funnelarmor-packs`).
+2. Under bucket **Settings**, enable public access using a **Custom Domain**
+   (recommended for regular usage). You can use the automatically assigned
+   **r2.dev Public Development URL** for testing only; it is rate-limited.
+3. Under **R2 > Manage API Tokens**, create an S3-compatible API token
+   restricted to that bucket with **Object Read & Write** permission.
+   Copy its Access Key ID and Secret Access Key; never paste them into Git
+   or your Paper `config.yml`.
+4. In this GitHub repository, go to **Settings > Secrets and variables > Actions**.
+   Add **Repository variables** `R2_ACCOUNT_ID` (Cloudflare account ID),
+   `R2_BUCKET` (bucket name), and optionally `R2_PUBLIC_BASE_URL`
+   (the public HTTPS URL, **not** the S3 API endpoint).
+   Add **Repository secrets** `R2_ACCESS_KEY_ID` and
+   `R2_SECRET_ACCESS_KEY`.
+5. Run the GitHub Actions workflow on `main` (or make any commit).
+   The `publish-r2` job runs **only when** the R2 account ID and bucket
+   variables are present and the build succeeded. The job will stop with
+   a clear error if its credentials are missing.
+6. On your Paper PC, update `plugins/FunnelArmor/config.yml`:
+
+   ```yaml
+   pack:
+     send-on-join: true
+     require: false
+     external-base-url: "https://packs.example.com"  # YOUR public R2 domain
+     external-url: ""
+     embedded-http:
+       enabled: false
+   ```
+
+   Edit these keys in your existing config; keep the remaining settings
+   unchanged. Use your actual public R2 base URL, without a ZIP filename.
+   Replace the Paper JAR with the **matching JAR from the same Actions run**
+   that successfully published to R2, then restart Paper.
+
+### Behavior and diagnostics
+
+- The uploaded filename is `funnel-pack-<ZIP-SHA1>.zip`; the plugin
+  computes that exact name from the SHA-1 of its embedded ZIP.
+  Example result: `https://packs.example.com/funnel-pack-<SHA1>.zip`.
+  Each release has an immutable URL, preventing stale CDN files and mismatched
+  JAR/packs. Do not delete older pack objects while old JARs are in use.
+- Test from an external client: `/funnel status` shows the URL, hash and
+  size. `/funnel pack` requests the pack again. Check Paper console for
+  `SUCCESSFULLY_LOADED` or `FAILED_DOWNLOAD`.
+- If `publish-r2` says **skipped**, set the GitHub Actions repository
+  variables. If it fails on upload, check the R2 S3 API credentials and
+  bucket-scoped permissions. If the upload succeeds but loading fails, check
+  that the **public** domain is enabled and the Paper config uses it.
+- Do not put your private S3 API endpoint
+  (`https://<ACCOUNT_ID>.r2.cloudflarestorage.com`) in `external-base-url`.
+  That endpoint requires authentication and will not serve a public pack.
+- `pack.external-url` remains an exact URL override. When either external
+  URL or external base URL is present, the embedded HTTP listener is disabled,
+  so **no new port forwarding** is needed.
+- Publishing is intentionally skipped for pull requests and remains inactive
+  until your own Cloudflare account is configured.

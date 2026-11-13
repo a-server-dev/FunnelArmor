@@ -26,12 +26,26 @@ jobs:
           gradle-version: '9.2.1'
       - name: Compile, test and package
         run: gradle clean build --no-daemon --stacktrace
+      - name: Verify generated resource pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s build/generated/funnel-pack/funnel-pack.zip
+          unzip -t build/generated/funnel-pack/funnel-pack.zip > /dev/null
+          sha1sum build/generated/funnel-pack/funnel-pack.zip
       - name: Upload plugin JAR
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: FunnelArmor-jar
           path: build/libs/*.jar
+          if-no-files-found: error
+      - name: Upload resource pack
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FunnelArmor-resourcepack
+          path: build/generated/funnel-pack/funnel-pack.zip
           if-no-files-found: error
       - name: Upload test reports
         if: always()
@@ -42,3 +56,50 @@ jobs:
             build/reports/tests/test/
             build/test-results/test/
           if-no-files-found: ignore
+
+  publish-r2:
+    needs: build
+    # Never publish pull requests or run without the essential R2 variables.
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.R2_ACCOUNT_ID != '' && vars.R2_BUCKET != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the same pack that was bundled into the JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: FunnelArmor-resourcepack
+          path: pack
+      - name: Upload immutable pack to Cloudflare R2
+        shell: bash
+        env:
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: 'true'
+        run: |
+          set -euo pipefail
+          if [[ -z "$AWS_ACCESS_KEY_ID" || -z "$AWS_SECRET_ACCESS_KEY" ]]; then
+            echo "::error::Missing R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY secrets"
+            exit 1
+          fi
+          command -v aws >/dev/null || { echo "::error::AWS CLI not available on runner"; exit 1; }
+          test -s pack/funnel-pack.zip
+          hash="$(sha1sum pack/funnel-pack.zip | cut -d' ' -f1)"
+          key="funnel-pack-${hash}.zip"
+          aws --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
+            s3api put-object --bucket "$R2_BUCKET" --key "$key" \
+            --body pack/funnel-pack.zip --content-type application/zip \
+            --cache-control "public, max-age=31536000, immutable" \
+            --no-cli-pager >/dev/null
+          echo "R2 object: $key"
+          echo "### R2 resource pack published" >> "$GITHUB_STEP_SUMMARY"
+          echo "Object key: \`$key\`" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -n "$R2_PUBLIC_BASE_URL" ]]; then
+            base="${R2_PUBLIC_BASE_URL%/}"
+            echo "Public URL: \`${base}/${key}\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "Paper config: \`pack.external-base-url: \"$base\"\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Set Paper \`pack.external-base-url\` to your R2 public HTTPS base URL." >> "$GITHUB_STEP_SUMMARY"
+          fi
