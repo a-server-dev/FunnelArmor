@@ -143,7 +143,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         ItemMeta meta = stack.getItemMeta();
         meta.displayName(Component.text("§b◆ ファンネル " + variant));
         meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7独立型ファンネル " + variant),Component.text("§7射程32 / ダメージ2HP")));
-        meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
+        meta.setItemModel(new NamespacedKey("funnel", "funnel_controller"));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
         meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1);
         stack.setItemMeta(meta);
