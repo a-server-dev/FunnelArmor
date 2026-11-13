@@ -1,0 +1,571 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "free",
+    "box_uv": false
+  },
+  "resolution": {
+    "width": 32,
+    "height": 32
+  },
+  "textures": [
+    {
+      "path": "funnel.png",
+      "name": "funnel.png",
+      "folder": "",
+      "namespace": "",
+      "id": "0",
+      "particle": false,
+      "render_mode": "default",
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "40401d6f-51fe-4f99-adcf-1ba58a6fdd52",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAB0UlEQVR4nO2WO0gcURSGvxlHBRsVNYXFrqAYlV3jbohR10JMaSnWW6VQxD4+Wg12CrGwEFIb7ASrkMb4wkfiYlYxELdQ8IGPIooP1mJ3kBnOvQqyajF/M3C+O3P/ueece69xcHKRRKPJqRkdJh6Pafnhwb6WWwBzi79E2Fj/BoCNDXmSmpoAAFubcZFXvq4CILa+JvJAsA5Ta+8J5BnwDBjP3oaJvFztgM72PC1PfNZifBMjegMAgycy7C1IPU93vos8398KwOrsrMhDkQgAO7tHIveXFmGFs5n+VqKxeE6bhj5a1soVbboVCGdydtIp0I+4/Jpf3qyAlwDRzBq4zoneVwOP0bPvAxbcVbtK9/2pXe0q+UuLlMzYTibFjaj4/434wuiXcTE+0B0U43vDc2K8b++MLDM7tQKfDp1wqDj1XHDdE96n7wcrS8uOePjdWwCO//1wxAvLWgBY/TnviIeaGjCzDEzTeEARZkieAYcBO+du2Tl3y865W3bO3Qo1NSgMnGJ87OnXHseRZvmjtqIdH7T8r5am94E/sd8irA7UArCuuNUGg3UAbCfkM7/C9wqAroQ8+ZjvBeyEngHPgGfAgrt+V8nud5XsfldpzKdmt4CrdE/0EWa3AAAAAElFTkSuQmCC"
+    }
+  ],
+  "name": "funnel_drone_4",
+  "elements": [
+    {
+      "name": "AssaultCore",
+      "type": "cube",
+      "uuid": "c51df876-9ee2-4293-90d5-3dd96d8fc474",
+      "from": [
+        6.8,
+        2.4,
+        6.2
+      ],
+      "to": [
+        9.2,
+        13.8,
+        9.8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            22,
+            24,
+            32
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            22,
+            16,
+            32
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            22,
+            8,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        8.1,
+        8
+      ]
+    },
+    {
+      "name": "GuardL",
+      "type": "cube",
+      "uuid": "499877d6-951e-4454-9b17-bf7586da76a0",
+      "from": [
+        4.7,
+        5,
+        6.8
+      ],
+      "to": [
+        6.8,
+        12.2,
+        9.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            16,
+            30,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            22,
+            16,
+            32
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            22,
+            16,
+            32
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            6,
+            16,
+            12,
+            22
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            22,
+            8,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        5.75,
+        8.6,
+        8
+      ]
+    },
+    {
+      "name": "GuardR",
+      "type": "cube",
+      "uuid": "bbd65381-7260-479b-ad41-be2634461552",
+      "from": [
+        9.2,
+        5,
+        6.8
+      ],
+      "to": [
+        11.3,
+        12.2,
+        9.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            16,
+            30,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            22,
+            16,
+            32
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            22,
+            16,
+            32
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            6,
+            16,
+            12,
+            22
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            22,
+            8,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        10.25,
+        8.6,
+        8
+      ]
+    },
+    {
+      "name": "TopFin",
+      "type": "cube",
+      "uuid": "08a7c086-1696-429c-90d6-64624bd954da",
+      "from": [
+        6.9,
+        13.8,
+        7
+      ],
+      "to": [
+        9.1,
+        15.7,
+        9
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            18,
+            16,
+            24,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        14.75,
+        8
+      ]
+    },
+    {
+      "name": "RearVent",
+      "type": "cube",
+      "uuid": "3c66fddb-5776-4e1e-b2ff-4b571e90063b",
+      "from": [
+        7.2,
+        6,
+        9.8
+      ],
+      "to": [
+        8.8,
+        10.6,
+        12
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            0,
+            24,
+            8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            24,
+            22,
+            32,
+            32
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            0,
+            24,
+            8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            16,
+            6,
+            22
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            22,
+            8,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        8.3,
+        10.9
+      ]
+    },
+    {
+      "name": "BellyCannon",
+      "type": "cube",
+      "uuid": "7b11ea54-b3ec-4be1-ba62-50795abf4a5e",
+      "from": [
+        7.05,
+        3.4,
+        4.4
+      ],
+      "to": [
+        8.95,
+        6.4,
+        6.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            22,
+            32,
+            32
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            16,
+            6,
+            22
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            22,
+            24,
+            32
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            16,
+            6,
+            22
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            16,
+            30,
+            22
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            18,
+            16,
+            24,
+            22
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        4.9,
+        5.3
+      ]
+    },
+    {
+      "name": "NoseGuard",
+      "type": "cube",
+      "uuid": "482991c8-03b6-4730-8aaa-d6f98d31b2bf",
+      "from": [
+        6.4,
+        6.7,
+        5.3
+      ],
+      "to": [
+        9.6,
+        9.2,
+        6.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            22,
+            24,
+            32
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        7.95,
+        5.95
+      ]
+    }
+  ],
+  "outliner": [
+    "c51df876-9ee2-4293-90d5-3dd96d8fc474",
+    "499877d6-951e-4454-9b17-bf7586da76a0",
+    "bbd65381-7260-479b-ad41-be2634461552",
+    "08a7c086-1696-429c-90d6-64624bd954da",
+    "3c66fddb-5776-4e1e-b2ff-4b571e90063b",
+    "7b11ea54-b3ec-4be1-ba62-50795abf4a5e",
+    "482991c8-03b6-4730-8aaa-d6f98d31b2bf"
+  ]
+}

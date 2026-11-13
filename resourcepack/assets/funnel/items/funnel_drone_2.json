@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"funnel:item/funnel_drone_2"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "funnel:item/funnel_drone_2"
+  }
+}

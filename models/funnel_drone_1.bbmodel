@@ -1,0 +1,571 @@
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "free",
+    "box_uv": false
+  },
+  "resolution": {
+    "width": 32,
+    "height": 32
+  },
+  "textures": [
+    {
+      "path": "funnel.png",
+      "name": "funnel.png",
+      "folder": "",
+      "namespace": "",
+      "id": "0",
+      "particle": false,
+      "render_mode": "default",
+      "visible": true,
+      "mode": "bitmap",
+      "saved": true,
+      "uuid": "40401d6f-51fe-4f99-adcf-1ba58a6fdd52",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAB0UlEQVR4nO2WO0gcURSGvxlHBRsVNYXFrqAYlV3jbohR10JMaSnWW6VQxD4+Wg12CrGwEFIb7ASrkMb4wkfiYlYxELdQ8IGPIooP1mJ3kBnOvQqyajF/M3C+O3P/ueece69xcHKRRKPJqRkdJh6Pafnhwb6WWwBzi79E2Fj/BoCNDXmSmpoAAFubcZFXvq4CILa+JvJAsA5Ta+8J5BnwDBjP3oaJvFztgM72PC1PfNZifBMjegMAgycy7C1IPU93vos8398KwOrsrMhDkQgAO7tHIveXFmGFs5n+VqKxeE6bhj5a1soVbboVCGdydtIp0I+4/Jpf3qyAlwDRzBq4zoneVwOP0bPvAxbcVbtK9/2pXe0q+UuLlMzYTibFjaj4/434wuiXcTE+0B0U43vDc2K8b++MLDM7tQKfDp1wqDj1XHDdE96n7wcrS8uOePjdWwCO//1wxAvLWgBY/TnviIeaGjCzDEzTeEARZkieAYcBO+du2Tl3y865W3bO3Qo1NSgMnGJ87OnXHseRZvmjtqIdH7T8r5am94E/sd8irA7UArCuuNUGg3UAbCfkM7/C9wqAroQ8+ZjvBeyEngHPgGfAgrt+V8nud5XsfldpzKdmt4CrdE/0EWa3AAAAAElFTkSuQmCC"
+    }
+  ],
+  "name": "funnel_drone_1",
+  "elements": [
+    {
+      "name": "CorePod",
+      "type": "cube",
+      "uuid": "30d45d56-c43f-45df-8835-293a78d8aab8",
+      "from": [
+        7,
+        2.2,
+        6.3
+      ],
+      "to": [
+        9,
+        13.9,
+        9.7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            16,
+            22,
+            24,
+            32
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            16,
+            0,
+            24,
+            8
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            8,
+            8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            0,
+            32,
+            8
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        8.05,
+        8
+      ]
+    },
+    {
+      "name": "LeftFin",
+      "type": "cube",
+      "uuid": "1f95b6f5-6864-4e9c-ae1e-396e5f6f6fef",
+      "from": [
+        5.2,
+        3.4,
+        6.6
+      ],
+      "to": [
+        6.2,
+        13,
+        9.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            16,
+            6,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            22,
+            16,
+            32
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            6,
+            16,
+            12,
+            22
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            22,
+            8,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        5.7,
+        8.2,
+        8
+      ]
+    },
+    {
+      "name": "RightFin",
+      "type": "cube",
+      "uuid": "84d5ac75-fc39-4bef-a113-6daf6e100b4b",
+      "from": [
+        9.8,
+        3.4,
+        6.6
+      ],
+      "to": [
+        10.8,
+        13,
+        9.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            16,
+            6,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            22,
+            16,
+            32
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            16,
+            8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            6,
+            16,
+            12,
+            22
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            22,
+            8,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        10.3,
+        8.2,
+        8
+      ]
+    },
+    {
+      "name": "DorsalBlade",
+      "type": "cube",
+      "uuid": "885cfd6d-20bf-496e-a1cc-064ec0a4d8e0",
+      "from": [
+        6.6,
+        13,
+        6.9
+      ],
+      "to": [
+        9.4,
+        15.2,
+        9.1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            18,
+            16,
+            24,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            24,
+            8,
+            32,
+            16
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        14.1,
+        8
+      ]
+    },
+    {
+      "name": "RearThruster",
+      "type": "cube",
+      "uuid": "8a327926-ff0e-4c83-a032-db8607f4f70d",
+      "from": [
+        7.2,
+        4.8,
+        9.7
+      ],
+      "to": [
+        8.8,
+        11.3,
+        11.7
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            16,
+            0,
+            24,
+            8
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            24,
+            22,
+            32,
+            32
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            16,
+            0,
+            24,
+            8
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            24,
+            16,
+            30,
+            22
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            22,
+            8,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        8.05,
+        10.7
+      ]
+    },
+    {
+      "name": "Emitter",
+      "type": "cube",
+      "uuid": "17f9b7eb-e3cd-4670-afaa-a373e12dfd8d",
+      "from": [
+        7.15,
+        7,
+        4.7
+      ],
+      "to": [
+        8.85,
+        9.3,
+        6.3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            22,
+            32,
+            32
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            0,
+            16,
+            6,
+            22
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            0,
+            8,
+            8,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            16,
+            22,
+            24,
+            32
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            16,
+            22,
+            24,
+            32
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        8.15,
+        5.5
+      ]
+    },
+    {
+      "name": "BellyStab",
+      "type": "cube",
+      "uuid": "2251c931-8d71-4bd7-9650-ec04bfea9f7c",
+      "from": [
+        7.2,
+        1,
+        6.8
+      ],
+      "to": [
+        8.8,
+        2.2,
+        9.2
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            24,
+            16,
+            30,
+            22
+          ],
+          "texture": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "south": {
+          "uv": [
+            12,
+            16,
+            18,
+            22
+          ],
+          "texture": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "up": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        },
+        "down": {
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ],
+          "texture": 0
+        }
+      },
+      "origin": [
+        8,
+        1.6,
+        8
+      ]
+    }
+  ],
+  "outliner": [
+    "30d45d56-c43f-45df-8835-293a78d8aab8",
+    "1f95b6f5-6864-4e9c-ae1e-396e5f6f6fef",
+    "84d5ac75-fc39-4bef-a113-6daf6e100b4b",
+    "885cfd6d-20bf-496e-a1cc-064ec0a4d8e0",
+    "8a327926-ff0e-4c83-a032-db8607f4f70d",
+    "17f9b7eb-e3cd-4670-afaa-a373e12dfd8d",
+    "2251c931-8d71-4bd7-9650-ec04bfea9f7c"
+  ]
+}

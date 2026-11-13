@@ -1,1 +1,6 @@
-{"model":{"type":"minecraft:model","model":"funnel:item/funnel_controller"}}
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "funnel:item/funnel_controller"
+  }
+}
