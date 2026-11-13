@@ -36,7 +36,9 @@ class FunnelGunAimTest {
         assertEquals(0,FunnelGunAim.aimWeight(-1));
         assertEquals(0,FunnelGunAim.aimWeight(9));
         assertTrue(FunnelGunAim.aimWeight(4)>0.9);
-        assertEquals(FunnelGunAim.aimWeight(0),FunnelGunAim.aimWeight(8),1.e-9);
+        assertTrue(FunnelGunAim.aimWeight(0)>0.3, "Aiming should start immediately on right click");
+        assertEquals(0,FunnelGunAim.aimWeight(8),1.e-9);
+        assertEquals(FunnelGunAim.aimWeight(0),FunnelGunAim.aimWeight(7),1.e-9);
         assertEquals(0,FunnelGunAim.toward(0,0,0,0).radians());
     }
 }
