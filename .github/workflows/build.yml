@@ -125,3 +125,77 @@ jobs:
             exit 1
           fi
           echo "Public ZIP download verified with matching SHA-1."
+
+  publish-direct:
+    needs: build
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: funnelarmor-pack-assets
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - name: Check out sources with branch-push permission
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download same pack bundled into JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: FunnelArmor-resourcepack
+          path: ${{ runner.temp }}/funnel-pack
+      - name: Publish immutable ZIP to pack-assets branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          input="${RUNNER_TEMP}/funnel-pack/funnel-pack.zip"
+          test -s "$input"
+          hash="$(sha1sum "$input" | cut -d' ' -f1)"
+          filename="funnel-pack-${hash}.zip"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin pack-assets >/dev/null; then
+            git fetch --depth=1 origin pack-assets
+            git switch -C pack-assets FETCH_HEAD
+          else
+            git switch --orphan pack-assets
+            git rm -rf --ignore-unmatch . >/dev/null || true
+          fi
+          # Never overwrite an existing hash-addressed object.
+          if [[ -e "$filename" ]]; then
+            test "$(sha1sum "$filename" | cut -d' ' -f1)" = "$hash" || {
+              echo "::error::An immutable ZIP with this SHA-1 name already exists but has different content"
+              exit 1
+            }
+          else
+            cp "$input" "$filename"
+            git add "$filename"
+            git commit -m "pack: publish immutable resource pack ${hash}"
+            git push origin HEAD:refs/heads/pack-assets
+          fi
+          echo "Published direct binary asset: ${filename}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify public direct URL with no redirects and exact SHA-1
+        shell: bash
+        env:
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          input="${RUNNER_TEMP}/funnel-pack/funnel-pack.zip"
+          hash="$(sha1sum "$input" | cut -d' ' -f1)"
+          url="https://raw.githubusercontent.com/${GH_REPO}/pack-assets/funnel-pack-${hash}.zip"
+          # Raw GitHub's cache may take a few seconds after the branch push.
+          code="$(curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+            --output "${RUNNER_TEMP}/pack-public-check.zip" \
+            --write-out '%{http_code}/%{num_redirects}' "$url")"
+          if [[ "$code" != "200/0" ]]; then
+            echo "::error::Direct download returned ${code}; expected HTTP 200 without redirects"
+            exit 1
+          fi
+          actual="$(sha1sum "${RUNNER_TEMP}/pack-public-check.zip" | cut -d' ' -f1)"
+          if [[ "$actual" != "$hash" ]]; then
+            echo "::error::Direct URL payload does not match the JAR resource pack SHA-1"
+            exit 1
+          fi
+          echo "### Direct Minecraft pack URL (HTTP 200; no redirect; hash verified)" >> "$GITHUB_STEP_SUMMARY"
+          echo "${url}" >> "$GITHUB_STEP_SUMMARY"

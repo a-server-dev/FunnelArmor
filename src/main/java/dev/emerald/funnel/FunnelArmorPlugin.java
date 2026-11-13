@@ -101,7 +101,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.8 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.9 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -117,9 +117,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private void startHttp() {
         if (httpServer != null) httpServer.stop(0);
         httpServer = null;
-        // GitHub Releases, or another external download host, requires no
+        // GitHub raw, Releases or another external download host requires no
         // inbound HTTP listener (and no port forwarding) on the Paper machine.
-        if (usesGitHubReleases()
+        if (usesGithubRaw() || usesGitHubReleases()
                 || !getConfig().getBoolean("pack.embedded-http.enabled", false)
                 || packBytes == null
                 || !getConfig().getString("pack.external-url", "").isBlank()
@@ -152,10 +152,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             httpServer = null;
         }
     }
+    private boolean usesGithubRaw() {
+        // Default true even if the server has an old config.yml.
+        // Explicit external URLs always take precedence.
+        return getConfig().getBoolean("pack.github-raw.enabled", true)
+                && getConfig().getString("pack.external-url", "").isBlank()
+                && getConfig().getString("pack.external-base-url", "").isBlank();
+    }
     private boolean usesGitHubReleases() {
-        // Enabled by default even for existing config.yml files from v0.7.6.
-        // An explicitly configured external host takes precedence.
-        return getConfig().getBoolean("pack.github-releases.enabled", true)
+        return !usesGithubRaw()
+                && getConfig().getBoolean("pack.github-releases.enabled", true)
                 && getConfig().getString("pack.external-url", "").isBlank()
                 && getConfig().getString("pack.external-base-url", "").isBlank();
     }
@@ -167,6 +173,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (!external.isEmpty()) return external;
         String externalBase = getConfig().getString("pack.external-base-url", "").trim();
         if (!externalBase.isEmpty()) return ResourcePackUrl.fromBase(externalBase, sha1);
+        if (usesGithubRaw()) {
+            return ResourcePackUrl.githubRaw(
+                    getConfig().getString("pack.github-raw.repository", "a-server-dev/FunnelArmor"),
+                    sha1);
+        }
         if (usesGitHubReleases()) {
             return ResourcePackUrl.githubRelease(
                     getConfig().getString("pack.github-releases.repository", "a-server-dev/FunnelArmor"),
@@ -188,7 +199,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     private boolean applyPack(Player player) {
         if (sha1 == null) { player.sendMessage("§cリソースパックが生成されていません。"); return false; }
-        if (!usesGitHubReleases()
+        if (!usesGithubRaw() && !usesGitHubReleases()
                 && getConfig().getString("pack.external-url", "").isBlank()
                 && getConfig().getString("pack.external-base-url", "").isBlank()
                 && httpServer == null) {
@@ -619,7 +630,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         // getLogger().info("Resource pack " + e.getPlayer().getName() + ": " + e.getStatus());
         switch (e.getStatus()) {
             case SUCCESSFULLY_LOADED -> { /* e.getPlayer().sendMessage("§a[FunnelArmor] リソースパックの適用に成功しました。"); */ }
-            case FAILED_DOWNLOAD -> e.getPlayer().sendMessage("§c[FunnelArmor] リソースパックのダウンロードに失敗しました。/funnel status のURLが公開されているか確認してください。");
+            case FAILED_DOWNLOAD -> {
+                e.getPlayer().sendMessage("§c[FunnelArmor] リソースパックのダウンロードに失敗しました。/funnel status のURLとクライアントのlogs/latest.logを確認してください。");
+                getLogger().warning("Resource-pack download failed for " + e.getPlayer().getName()
+                        + ". Check public URL with /funnel status, and ask the player for client latest.log.");
+            }
             case DECLINED -> e.getPlayer().sendMessage("§e[FunnelArmor] リソースパックが拒否されました。サーバー一覧のリソースパック設定を確認してください。");
             default -> { }
         }

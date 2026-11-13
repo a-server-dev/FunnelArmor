@@ -7,18 +7,21 @@ beam:
 pack:
   send-on-join: true
   require: false
-  # Automatically download the exact resource pack from GitHub Releases.
-  # IMPORTANT: the GitHub repository must be PUBLIC for players to download!
-  # Release tag = pack-<SHA1>, asset = funnel-pack-<SHA1>.zip.
+  # Default: GitHub direct raw URL (no signed CDN redirect).
+  # A GitHub Actions job pushes ZIPs to the public pack-assets branch.
+  github-raw:
+    enabled: true
+    repository: "a-server-dev/FunnelArmor"
+  # Legacy fallback: GitHub Releases (may redirect to signed CDN endpoints).
   github-releases:
     enabled: true
     repository: "a-server-dev/FunnelArmor"
-  # Optional external host overrides (leave blank for GitHub Releases).
+  # Optional external host overrides (leave blank for GitHub raw).
   external-base-url: ""
   external-url: ""
   embedded-http:
     # Local HTTP is disabled by default. No port forwarding is needed.
-    # For emergency fallback, disable github-releases and enable this.
+    # For emergency fallback, disable github-raw and github-releases and enable this.
     enabled: false
     bind-host: "0.0.0.0"
     port: 8765

@@ -37,14 +37,28 @@ public final class ResourcePackUrl {
      * GitHub's public Release asset URL. The tag is keyed by ZIP SHA-1 so the
      * exact asset is stable even if the Java plugin changes independently.
      */
-    public static String githubRelease(String repository, String sha1) {
+    private static String validatedRepository(String repository) {
         if (repository == null || !repository.matches(
                 "[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}")) {
-            throw new IllegalArgumentException("Invalid public GitHub release repository");
+            throw new IllegalArgumentException("Invalid public GitHub repository");
         }
+        return repository;
+    }
+
+    public static String githubRelease(String repository, String sha1) {
         String hash = fileName(sha1).substring("funnel-pack-".length(),
                 "funnel-pack-".length() + 40);
-        return "https://github.com/" + repository
+        return "https://github.com/" + validatedRepository(repository)
                 + "/releases/download/pack-" + hash + "/" + fileName(hash);
+    }
+
+    /**
+     * Direct static GitHub raw download. Unlike /releases/download this URL
+     * does not redirect to GitHub's short-lived signed release-assets endpoint.
+     * ZIPs are automatically committed to the dedicated pack-assets branch.
+     */
+    public static String githubRaw(String repository, String sha1) {
+        return "https://raw.githubusercontent.com/" + validatedRepository(repository)
+                + "/pack-assets/" + fileName(sha1);
     }
 }

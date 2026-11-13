@@ -38,6 +38,16 @@ class ResourcePackUrlTest {
                 () -> ResourcePackUrl.githubRelease("a-server-dev/FunnelArmor", "xyz"));
     }
 
+    @Test void rawGitHubPackUrlUsesDirectVersionedBinaryPath() {
+        String expected = "https://raw.githubusercontent.com/a-server-dev/FunnelArmor/pack-assets/"
+                + "funnel-pack-" + HASH + ".zip";
+        assertEquals(expected, ResourcePackUrl.githubRaw("a-server-dev/FunnelArmor", HASH));
+        assertEquals(expected, ResourcePackUrl.githubRaw("a-server-dev/FunnelArmor", HASH.toUpperCase(java.util.Locale.ROOT)));
+        assertThrows(IllegalArgumentException.class, () -> ResourcePackUrl.githubRaw("bad/../path", HASH));
+        assertThrows(IllegalArgumentException.class, () -> ResourcePackUrl.githubRaw("a-server-dev/FunnelArmor", "no-hash"));
+        assertNotEquals(ResourcePackUrl.githubRelease("a-server-dev/FunnelArmor", HASH), expected);
+    }
+
     @Test void changedContentHashProducesDifferentCachedObject() {
         assertNotEquals(ResourcePackUrl.fromBase("https://packs.example.com", HASH),
                 ResourcePackUrl.fromBase("https://packs.example.com", "a".repeat(40)));

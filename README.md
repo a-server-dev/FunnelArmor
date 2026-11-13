@@ -277,3 +277,24 @@ its SHA-1, actual Minecraft client compatibility should still be verified.
 - The player can still explicitly query a mode with /funnel formation. Errors remain visible.
 - Routine pack-offer, success and server-log messages are commented out. Download failures remain visible and direct users to /funnel status.
 - No changes to models, gameplay, flight paths or resource-pack bytes.
+
+## v0.7.9 — Direct GitHub raw resource-pack delivery
+
+The GitHub Releases ZIP was confirmed available and checksum-valid from GitHub Actions,
+but some Minecraft clients can fail while following its short-lived signed CDN redirects.
+The exact client failure reason requires inspection of the player's latest.log.
+
+To remove that potential failure point, a separate publish-direct Actions job now
+commits the identical ZIP to the public pack-assets branch at an immutable filename
+funnel-pack-<ZIP_SHA1>.zip. The job checks HTTP 200, ZERO redirects and downloaded
+SHA-1 byte equality. It uses only GITHUB_TOKEN and does not need a credit card or
+port forwarding. The GitHub Releases workflow continues as a fallback/archive.
+
+By default (including preexisting config.yml), the plugin downloads from:
+https://raw.githubusercontent.com/a-server-dev/FunnelArmor/pack-assets/funnel-pack-<SHA1>.zip
+
+Set pack.github-raw.enabled: false to return to the GitHub Releases URL.
+Explicit pack.external-url and pack.external-base-url overrides take precedence.
+The server must use the matching JAR after publish-direct succeeds. If the client
+still reports FAILED_DOWNLOAD, open .minecraft/logs/latest.log for the HTTP or TLS
+exception; the server can only see the status, not the client's exact error.
