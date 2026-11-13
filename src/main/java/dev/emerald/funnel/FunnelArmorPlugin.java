@@ -69,6 +69,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     /** 0 = docked, 1 = protective wall; retained while closing. */
     private final Map<UUID, Double> shieldProgress = new ConcurrentHashMap<>();
     private final Map<UUID, Long> shotAnimationStart = new ConcurrentHashMap<>();
+    private final Map<UUID, Vector> shotAimTargets = new ConcurrentHashMap<>();
     private long animationTick = 0;
     private HttpServer httpServer;
     private byte[] packBytes;
@@ -100,7 +101,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.7.2 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.7.3 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -108,6 +109,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shieldToggleTicks.clear();
         shieldProgress.clear();
         shotAnimationStart.clear();
+        shotAimTargets.clear();
         for (UUID uuid : new ArrayList<>(shieldGuards)) stopShield(uuid);
         for (UUID uuid : new ArrayList<>(shieldDisplays.keySet())) removeShieldDisplays(uuid);
         for (UUID uuid : new ArrayList<>(activeDrones.keySet())) removeDrones(uuid);
@@ -346,6 +348,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                         d.setInvulnerable(true);
                         // One-tick interpolation avoids trailing noticeably behind the moving player.
                         d.setTeleportDuration(1);
+                        d.setInterpolationDuration(1);
                         d.getPersistentDataContainer().set(displayKey, PersistentDataType.BYTE, (byte) 1);
                     });
                     created.add(display);
@@ -359,7 +362,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 return;
             }
         }
-        for (int i = 0; i < 3; i++) displays.get(i).teleport(shieldLocation(player, i, progress));
+        for (int i = 0; i < 3; i++) {
+            ItemDisplay display = displays.get(i);
+            ShieldAnimationGeometry.Pose pose = ShieldAnimationGeometry.pose(i, progress);
+            display.teleport(shieldLocation(player, i, progress));
+            float scale = (float) Math.max(0.1, Math.min(3.0,
+                    getConfig().getDouble("drones.model-scale", 1.45) * 1.1));
+            display.setTransformation(new Transformation(new Vector3f(0, 0, 0),
+                    new AxisAngle4f((float) Math.toRadians(pose.rollDegrees()), 0f, 0f, 1f),
+                    new Vector3f(scale, scale, scale), new AxisAngle4f()));
+        }
     }
     private boolean shieldIntersects(Player player, Projectile projectile) {
         Vector motion = projectile.getVelocity();
@@ -412,6 +424,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
         // Remove completed recoil animations; one tick update cadence.
         shotAnimationStart.entrySet().removeIf(entry -> animationTick - entry.getValue() > 8);
+        shotAimTargets.keySet().removeIf(uuid -> !shotAnimationStart.containsKey(uuid));
     }
     @EventHandler(ignoreCancelled = true)
     public void onProjectileDamage(EntityDamageByEntityEvent event) {
@@ -454,6 +467,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     display.setGravity(false);
                     display.setInvulnerable(true);
                     display.setTeleportDuration(Math.min(59, Math.max(0, getConfig().getInt("drones.teleport-duration", 2))));
+                    display.setInterpolationDuration(2);
                     display.getPersistentDataContainer().set(displayKey, PersistentDataType.BYTE, (byte)1);
                 });
                 displays.add(d);
@@ -490,8 +504,34 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     break;
                 }
                 d.teleport(droneLocation(p, selectedVariant(p), i));
+                updateGunAim(p, d);
             }
         }
+    }
+    /**
+     * Aim the entire Unicorn shield during its firing animation. The Blockbench
+     * barrels run along local -Y. Display yaw is retained, then the model is
+     * rotated locally so the two muzzles point toward the beam ray-trace hit.
+     */
+    private void updateGunAim(Player player, ItemDisplay display) {
+        int variant = selectedVariant(player);
+        Vector target = variant == 4 ? shotAimTargets.get(player.getUniqueId()) : null;
+        Long start = shotAnimationStart.get(player.getUniqueId());
+        float scale = (float) Math.max(0.1, Math.min(3.0,
+                getConfig().getDouble("drones.model-scale", 1.45)));
+        AxisAngle4f rotation = new AxisAngle4f();
+        if (target != null && start != null) {
+            Vector toward = target.clone().subtract(display.getLocation().toVector());
+            FunnelGunAim.Rotation aim = FunnelGunAim.toward(
+                    toward.getX(), toward.getY(), toward.getZ(),
+                    display.getLocation().getYaw());
+            double weight = FunnelGunAim.aimWeight(animationTick - start);
+            rotation = new AxisAngle4f((float) (aim.radians() * weight),
+                    (float) aim.axisX(), (float) aim.axisY(), (float) aim.axisZ());
+        }
+        display.setTransformation(new Transformation(
+                new Vector3f(0, 0, 0), rotation,
+                new Vector3f(scale, scale, scale), new AxisAngle4f()));
     }
     private Location droneLocation(Player p, int variant, int index) {
         FormationGeometry.Position pos = FormationGeometry.position(
@@ -524,6 +564,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         stopShield(e.getPlayer().getUniqueId());
         shieldToggleTicks.remove(e.getPlayer().getUniqueId());
         shotAnimationStart.remove(e.getPlayer().getUniqueId());
+        shotAimTargets.remove(e.getPlayer().getUniqueId());
         removeDrones(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onChangedWorld(PlayerChangedWorldEvent e) {
@@ -535,6 +576,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         stopShield(e.getEntity().getUniqueId());
         removeDrones(e.getEntity().getUniqueId());
         shotAnimationStart.remove(e.getEntity().getUniqueId());
+        shotAimTargets.remove(e.getEntity().getUniqueId());
     }
     @EventHandler public void onJoin(PlayerJoinEvent e) {
         if (getConfig().getBoolean("pack.send-on-join", true))
@@ -585,6 +627,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 entity -> entity instanceof LivingEntity && entity != player && !entity.isDead());
         double dist = entityHit == null ? blockDist : eye.toVector().distance(entityHit.getHitPosition());
         Vector target = eye.toVector().add(dir.clone().multiply(dist));
+        if (selectedVariant(player) == 4) {
+            shotAimTargets.put(player.getUniqueId(), target.clone());
+        } else {
+            shotAimTargets.remove(player.getUniqueId());
+        }
         double step = Math.max(0.1, getConfig().getDouble("beam.particle-step", 0.45));
         Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(75,224,255), 1.1f);
         List<ItemDisplay> drones = activeDrones.get(player.getUniqueId());

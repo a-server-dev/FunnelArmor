@@ -8,12 +8,18 @@ class ShieldAnimationGeometryTest {
     @Test void defenseEndsAtExistingWallDistance() {
         for (int i=0; i<3; i++) {
             var pose = ShieldAnimationGeometry.pose(i, 1);
-            assertEquals(ShieldGuardGeometry.PLANE_DISTANCE, pose.forward(), 1.e-9);
+            assertEquals(ShieldGuardGeometry.PLANE_DISTANCE + (i - 1) * 0.06,
+                    pose.forward(), 1.e-9);
             assertEquals(0, pose.yawOffset(), 1.e-9);
         }
-        assertEquals(-1.08, ShieldAnimationGeometry.pose(0, 1).right(), 1.e-9);
-        assertEquals(0, ShieldAnimationGeometry.pose(1, 1).right(), 1.e-9);
-        assertEquals(1.08, ShieldAnimationGeometry.pose(2, 1).right(), 1.e-9);
+        assertEquals(0, ShieldAnimationGeometry.pose(0, 1).right(), 1.e-9);
+        assertEquals(-0.58, ShieldAnimationGeometry.pose(1, 1).right(), 1.e-9);
+        assertEquals(0.58, ShieldAnimationGeometry.pose(2, 1).right(), 1.e-9);
+        assertEquals(0, ShieldAnimationGeometry.pose(0, 1).rollDegrees(), 1.e-9);
+        assertEquals(-120, ShieldAnimationGeometry.pose(1, 1).rollDegrees(), 1.e-9);
+        assertEquals(120, ShieldAnimationGeometry.pose(2, 1).rollDegrees(), 1.e-9);
+        assertTrue(ShieldAnimationGeometry.pose(0, 1).up() <
+                ShieldAnimationGeometry.pose(1, 1).up());
     }
 
     @Test void opensFromBehindShouldersAndClosesBackThere() {

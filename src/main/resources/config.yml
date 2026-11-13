@@ -31,6 +31,9 @@ drones:
   teleport-duration: 2
 
 # Unicorn-style shield offhand animation and front facing.
+# Three shields overlap like flower petals; each rotates 120 degrees.
+# For main-hand shots, the whole Unicorn shield turns so its two -Y barrels
+# face the target during the 8-tick firing motion.
 shield:
   # The default 0 flips the previous defense stance, exposing the other side.
   # Change to 180 if the installed custom model faces the opposite direction.

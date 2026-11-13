@@ -100,3 +100,25 @@ resource-pack upload is required.
 - Projectile protection activates after the wall finishes deploying, and is immediately disabled when retraction starts. Defense is not active during the initial deployment, making the visual and gameplay states consistent.
 - Normal **main-hand right-click shooting** now gives deployed drones a brief forward firing-pulse motion (8 ticks, up to `drones.shot-recoil-blocks`). The beam damage and cooldown are unchanged.
 - The five formations, all model files and the embedded pack remain otherwise unchanged.
+
+## v0.7.3 — Aim the muzzle and arrange a 3-petal shield
+
+Uses the existing v5 Unicorn model and `ItemDisplay` rotations. No BetterModel,
+external animation plugin, changed bbmodel or resource-pack update is required.
+
+- **Main-hand right-click (variant 4 only)**: while firing, each visible
+  shield rotates its full model so the two lower gun muzzles (model -Y) aim
+  at the exact ray-trace target (entity/block or range end). The rotation
+  ramps up and returns to idle over 8 ticks, alongside the existing recoil.
+  Other funnel models are unaffected; damage/cooldown remain unchanged.
+- **Offhand shield defense**: three ItemDisplays glide together into a
+  **three-petal rosette**. The bottom shield and the upper-left / upper-right
+  shields overlap at the center. The upper shields roll -120/+120 degrees
+  around the model face (local Z); their Z depths are slightly staggered to
+  prevent texture flicker. The protective hit-plane and 12-tick transitions
+  are unchanged.
+- Pure geometry/JUnit tests cover the completed flower arrangement,
+  progressive animation, and barrel-aim rotations toward targets at
+  multiple player yaw angles.
+- A whole-model rotation is used for aiming: moving the twin barrels alone
+  would require separating the model into individually controlled displays.
