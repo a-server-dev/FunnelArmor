@@ -83,7 +83,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         if (getCommand("funnel") != null) getCommand("funnel").setExecutor(this);
-        getLogger().info("FunnelArmor 0.3.3 ready. Built-in resource pack SHA1: " + sha1);
+        getLogger().info("FunnelArmor 0.3.4 ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
         if (httpServer != null) httpServer.stop(0);
@@ -109,21 +109,37 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                         exchange.getResponseHeaders().set("Content-Length", Integer.toString(packBytes.length));
                         exchange.sendResponseHeaders(200, -1);
                     } else {
+                        getLogger().info("Resource-pack download: " + exchange.getRemoteAddress() + " requested " + exchange.getRequestURI());
                         exchange.sendResponseHeaders(200, packBytes.length);
                         exchange.getResponseBody().write(packBytes);
                     }
                 } finally { exchange.close(); }
             });
             httpServer.start();
-            getLogger().info("Serving pack at " + publicUrl());
+            getLogger().info("Pack HTTP listening on " + bind + ":" + port + " (configured URL: " + publicUrl() + ")");
         } catch (IOException ex) {
             getLogger().warning("Cannot start pack HTTP server: " + ex.getMessage());
+            httpServer = null;
         }
     }
     private String publicUrl() {
+        return publicUrl(null);
+    }
+    private String publicUrl(Player player) {
         String external = getConfig().getString("pack.external-url", "").trim();
         if (!external.isEmpty()) return external;
-        String host = getConfig().getString("pack.embedded-http.public-host", "127.0.0.1").trim();
+        String host = getConfig().getString("pack.embedded-http.public-host", "auto").trim();
+        if (host.equalsIgnoreCase("auto") || host.isBlank()) {
+            // This is the hostname the player used to connect. It avoids accidentally
+            // sending 127.0.0.1 to players who connected using a remote address.
+            java.net.InetSocketAddress virtualHost = player == null ? null : player.getVirtualHost();
+            if (virtualHost != null && virtualHost.getHostString() != null && !virtualHost.getHostString().isBlank()) {
+                host = virtualHost.getHostString();
+            } else {
+                host = "127.0.0.1";
+            }
+        }
+        if (host.contains(":") && !host.startsWith("[")) host = "[" + host + "]";
         return "http://" + host + ":" + getConfig().getInt("pack.embedded-http.port", 8765) + "/funnel-pack.zip";
     }
     private boolean applyPack(Player player) {
@@ -132,9 +148,15 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             player.sendMessage("§cパック配信サーバーが起動していません。plugins/FunnelArmor/FunnelArmor-pack.zip を手動適用してください。");
             return false;
         }
-        player.setResourcePack(publicUrl(), sha1, getConfig().getBoolean("pack.require", false),
+        String url = publicUrl(player);
+        player.setResourcePack(url, sha1, getConfig().getBoolean("pack.require", false),
                 Component.text("ファンネル用3Dモデルを表示するリソースパックです。"));
-        player.sendMessage("§bファンネルのリソースパック適用を要求しました: §7" + publicUrl());
+        player.sendMessage("§bファンネルのパックを要求しました: §7" + url);
+        getLogger().info("Requested resource pack for " + player.getName() + " from " + url);
+        if (url.contains("127.0.0.1") && player.getAddress() != null
+                && !player.getAddress().getAddress().isLoopbackAddress()) {
+            player.sendMessage("§e警告: URLが127.0.0.1です。別PCの場合は config.yml の pack.embedded-http.public-host にサーバーの到達可能なホスト名/IPを設定してください。");
+        }
         return true;
     }
     private ItemStack weapon(int variant) {
@@ -251,6 +273,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     @EventHandler public void onPack(PlayerResourcePackStatusEvent e) {
         getLogger().info("Resource pack " + e.getPlayer().getName() + ": " + e.getStatus());
+        switch (e.getStatus()) {
+            case SUCCESSFULLY_LOADED -> e.getPlayer().sendMessage("§a[FunnelArmor] リソースパックの適用に成功しました。");
+            case FAILED_DOWNLOAD -> e.getPlayer().sendMessage("§c[FunnelArmor] リソースパックのダウンロードに失敗しました。/funnel status の配布URLと8765/TCPの接続を確認してください。");
+            case DECLINED -> e.getPlayer().sendMessage("§e[FunnelArmor] リソースパックが拒否されました。サーバー一覧のリソースパック設定を確認してください。");
+            default -> { }
+        }
     }
     @EventHandler public void onInteract(PlayerInteractEvent event) {
         if (event.getHand() != EquipmentSlot.HAND ||
@@ -339,7 +367,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             }
             case "status" -> {
                 sender.sendMessage("§bPack SHA1: §f" + sha1);
-                sender.sendMessage("§bPack URL: §f" + publicUrl());
+                sender.sendMessage("§bPack URL: §f" + (sender instanceof Player p ? publicUrl(p) : publicUrl()));
+                sender.sendMessage("§bConfigured public host: §f" + getConfig().getString("pack.embedded-http.public-host", "auto"));
+                sender.sendMessage("§bPack bytes: §f" + (packBytes == null ? 0 : packBytes.length));
                 sender.sendMessage("§bEmbedded HTTP: §f" + (httpServer == null ? "OFF" : "ON"));
                 sender.sendMessage("§bPack file: §f" + packPath);
             }
