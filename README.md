@@ -20,4 +20,4 @@ Before FunnelArmor, a separate IronGolemModelStarter experiment used BetterModel
 This historical BetterModel work **is not part of FunnelArmor's active source or dependency set**, and should only be revisited if we later want custom-modeled mobs.
 
 ## Repository status
-The GitHub repository is initialized. Full project synchronization has not yet been completed; do not treat this README alone as a buildable Gradle project.
+The v0.3.1 Java source, all five Blockbench model source files, resource-pack JSON/texture sources and the bundled `src/main/resources/funnel-pack.zip` have been committed. The Gradle Wrapper JAR and launch scripts are not currently committed, so use an installed Gradle 9.1+ via IntelliJ until a valid wrapper is added. Gradle and in-game runtime have not been tested here.
