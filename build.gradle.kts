@@ -1,6 +1,6 @@
 plugins { java }
 group = "dev.emerald"
-version = "0.3.0-SNAPSHOT"
+version = "0.3.1-SNAPSHOT"
 repositories { mavenCentral(); maven("https://repo.papermc.io/repository/maven-public/") }
 dependencies { compileOnly("io.papermc.paper:paper-api:26.3.build.+") }
 java { toolchain.languageVersion.set(JavaLanguageVersion.of(25)) }
