@@ -64,10 +64,11 @@ fin-barrier:
   glass-enabled: true
   glass-thickness: 0.035
 
-# ν fin funnel only. Model's open muzzle is local -X; folded model's
-# long axis is local +Y. Previously model-yaw-offset=90 did not handle these
-# two axes correctly. Its legacy value is intentionally ignored.
+# ν fin funnel only. The actual deployed muzzle axis is local +X.
+# In-game verification showed that 180 degrees is necessary in all idle modes
+# (stored / normal / barrier). Firing uses the same +X axis, avoiding a half turn.
+# The folded model's long axis is local +Y. Legacy model-yaw-offset is ignored.
 fin-funnel:
-  yaw-adjustment-degrees: 0
+  yaw-adjustment-degrees: 180
   # Rotation about local Z when the rod-shaped stored model is shown.
   folded-roll-degrees: 90
