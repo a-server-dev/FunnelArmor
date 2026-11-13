@@ -61,3 +61,16 @@ All four funnel types support these independent, per-item layouts:
 Hold the controller, then **sneak + right-click** to cycle styles (normal right-click still shoots). Use `/funnel formation <orbit|wings|rear|front|spiral|next>` for a named style, and `/funnel formation` to display current selection. The mode is stored in item metadata and survives reconnects. The action bar and item lore reflect the selection. Only the server plugin needs updating; the models and resource pack did not change.
 
 JUnit tests cover formation geometry and all drone counts.
+
+## v0.7.0: Unicorn shield guard (offhand only)
+
+Place the **variant 4 Unicorn-style shield funnel controller** in the offhand and right-click to toggle a forward-facing three-shield defensive barrier. Only variant 4 has this function.
+
+- Toggle with offhand right-click; `/funnel shield` is an alternative if the client uses the main-hand item instead of issuing an offhand interaction.
+- Three shield ItemDisplays form a front wall about 1.85 blocks ahead of the player, following the player's yaw and position.
+- Intercepts inbound Bukkit Projectile entities whose travel path crosses the front shield field (about 3.4 blocks wide and 0.2–2.65 blocks above the feet). Cancels incoming projectile-hit damage as a fallback.
+- Uses a one-tick projectile check and removes intercepted projectiles with particles/sound. It does not consume the shield controller, damage friendly/self-fired projectiles, or protect against melee attacks and area/explosion damage.
+- Automatically deactivates on changing world, death, leaving, or removing the shield controller from the offhand. The other three funnel variants cannot activate the shield.
+- The normal five deployment patterns and main-hand funnel shooting remain available, but variant 4's normal orbiting displays are suppressed when its offhand guard is active for the same player.
+
+The shield uses the **existing** variant 4 model: only the JAR needs updating. Verify in-game with arrows/tridents and check for conflicts with other projectile-control plugins.

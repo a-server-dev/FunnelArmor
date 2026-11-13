@@ -6,7 +6,7 @@ author: Emerald
 commands:
   funnel:
     description: Funnel weapon and resource pack
-    usage: /funnel <give|formation|pack|reload|status>
+    usage: /funnel <give|formation|shield|pack|reload|status>
 permissions:
   funnel.admin:
     default: op
