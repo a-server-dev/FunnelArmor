@@ -36,7 +36,7 @@ class ResourcePackTest {
                 }
             }
             assertTrue(entries.contains("pack.mcmeta"));
-            assertTrue(entries.contains("assets/funnel/textures/item/funnel.png"));
+            assertTrue(entries.contains("assets/funnel/textures/block/funnel.png"));
             for (int i = 1; i <= 4; i++) {
                 assertTrue(entries.contains("assets/funnel/items/funnel_drone_" + i + ".json"));
                 assertTrue(entries.contains("assets/funnel/models/item/funnel_drone_" + i + ".json"));
@@ -57,7 +57,7 @@ class ResourcePackTest {
                     if (entry.getName().startsWith("assets/funnel/models/item/")
                             && entry.getName().endsWith(".json")) {
                         JsonObject model = parse(zip.readAllBytes());
-                        assertEquals("funnel:item/funnel",
+                        assertEquals("funnel:block/funnel",
                                 model.getAsJsonObject("textures").get("0").getAsString());
                         for (var element : model.getAsJsonArray("elements")) {
                             for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet()) {
