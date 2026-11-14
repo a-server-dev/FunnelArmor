@@ -367,3 +367,10 @@ exception; the server can only see the status, not the client's exact error.
 - Variant 3 keeps the same five formation modes with twelve mainhand bits. Offhand right click locks the nearest live Mob within 24 blocks (or stops when the same target is chosen again); twelve additional visual bits circle the locked target in two rings and fire staggered half-HP beams every eight ticks. Stops on target death, distance, offhand removal, death, world transfer or logout. No player-targeting.
 - ν fin barrier and Unicorn shield now absorb at most five attacks or 20 HP of incoming damage, whichever comes first. Each blocked projectile and beam counts once; direct attacks absorbed according to the existing coverage. Shield disengages immediately and displays retract.
 - Vanilla model/pack compatibility is checked by CI; the matching new resource pack must be applied with /funnel pack.
+
+## v0.7.24 — Qubeley visual scale
+
+- Variant 3 Qubeley bits in **all mainhand formations and the 12-bit offhand mob-pursuit animation** display at 25% of their previous width, height and length.
+- The existing user-approved `funnel_drone_3.bbmodel` and resource-pack geometry are unchanged. No separate pack update is required.
+- Change `qubeley.model-scale-multiplier` (default `0.25`) in `plugins/FunnelArmor/config.yml` to adjust just variant 3. Other variants keep the existing `drones.model-scale` value.
+- Reload configuration with `/funnel reload`. Existing active offhand attacks may need restarting to apply a changed multiplier; mainhand formations refresh automatically.

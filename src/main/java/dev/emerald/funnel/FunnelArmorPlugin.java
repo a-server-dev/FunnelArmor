@@ -956,8 +956,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     item.setItemMeta(meta);
                     display.setItemStack(item);
                     display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                    float scale = (float) Math.max(0.1, Math.min(3.0,
-                            getConfig().getDouble("drones.model-scale", 1.45)));
+                    float scale = droneVisualScale(3);
                     display.setTransformation(new Transformation(new Vector3f(),
                             new AxisAngle4f(), new Vector3f(scale,scale,scale),
                             new AxisAngle4f()));
@@ -1085,6 +1084,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private int droneCount(int variant) {
         return FormationGeometry.countForVariant(variant);
     }
+    /** Use the same per-variant scale for deployed and offhand attack displays. */
+    private float droneVisualScale(int variant) {
+        return DroneModelScale.forVariant(variant,
+                getConfig().getDouble("drones.model-scale", 1.45),
+                getConfig().getDouble("qubeley.model-scale-multiplier", 0.25));
+    }
     private List<ItemDisplay> spawnDrones(Player player) {
         List<ItemDisplay> displays = new ArrayList<>(droneCount(selectedVariant(player)));
         try {
@@ -1101,7 +1106,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     item.setItemMeta(meta);
                     display.setItemStack(item);
                     display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                    float visualScale = (float)Math.max(0.1, Math.min(3.0, getConfig().getDouble("drones.model-scale", 1.45)));
+                    float visualScale = droneVisualScale(number);
                     display.setTransformation(new Transformation(
                         new Vector3f(0, 0, 0), new AxisAngle4f(),
                         new Vector3f(visualScale, visualScale, visualScale), new AxisAngle4f()));
@@ -1183,8 +1188,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Vector target = (variant == 1 || variant == 4)
                 ? shotAimTargets.get(player.getUniqueId()) : null;
         Long start = shotAnimationStart.get(player.getUniqueId());
-        float scale = (float) Math.max(0.1, Math.min(3.0,
-                getConfig().getDouble("drones.model-scale", 1.45)));
+        float scale = droneVisualScale(variant);
         AxisAngle4f rotation = new AxisAngle4f();
         if (variant == 1 && selectedFinFormation(player) == FinFormationMode.STORED) {
             rotation = finFoldRotation();

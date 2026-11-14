@@ -64,6 +64,10 @@ barrier-durability:
 # Qubeley variant 3 in the offhand: lock nearest mob at click and
 # fly 12 bits around it, firing one 0.5 HP beam every 8 ticks.
 qubeley:
+  # Model visual size only. 0.25 means 1/4 length, width and height.
+  # Applies to both 12-bit mainhand formations and 12-bit offhand attacks.
+  # Final display scale = drones.model-scale * model-scale-multiplier.
+  model-scale-multiplier: 0.25
   target-range: 24.0
   fire-interval-ticks: 8
   damage: 0.5
