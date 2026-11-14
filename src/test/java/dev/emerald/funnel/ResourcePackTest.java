@@ -43,6 +43,8 @@ class ResourcePackTest {
             assertTrue(entries.contains("assets/funnel/models/item/funnel_drone_1_folded.json"));
             assertTrue(entries.contains("assets/funnel/items/funnel_drone_1_folded.json"));
             assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_1.png"));
+            assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_3.png"),
+                    "Qubeley bit requires the dedicated 64x64 purple texture");
             assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_4.png"),
                     "Unicorn-style shield needs its own 256px paint texture");
             for (int i = 1; i <= 4; i++) {
@@ -69,7 +71,8 @@ class ResourcePackTest {
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
                                 textureId.equals("funnel:item/funnel_drone_4") ||
-                                textureId.equals("funnel:item/funnel_drone_1"),
+                                textureId.equals("funnel:item/funnel_drone_1") ||
+                                textureId.equals("funnel:item/funnel_drone_3"),
                                 "Unexpected texture " + textureId);
                         if (entry.getName().endsWith("/funnel_drone_4.json")) {
                             assertEquals("funnel:item/funnel_drone_4", textureId);
@@ -145,6 +148,72 @@ class ResourcePackTest {
         }
         assertEquals(4, signatures.size(), "All 4 drones must be present");
         assertEquals(4, new HashSet<>(signatures.values()).size(), "All 4 drones need unique shapes");
+    }
+
+    @Test
+    void qubeleyBitHasLongConicalSilhouetteAndDedicatedTexture() throws Exception {
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(stream);
+            boolean modelFound = false, textureFound = false, atlasFound = false;
+            try (ZipInputStream zip = new ZipInputStream(stream)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    String path = entry.getName();
+                    if (path.equals("assets/funnel/models/item/funnel_drone_3.json")) {
+                        JsonObject model = parse(zip.readAllBytes());
+                        assertEquals("funnel:item/funnel_drone_3",
+                                model.getAsJsonObject("textures").get("0").getAsString());
+                        var elements = model.getAsJsonArray("elements");
+                        assertTrue(elements.size() >= 300 && elements.size() <= 500,
+                                "The smooth bell-shaped bit should be detailed but bounded");
+                        double minX=100, minY=100, minZ=100, maxX=-100, maxY=-100, maxZ=-100;
+                        int sideFacets=0;
+                        for (var element : elements) {
+                            var cuboid = element.getAsJsonObject();
+                            var from = cuboid.getAsJsonArray("from");
+                            var to = cuboid.getAsJsonArray("to");
+                            minX=Math.min(minX,from.get(0).getAsDouble());
+                            minY=Math.min(minY,from.get(1).getAsDouble());
+                            minZ=Math.min(minZ,from.get(2).getAsDouble());
+                            maxX=Math.max(maxX,to.get(0).getAsDouble());
+                            maxY=Math.max(maxY,to.get(1).getAsDouble());
+                            maxZ=Math.max(maxZ,to.get(2).getAsDouble());
+                            if(cuboid.has("rotation")) {
+                                String axis=cuboid.getAsJsonObject("rotation").get("axis").getAsString();
+                                assertEquals("z", axis);
+                                double angle=Math.abs(cuboid.getAsJsonObject("rotation")
+                                        .get("angle").getAsDouble());
+                                assertTrue(angle==22.5 || angle==45);
+                                sideFacets++;
+                            }
+                        }
+                        assertTrue(maxZ-minZ>25, "Bit should be long from nozzle to tail bell");
+                        assertTrue(maxZ-minZ>(maxX-minX)*3, "Bit should be a slender cone, not a saucer");
+                        assertEquals(maxX-minX,maxY-minY,0.001, "Bell should be round in section");
+                        assertTrue(sideFacets>120, "Sixteen-sided tapered shell must be faceted smoothly");
+                        modelFound=true;
+                    }
+                    else if(path.equals("assets/funnel/textures/item/funnel_drone_3.png")) {
+                        byte[] imageBytes=zip.readAllBytes();
+                        assertTrue(imageBytes.length>100);
+                        assertEquals(137,imageBytes[0]&0xff);
+                        assertEquals(80,imageBytes[1]&0xff);
+                        assertEquals(78,imageBytes[2]&0xff);
+                        assertEquals(71,imageBytes[3]&0xff);
+                        assertEquals(64,imageBytes[19]&0xff);
+                        assertEquals(64,imageBytes[23]&0xff);
+                        textureFound=true;
+                    }
+                    else if(path.equals("assets/minecraft/atlases/items.json")) {
+                        String atlas=new String(zip.readAllBytes(), StandardCharsets.UTF_8);
+                        assertTrue(atlas.contains("funnel:item/funnel_drone_3"));
+                        atlasFound=true;
+                    }
+                    zip.closeEntry();
+                }
+            }
+            assertTrue(modelFound && textureFound && atlasFound);
+        }
     }
 
     @Test

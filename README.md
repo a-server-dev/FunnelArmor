@@ -343,3 +343,20 @@ exception; the server can only see the status, not the client's exact error.
   +90 correction from previous plugin configs.
 - Beam damage cap, manual /funnel pack, 4-unit barrier collision and the other
   three variants are unchanged.
+
+## v0.7.21 — Qubeley-inspired long conical bit (variant 3)
+
+- Rebuilt `models/funnel_drone_3.bbmodel` from its 22-cube placeholder as a
+  long, tapered purple/magenta bit with a flared bell-shaped tail, tapered
+  needle tip, 16-sided rounded cross-section, reflective streaks and a dark
+  recessed tail cap.
+- The editable Blockbench source and the vanilla-compatible JSON export use
+  the same 448 cubes and a dedicated 64×64 texture; both are tracked.
+- Added `resourcepack/assets/funnel/textures/item/funnel_drone_3.png` and
+  registered it in the item/block atlases. Reapply `/funnel pack` after
+  installing the matching JAR and restarting Paper.
+- Only variant 3 visuals changed; other models, drone behavior, damage,
+  and the ν-fin barrier configuration are unchanged.
+- This is Minecraft-model geometry, not a smooth polygon mesh. The curve
+  is approximated by narrow sixteen-sided plates and is more demanding
+  to render than the old 22-cube placeholder.
