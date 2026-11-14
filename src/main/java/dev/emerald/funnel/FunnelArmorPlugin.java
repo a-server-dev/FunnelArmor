@@ -85,11 +85,15 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     /** Variant 3 offhand autonomous pursuit of the closest mob chosen on click. */
     private static final class QubeleyAttackState {
         final UUID targetId;
+        final long beganAt;
+        final long motionSeed;
         long lastShotTick;
         int nextShooter;
-        QubeleyAttackState(UUID targetId, long lastShotTick) {
+        QubeleyAttackState(UUID targetId, long tick, long motionSeed) {
             this.targetId = targetId;
-            this.lastShotTick = lastShotTick;
+            this.beganAt = tick;
+            this.lastShotTick = tick;
+            this.motionSeed = motionSeed;
         }
     }
     private final Map<UUID, QubeleyAttackState> qubeleyAttacks = new ConcurrentHashMap<>();
@@ -304,7 +308,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (!isWeapon(stack)) return FormationMode.ORBIT;
         String saved = stack.getItemMeta().getPersistentDataContainer()
                 .get(formationKey, PersistentDataType.STRING);
-        return FormationMode.orDefault(saved);
+        return FormationMode.forVariant(selectedVariant(player), saved);
     }
     private FinFormationMode selectedFinFormation(Player player) {
         ItemStack stack = player.getInventory().getItemInMainHand();
@@ -336,9 +340,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             player.sendMessage("§cファンネルをメインハンドに持ってください。");
             return;
         }
+        int variant = selectedVariant(player);
+        if (!mode.availableFor(variant)) {
+            player.sendMessage("§cキュベレイ・ビットは螺旋陣形に対応していません。");
+            return;
+        }
         ItemMeta meta = stack.getItemMeta();
         meta.getPersistentDataContainer().set(formationKey, PersistentDataType.STRING, mode.id());
-        int variant = selectedVariant(player);
         meta.lore(java.util.List.of(
                 Component.text("§7右クリック: ビーム攻撃"),
                 Component.text("§7周囲に " + droneCount(variant) + " 基展開"),
@@ -931,8 +939,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             return;
         }
         stopQubeleyAttack(id);
+        long seed = id.getMostSignificantBits()
+                ^ id.getLeastSignificantBits()
+                ^ closest.getUniqueId().getLeastSignificantBits()
+                ^ animationTick * 0x9e3779b97f4a7c15L;
         qubeleyAttacks.put(id, new QubeleyAttackState(
-                closest.getUniqueId(), animationTick));
+                closest.getUniqueId(), animationTick, seed));
     }
 
     private void stopQubeleyAttack(UUID id) {
@@ -946,7 +958,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         try {
             for (int index = 0; index < 12; index++) {
                 final int slot = index;
-                Location pos = qubeleyAttackLocation(target, slot);
+                Location pos = qubeleyAttackLocation(target, slot,
+                        qubeleyAttacks.get(player.getUniqueId()));
                 ItemDisplay d = player.getWorld().spawn(pos, ItemDisplay.class, display -> {
                     ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
                     ItemMeta meta = item.getItemMeta();
@@ -977,18 +990,18 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         return created;
     }
 
-    private Location qubeleyAttackLocation(Mob target, int index) {
-        QubeleyAttackGeometry.Position offset =
-                QubeleyAttackGeometry.position(index, animationTick);
+    private Location qubeleyAttackLocation(
+            Mob target, int index, QubeleyAttackState state) {
+        QubeleyAttackGeometry.Position offset = QubeleyAttackGeometry.position(
+                index, animationTick - state.beganAt, state.motionSeed);
         Location center = target.getLocation().add(0,
                 Math.max(0.5, target.getHeight() * 0.55), 0);
         Location pos = center.clone().add(offset.x(), offset.y(), offset.z());
         Vector toward = center.toVector().subtract(pos.toVector());
-        // The new conical model points along LOCAL -Z (the slender tip).
-        // Entity yaw 0 faces world +Z; add 180 to face the nozzle at the mob.
-        pos.setYaw((float) (Math.toDegrees(
-                Math.atan2(-toward.getX(), toward.getZ())) + 180.0));
-        pos.setPitch(0f);
+        QubeleyAttackGeometry.Aim aim = QubeleyAttackGeometry.toward(
+                toward.getX(), toward.getY(), toward.getZ());
+        pos.setYaw(aim.yaw());
+        pos.setPitch(aim.pitch());
         return pos;
     }
 
@@ -1033,8 +1046,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     continue;
                 }
             }
-            for (int i = 0; i < 12; i++)
-                displays.get(i).teleport(qubeleyAttackLocation(target, i));
+            for (int i = 0; i < 12; i++) {
+                ItemDisplay bit = displays.get(i);
+                bit.setInterpolationDuration(1);
+                bit.teleport(qubeleyAttackLocation(target, i, state));
+            }
 
             int interval = Math.max(2, Math.min(60,
                     getConfig().getInt("qubeley.fire-interval-ticks", 8)));
@@ -1042,9 +1058,21 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             int shooterIndex = state.nextShooter++ % 12;
             state.lastShotTick = animationTick;
             ItemDisplay shooter = displays.get(shooterIndex);
-            Location muzzle = shooter.getLocation();
+            // Snap the firing bit's muzzle onto the current mob location
+            // on the exact tick of the beam, including vertical pitch.
             Location aim = target.getLocation().add(
                     0, Math.max(0.5, target.getHeight() * 0.55), 0);
+            Location pose = shooter.getLocation();
+            Vector aimVector = aim.toVector().subtract(pose.toVector());
+            QubeleyAttackGeometry.Aim shootingAim = QubeleyAttackGeometry.toward(
+                    aimVector.getX(), aimVector.getY(), aimVector.getZ());
+            pose.setYaw(shootingAim.yaw());
+            pose.setPitch(shootingAim.pitch());
+            shooter.setInterpolationDuration(0);
+            shooter.teleport(pose);
+            // Start the visible beam at the cone's forward tip, not its center.
+            Location muzzle = pose.clone().add(
+                    aimVector.clone().normalize().multiply(0.18));
             Vector beam = aim.toVector().subtract(muzzle.toVector());
             double length = beam.length();
             if (length <= 0.001) continue;
@@ -1315,7 +1343,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (player.isSneaking()) {
             if (selectedVariant(player) == 1)
                 changeFinFormation(player, selectedFinFormation(player).next());
-            else changeFormation(player, selectedFormation(player).next());
+            else changeFormation(player, selectedFormation(player)
+                    .nextForVariant(selectedVariant(player)));
             return;
         }
         if (selectedVariant(player) == 1 && selectedFinFormation(player) == FinFormationMode.STORED) return;
@@ -1430,7 +1459,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         List<String> online = Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName).toList();
         return FunnelTabSuggestions.complete(args, sender.hasPermission("funnel.admin"),
-                sender instanceof Player, sender instanceof Player p && selectedVariant(p) == 1, online);
+                sender instanceof Player,
+                sender instanceof Player p ? selectedVariant(p) : 0, online);
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -1475,8 +1505,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                             ? selectedFinFormation(player).displayName() : selectedFormation(player).displayName()));
                     sender.sendMessage(selectedVariant(player) == 1
                             ? "§7/stored 格納 /orbit 周回 /wings 左右展開 /rear 背面 /front 前方 /spiral 螺旋"
-                            : "§7/orbit 周回 /wings 左右展開 /rear 背面 /front 前方 /spiral 螺旋");
-                    sender.sendMessage("§7/funnel formation <orbit|wings|rear|front|spiral|next>");
+                            : selectedVariant(player) == 3
+                                ? "§7/orbit 周回 /wings 左右展開 /rear 背面 /front 前方"
+                                : "§7/orbit 周回 /wings 左右展開 /rear 背面 /front 前方 /spiral 螺旋");
+                    sender.sendMessage(selectedVariant(player) == 3
+                            ? "§7/funnel formation <orbit|wings|rear|front|next>"
+                            : "§7/funnel formation <orbit|wings|rear|front|spiral|next>");
                     return true;
                 }
                 if (selectedVariant(player) == 1) {
@@ -1489,9 +1523,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     changeFinFormation(player, mode);
                 } else {
                     FormationMode mode = args[1].equalsIgnoreCase("next")
-                            ? selectedFormation(player).next() : FormationMode.parse(args[1]);
-                    if (mode == null) {
-                        sender.sendMessage("§c不明な展開モードです。orbit / wings / rear / front / spiral");
+                            ? selectedFormation(player).nextForVariant(selectedVariant(player))
+                            : FormationMode.parse(args[1]);
+                    if (mode == null || !mode.availableFor(selectedVariant(player))) {
+                        sender.sendMessage(selectedVariant(player) == 3
+                                ? "§cキュベレイ・ビットの陣形: orbit / wings / rear / front（螺旋なし）"
+                                : "§c不明な展開モードです。orbit / wings / rear / front / spiral");
                         return true;
                     }
                     changeFormation(player, mode);

@@ -30,6 +30,16 @@ class FormationGeometryTest {
     }
 
     @Test
+    void variantThreeSkipsSpiralInCycleAndLegacyItems() {
+        assertFalse(FormationMode.SPIRAL.availableFor(3));
+        assertTrue(FormationMode.SPIRAL.availableFor(2));
+        assertEquals(FormationMode.ORBIT, FormationMode.FRONT.nextForVariant(3));
+        assertEquals(FormationMode.SPIRAL, FormationMode.FRONT.nextForVariant(2));
+        assertEquals(FormationMode.ORBIT, FormationMode.forVariant(3,"spiral"));
+        assertEquals(FormationMode.WINGS, FormationMode.forVariant(3,"wings"));
+    }
+
+    @Test
     void positionsAreFiniteAndDistinctForEveryStyleAndVariant() {
         for (FormationMode mode : FormationMode.values()) {
             for (int variant = 1; variant <= 4; variant++) {

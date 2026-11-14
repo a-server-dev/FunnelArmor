@@ -26,6 +26,23 @@ public enum FormationMode {
         return choices[(ordinal() + 1) % choices.length];
     }
 
+    /** Variant 3 has no spiral formation; all other controllers are unchanged. */
+    public boolean availableFor(int variant) {
+        return variant != 3 || this != SPIRAL;
+    }
+
+    public FormationMode nextForVariant(int variant) {
+        FormationMode next = next();
+        while (!next.availableFor(variant)) next = next.next();
+        return next;
+    }
+
+    /** Old variant-3 items saved in SPIRAL safely revert to ORBIT. */
+    public static FormationMode forVariant(int variant, String raw) {
+        FormationMode mode = orDefault(raw);
+        return mode.availableFor(variant) ? mode : ORBIT;
+    }
+
     public static FormationMode parse(String raw) {
         if (raw == null) return null;
         String value = raw.trim().toLowerCase(Locale.ROOT);

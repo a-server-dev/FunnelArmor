@@ -40,6 +40,16 @@ class FunnelTabSuggestionsTest {
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"status",""}, true, true, ONLINE));
     }
 
+    @Test void qubeleyVariantNeverSuggestsSpiral() {
+        var list = FunnelTabSuggestions.complete(new String[]{"formation",""}, false,
+                true, 3, ONLINE);
+        assertEquals(List.of("front","next","orbit","rear","wings"), list);
+        assertEquals(List.of(), FunnelTabSuggestions.complete(
+                new String[]{"formation","spi"}, false, true, 3, ONLINE));
+        assertEquals(List.of("spiral"), FunnelTabSuggestions.complete(
+                new String[]{"formation","spi"}, false, true, 2, ONLINE));
+    }
+
     @Test void adminCanCompleteSignedAngles() {
         assertEquals(List.of("-10", "-15", "-6"),
                 FunnelTabSuggestions.complete(new String[]{"angle","-"}, true, true, ONLINE));

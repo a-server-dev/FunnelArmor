@@ -20,6 +20,13 @@ public final class FunnelTabSuggestions {
     public static List<String> complete(String[] args, boolean admin,
                                         boolean player, boolean finFunnel,
                                         Collection<String> onlineNames) {
+        return complete(args, admin, player, finFunnel ? 1 : 0, onlineNames);
+    }
+
+    /** Variant-aware completion: omit SPIRAL for variant 3. */
+    public static List<String> complete(String[] args, boolean admin,
+                                        boolean player, int variant,
+                                        Collection<String> onlineNames) {
         if (args == null || args.length == 0) return List.of();
         List<String> candidates = new ArrayList<>();
         String action = args[0].toLowerCase(Locale.ROOT);
@@ -40,8 +47,9 @@ public final class FunnelTabSuggestions {
             switch (action) {
                 case "formation" -> {
                     if (!player || args.length != 2) return List.of();
-                    if (finFunnel) for (FinFormationMode mode : FinFormationMode.values()) candidates.add(mode.id());
-                    else for (FormationMode mode : FormationMode.values()) candidates.add(mode.id());
+                    if (variant == 1) for (FinFormationMode mode : FinFormationMode.values()) candidates.add(mode.id());
+                    else for (FormationMode mode : FormationMode.values())
+                        if (mode.availableFor(variant)) candidates.add(mode.id());
                     candidates.add("next");
                 }
                 case "give" -> {

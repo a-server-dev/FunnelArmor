@@ -374,3 +374,10 @@ exception; the server can only see the status, not the client's exact error.
 - The existing user-approved `funnel_drone_3.bbmodel` and resource-pack geometry are unchanged. No separate pack update is required.
 - Change `qubeley.model-scale-multiplier` (default `0.25`) in `plugins/FunnelArmor/config.yml` to adjust just variant 3. Other variants keep the existing `drones.model-scale` value.
 - Reload configuration with `/funnel reload`. Existing active offhand attacks may need restarting to apply a changed multiplier; mainhand formations refresh automatically.
+
+## v0.7.25 — Qubeley target-facing bits and organic attack motion
+
+- Corrected the backward-facing Qubeley offhand bit orientation using target-facing yaw without the previous 180-degree reversal and target-relative up/down pitch; the firing bit snaps to a fresh aim on every shot.
+- The offhand twelve-bit attack now uses independent smooth seeded trajectories, varying the distance and height around the selected mob; the selected target and 0.5-HP staggered beam logic remain unchanged.
+- Removed **spiral** for variant 3 from right-click formation cycling, `/funnel formation` and tab-completion; previously saved spiral settings fall back to orbit. Other models retain spiral.
+- Model geometry, texture and the quarter-size scaling from v0.7.24 are unchanged; updating the resource pack is unnecessary for this version.
