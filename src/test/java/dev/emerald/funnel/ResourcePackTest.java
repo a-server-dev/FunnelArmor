@@ -172,6 +172,9 @@ class ResourcePackTest {
                             var cuboid = element.getAsJsonObject();
                             var from = cuboid.getAsJsonArray("from");
                             var to = cuboid.getAsJsonArray("to");
+                            for (int axis=0; axis<3; axis++)
+                                assertTrue(to.get(axis).getAsDouble()>from.get(axis).getAsDouble(),
+                                        "Zero-width or inverted cube at axis " + axis);
                             minX=Math.min(minX,from.get(0).getAsDouble());
                             minY=Math.min(minY,from.get(1).getAsDouble());
                             minZ=Math.min(minZ,from.get(2).getAsDouble());
