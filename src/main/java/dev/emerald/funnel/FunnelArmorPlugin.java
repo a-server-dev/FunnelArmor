@@ -87,13 +87,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         final UUID targetId;
         final long beganAt;
         final long motionSeed;
+        final Location launchOrigin;
         long lastShotTick;
         int nextShooter;
-        QubeleyAttackState(UUID targetId, long tick, long motionSeed) {
+        QubeleyAttackState(UUID targetId, long tick, long motionSeed,
+                           Location launchOrigin) {
             this.targetId = targetId;
             this.beganAt = tick;
             this.lastShotTick = tick;
             this.motionSeed = motionSeed;
+            this.launchOrigin = launchOrigin.clone();
         }
     }
     private final Map<UUID, QubeleyAttackState> qubeleyAttacks = new ConcurrentHashMap<>();
@@ -944,7 +947,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 ^ closest.getUniqueId().getLeastSignificantBits()
                 ^ animationTick * 0x9e3779b97f4a7c15L;
         qubeleyAttacks.put(id, new QubeleyAttackState(
-                closest.getUniqueId(), animationTick, seed));
+                closest.getUniqueId(), animationTick, seed, player.getLocation()));
     }
 
     private void stopQubeleyAttack(UUID id) {
@@ -953,13 +956,15 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (old != null) for (ItemDisplay d : old) if (d.isValid()) d.remove();
     }
 
-    private List<ItemDisplay> spawnQubeleyAttackDisplays(Player player, Mob target) {
+    private List<ItemDisplay> spawnQubeleyAttackDisplays(
+            Player player, Mob target, QubeleyAttackState state) {
         List<ItemDisplay> created = new ArrayList<>(12);
         try {
             for (int index = 0; index < 12; index++) {
                 final int slot = index;
-                Location pos = qubeleyAttackLocation(target, slot,
-                        qubeleyAttacks.get(player.getUniqueId()));
+                // During deployment these positions start by the player,
+                // then move toward the selected mob over several ticks.
+                Location pos = qubeleyAttackLocation(target, slot, state);
                 ItemDisplay d = player.getWorld().spawn(pos, ItemDisplay.class, display -> {
                     ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
                     ItemMeta meta = item.getItemMeta();
@@ -996,7 +1001,25 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 index, animationTick - state.beganAt, state.motionSeed);
         Location center = target.getLocation().add(0,
                 Math.max(0.5, target.getHeight() * 0.55), 0);
-        Location pos = center.clone().add(offset.x(), offset.y(), offset.z());
+        Location destination = center.clone().add(
+                offset.x(), offset.y(), offset.z());
+        QubeleyAttackGeometry.Position launchOffset =
+                QubeleyAttackGeometry.launchOffset(index,
+                        state.launchOrigin.getYaw());
+        Location origin = state.launchOrigin.clone().add(
+                launchOffset.x(), launchOffset.y(), launchOffset.z());
+        long elapsed = animationTick - state.beganAt;
+        QubeleyAttackGeometry.Position path =
+                QubeleyAttackGeometry.flightPosition(
+                        new QubeleyAttackGeometry.Position(
+                                origin.getX(), origin.getY(), origin.getZ()),
+                        new QubeleyAttackGeometry.Position(
+                                destination.getX(), destination.getY(), destination.getZ()),
+                        index, elapsed);
+        Location pos = destination.clone();
+        pos.setX(path.x());
+        pos.setY(path.y());
+        pos.setZ(path.z());
         Vector toward = center.toVector().subtract(pos.toVector());
         QubeleyAttackGeometry.Aim aim = QubeleyAttackGeometry.toward(
                 toward.getX(), toward.getY(), toward.getZ());
@@ -1038,7 +1061,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             if (broken) {
                 stopQubeleyAttackDisplays(id);
                 try {
-                    displays = spawnQubeleyAttackDisplays(player, target);
+                    displays = spawnQubeleyAttackDisplays(player, target, state);
                     qubeleyAttackDisplays.put(id, displays);
                 } catch (RuntimeException ex) {
                     getLogger().warning("Qubeley attack displays failed: " + ex.getMessage());
@@ -1052,6 +1075,10 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 bit.teleport(qubeleyAttackLocation(target, i, state));
             }
 
+            // The first beam cannot fire while the twelve bits are still
+            // flying away from the player toward their target positions.
+            if (!QubeleyAttackGeometry.allArrived(
+                    animationTick - state.beganAt)) continue;
             int interval = Math.max(2, Math.min(60,
                     getConfig().getInt("qubeley.fire-interval-ticks", 8)));
             if (animationTick - state.lastShotTick < interval) continue;

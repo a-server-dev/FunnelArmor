@@ -381,3 +381,10 @@ exception; the server can only see the status, not the client's exact error.
 - The offhand twelve-bit attack now uses independent smooth seeded trajectories, varying the distance and height around the selected mob; the selected target and 0.5-HP staggered beam logic remain unchanged.
 - Removed **spiral** for variant 3 from right-click formation cycling, `/funnel formation` and tab-completion; previously saved spiral settings fall back to orbit. Other models retain spiral.
 - Model geometry, texture and the quarter-size scaling from v0.7.24 are unchanged; updating the resource pack is unnecessary for this version.
+
+
+## v0.7.26 — Aerial WINGS and launch-to-target movement
+
+- Variant 3's twelve WINGS bit positions are now loosely scattered at staggered heights around the player's shoulders and above their head, with separate forwards/backwards offsets and slight hover movement. Other variants' WINGS formations are unchanged.
+- Offhand activation snapshots the player's location. All twelve Qubeley bits spawn around the player at distinct shoulder/back launch points, then fly to their orbiting mob positions on curved, smoothly eased flight paths with short per-bit departure delays. The last unit finishes deployment after roughly 35 ticks (1.75 seconds).
+- Repeated 0.5 HP beams start only after all twelve bits have arrived; existing target selection, tracking, gun aiming, and organic orbital motion remain in place. Models and resource-pack contents are unchanged.

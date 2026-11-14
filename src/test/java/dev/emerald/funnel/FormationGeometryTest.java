@@ -57,6 +57,28 @@ class FormationGeometryTest {
     }
 
     @Test
+    void qubeleyWingsDisperseAroundShouldersAndAboveHead() {
+        var places = new HashSet<String>();
+        int overhead = 0;
+        double minUp = Double.POSITIVE_INFINITY, maxUp = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < 12; i++) {
+            var p = FormationGeometry.position(FormationMode.WINGS, 3, i,
+                    0, 0.055, 1.65, 1.55, 0);
+            if (p.up() > 2.5) overhead++;
+            minUp = Math.min(minUp, p.up());
+            maxUp = Math.max(maxUp, p.up());
+            places.add(p.right() + "/" + p.forward() + "/" + p.up());
+        }
+        assertEquals(12, places.size());
+        assertTrue(overhead >= 4, "At least four bits should sit above the head");
+        assertTrue(maxUp - minUp > 1.5, "WINGS should have a tall, scattered outline");
+        // Original non-Qubeley WINGS rows remain the same height pattern.
+        var other = FormationGeometry.position(FormationMode.WINGS, 2, 0,
+                0, 0.055, 1.65, 1.55, 0);
+        assertEquals(-1.65, other.right(), 1.e-9);
+    }
+
+    @Test
     void rearAndFrontStayOnExpectedSides() {
         for (int variant = 1; variant <= 4; variant++) {
             for (int i = 0; i < FormationGeometry.countForVariant(variant); i++) {

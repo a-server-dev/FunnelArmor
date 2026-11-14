@@ -48,7 +48,22 @@ public final class FormationGeometry {
                 yawOffset = Math.toDegrees(angle);
             }
             case WINGS -> {
-                if (count % 2 == 1 && index == count - 1) {
+                if (variant == 3) {
+                    // Aerial scatter: four bits above the player's head,
+                    // the others loosely dispersed around the shoulders.
+                    // Mirror pairs stay recognizable as WINGS rather than ORBIT.
+                    int rank = index / 2;
+                    int side = index % 2 == 0 ? -1 : 1;
+                    double[] lateral = {0.72, 1.42, 2.22, 0.43, 1.23, 2.08};
+                    double[] altitude = {1.18, 0.43, -0.08, 1.85, 1.26, 0.65};
+                    double[] depth = {-0.10, -0.64, 0.25, 0.35, -0.25, -0.83};
+                    right = side * lateral[rank]
+                            + 0.045 * Math.sin(ticks * 0.046 + index * 1.3);
+                    forward = depth[rank]
+                            + 0.08 * Math.sin(ticks * 0.037 + index * 1.7);
+                    up += altitude[rank];
+                    yawOffset = side * (12 + (rank % 3) * 9);
+                } else if (count % 2 == 1 && index == count - 1) {
                     right = 0;
                     forward = -0.95;
                     up += 0.65;
