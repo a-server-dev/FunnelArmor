@@ -360,3 +360,10 @@ exception; the server can only see the status, not the client's exact error.
 - This is Minecraft-model geometry, not a smooth polygon mesh. The curve
   is approximated by narrow sixteen-sided plates and is more demanding
   to render than the old 22-cube placeholder.
+
+## v0.7.23 — Qubeley final bit, offhand target pursuit and shield durability
+
+- Updated the editable variant-3 bbmodel to the user-approved 598-cube model; exported matching JSON and embedded texture.
+- Variant 3 keeps the same five formation modes with twelve mainhand bits. Offhand right click locks the nearest live Mob within 24 blocks (or stops when the same target is chosen again); twelve additional visual bits circle the locked target in two rings and fire staggered half-HP beams every eight ticks. Stops on target death, distance, offhand removal, death, world transfer or logout. No player-targeting.
+- ν fin barrier and Unicorn shield now absorb at most five attacks or 20 HP of incoming damage, whichever comes first. Each blocked projectile and beam counts once; direct attacks absorbed according to the existing coverage. Shield disengages immediately and displays retract.
+- Vanilla model/pack compatibility is checked by CI; the matching new resource pack must be applied with /funnel pack.

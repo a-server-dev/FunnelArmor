@@ -56,6 +56,18 @@ shield:
   deploy-ticks: 12
   retract-ticks: 12
 
+# All shields break after either 5 intercepted attacks or 20 absorbed HP.
+barrier-durability:
+  max-hits: 5
+  max-absorbed-damage: 20.0
+
+# Qubeley variant 3 in the offhand: lock nearest mob at click and
+# fly 12 bits around it, firing one 0.5 HP beam every 8 ticks.
+qubeley:
+  target-range: 24.0
+  fire-interval-ticks: 8
+  damage: 0.5
+
 fin-barrier:
   deploy-ticks: 10
   retract-ticks: 10

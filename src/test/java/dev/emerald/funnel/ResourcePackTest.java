@@ -164,7 +164,7 @@ class ResourcePackTest {
                         assertEquals("funnel:item/funnel_drone_3",
                                 model.getAsJsonObject("textures").get("0").getAsString());
                         var elements = model.getAsJsonArray("elements");
-                        assertTrue(elements.size() >= 300 && elements.size() <= 500,
+                        assertTrue(elements.size() >= 550 && elements.size() <= 650,
                                 "The smooth bell-shaped bit should be detailed but bounded");
                         double minX=100, minY=100, minZ=100, maxX=-100, maxY=-100, maxZ=-100;
                         int sideFacets=0;

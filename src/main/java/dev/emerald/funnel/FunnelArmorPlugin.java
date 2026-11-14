@@ -17,6 +17,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Player;
@@ -80,6 +82,21 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private final Map<UUID, Long> shotAnimationStart = new ConcurrentHashMap<>();
     private final Map<UUID, Vector> shotAimTargets = new ConcurrentHashMap<>();
     private long animationTick = 0;
+    /** Variant 3 offhand autonomous pursuit of the closest mob chosen on click. */
+    private static final class QubeleyAttackState {
+        final UUID targetId;
+        long lastShotTick;
+        int nextShooter;
+        QubeleyAttackState(UUID targetId, long lastShotTick) {
+            this.targetId = targetId;
+            this.lastShotTick = lastShotTick;
+        }
+    }
+    private final Map<UUID, QubeleyAttackState> qubeleyAttacks = new ConcurrentHashMap<>();
+    private final Map<UUID, List<ItemDisplay>> qubeleyAttackDisplays = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> qubeleyToggleTicks = new ConcurrentHashMap<>();
+    private final Map<UUID, BarrierDurability.State> finBarrierHealth = new ConcurrentHashMap<>();
+    private final Map<UUID, BarrierDurability.State> shieldHealth = new ConcurrentHashMap<>();
     private HttpServer httpServer;
     private byte[] packBytes;
     private String sha1;
@@ -124,6 +141,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shieldProgress.clear();
         shotAnimationStart.clear();
         shotAimTargets.clear();
+        for (UUID uuid : new ArrayList<>(qubeleyAttacks.keySet())) stopQubeleyAttack(uuid);
+        for (UUID uuid : new ArrayList<>(qubeleyAttackDisplays.keySet())) stopQubeleyAttack(uuid);
+        qubeleyToggleTicks.clear();
+        finBarrierHealth.clear();
+        shieldHealth.clear();
         for (UUID uuid : new ArrayList<>(shieldGuards)) stopShield(uuid);
         for (UUID uuid : new ArrayList<>(finBarrierGuards)) stopFinBarrier(uuid);
         for (UUID uuid : new ArrayList<>(finBarrierDisplays.keySet())) stopFinBarrier(uuid);
@@ -248,10 +270,16 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         meta.displayName(Component.text("§b◆ " + switch (variant) {
             case 1 -> "フィン・ファンネル（6基）";
             case 2 -> "重装ファンネル（6基）";
-            case 3 -> "ペタル・ビット（12基）";
+            case 3 -> "キュベレイ・ビット（12基）";
             default -> "シールド・ファンネル（3基）";
         }));
-        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),Component.text("§7周囲に " + droneCount(variant) + " 基展開"),Component.text("§7展開：" + (variant == 1 ? "格納" : "周回")),Component.text("§7しゃがみ＋右クリックで展開切替"),Component.text("§7射程32 / ダメージ0.5HP")));
+        meta.lore(java.util.List.of(Component.text("§7右クリック: ビーム攻撃"),
+                Component.text("§7周囲に " + droneCount(variant) + " 基展開"),
+                Component.text("§7展開：" + (variant == 1 ? "格納" : "周回")),
+                Component.text("§7しゃがみ＋右クリックで展開切替"),
+                Component.text(variant == 3
+                        ? "§7オフハンド右クリック: 最寄りのモブを12基で追撃"
+                        : "§7射程32 / ダメージ0.5HP")));
         meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
         meta.getPersistentDataContainer().set(formationKey, PersistentDataType.STRING, FormationMode.ORBIT.id());
@@ -350,12 +378,20 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 .get(variantKey, PersistentDataType.INTEGER);
         return variant != null && variant == 1;
     }
+    private boolean hasQubeleyOffhand(Player player) {
+        ItemStack item = player.getInventory().getItemInOffHand();
+        if (!isWeapon(item)) return false;
+        Integer variant = item.getItemMeta().getPersistentDataContainer()
+                .get(variantKey, PersistentDataType.INTEGER);
+        return variant != null && variant == 3;
+    }
     private boolean finBarrierActive(Player player) {
         return player.isOnline() && !player.isDead() && hasFinOffhand(player)
                 && finBarrierGuards.contains(player.getUniqueId())
                 && finBarrierProgress.getOrDefault(player.getUniqueId(), 0.0) >= 0.999;
     }
     private void stopFinBarrier(UUID id) {
+        finBarrierHealth.remove(id);
         finBarrierGuards.remove(id);
         finBarrierProgress.remove(id);
         List<ItemDisplay> old = finBarrierDisplays.remove(id);
@@ -373,7 +409,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Long prev = finBarrierToggleTicks.get(id);
         if (prev != null && tick >= prev && tick - prev < 5) return;
         finBarrierToggleTicks.put(id, tick);
-        if (!finBarrierGuards.add(id)) finBarrierGuards.remove(id);
+        if (!finBarrierGuards.add(id)) finBarrierHealth.remove(id);
+        else finBarrierHealth.put(id, new BarrierDurability.State(0, 0));
         updateFinBarrierDisplays(player, finBarrierProgress.getOrDefault(id, 0.0));
     }
     private Location finBarrierLocation(Player player, int i, double progress) {
@@ -626,6 +663,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         for (ItemDisplay display : displays) if (display.isValid()) display.remove();
     }
     private void stopShield(UUID uuid) {
+        shieldHealth.remove(uuid);
         shieldGuards.remove(uuid);
         shieldProgress.remove(uuid);
         removeShieldDisplays(uuid);
@@ -641,10 +679,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shieldToggleTicks.put(player.getUniqueId(), tick);
         if (shieldGuards.contains(player.getUniqueId())) {
             shieldGuards.remove(player.getUniqueId());
+            shieldHealth.remove(player.getUniqueId());
             // player.sendActionBar(Component.text("§7シールド防御：収納中"));
             // player.sendMessage("§7シールドファンネルを収納します。");
         } else {
             shieldGuards.add(player.getUniqueId());
+            shieldHealth.put(player.getUniqueId(), new BarrierDurability.State(0, 0));
             shieldProgress.putIfAbsent(player.getUniqueId(), 0.0);
             // Spawn behind the shoulders, then glide forward over several ticks.
             updateShieldDisplays(player, shieldProgress.get(player.getUniqueId()));
@@ -739,16 +779,51 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 from.dot(right), from.getY(), from.dot(front),
                 to.dot(right), to.getY(), to.dot(front));
     }
+    private void registerBarrierHit(Player player, double incomingDamage) {
+        UUID id = player.getUniqueId();
+        Map<UUID, BarrierDurability.State> states;
+        boolean fin = finBarrierActive(player);
+        if (fin) states = finBarrierHealth;
+        else if (shieldActive(player)) states = shieldHealth;
+        else return;
+        double damage = Double.isFinite(incomingDamage)
+                ? Math.max(0.0, incomingDamage) : 0.0;
+        BarrierDurability.State next = states.getOrDefault(id,
+                new BarrierDurability.State(0, 0)).absorb(damage);
+        states.put(id, next);
+        int maxHits = Math.max(1, getConfig().getInt("barrier-durability.max-hits", 5));
+        double maxDamage = Math.max(0.1, getConfig().getDouble(
+                "barrier-durability.max-absorbed-damage", 20.0));
+        if (next.broken(maxHits, maxDamage)) {
+            if (fin) {
+                finBarrierGuards.remove(id);
+                finBarrierHealth.remove(id);
+            } else {
+                shieldGuards.remove(id);
+                shieldHealth.remove(id);
+            }
+            player.getWorld().playSound(player.getLocation(), Sound.ITEM_SHIELD_BREAK, 0.9f, 1.05f);
+            player.sendMessage("§cバリア耐久限界！ §7(" + next.hits() + "回 / "
+                    + String.format(Locale.ROOT, "%.1f", next.totalDamage()) + "ダメージ)");
+        }
+    }
     private void interceptProjectile(Player player, Projectile projectile) {
+        double estimated = projectile instanceof AbstractArrow arrow
+                ? arrow.getDamage() : 0.0;
+        interceptProjectile(player, projectile, estimated);
+    }
+    private void interceptProjectile(Player player, Projectile projectile, double damage) {
         if (!projectile.isValid()) return;
         Location hit = projectile.getLocation();
         projectile.remove();
         player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, hit, 9, 0.18, 0.18, 0.18, 0.04);
         player.getWorld().playSound(hit, Sound.ITEM_SHIELD_BLOCK, 0.6f, 1.3f);
+        registerBarrierHit(player, damage);
     }
     private void updateShields() {
         animationTick++;
         updateFinBarriers();
+        updateQubeleyAttacks();
         Set<UUID> tracked = new HashSet<>(shieldGuards);
         tracked.addAll(shieldDisplays.keySet());
         for (UUID uuid : tracked) {
@@ -787,8 +862,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (finBarrierActive(player)) {
             if (finBarrierIntersects(player, projectile)
                     || projectile.getLocation().distanceSquared(player.getLocation().add(0, 1.25, 0)) < 3.5) {
+                double incoming = event.getFinalDamage();
                 event.setCancelled(true);
-                interceptProjectile(player, projectile);
+                interceptProjectile(player, projectile, incoming);
                 return;
             }
         }
@@ -797,10 +873,212 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Vector front = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
         Vector relative = projectile.getLocation().toVector().subtract(player.getLocation().toVector());
         if (ShieldGuardGeometry.blocksImpact(relative.dot(front), projectile.getVelocity().dot(front))) {
+            double incoming = event.getFinalDamage();
             event.setCancelled(true);
-            interceptProjectile(player, projectile);
+            interceptProjectile(player, projectile, incoming);
         }
     }
+
+    /** Direct strikes are absorbed by the active barrier (front-facing for Unicorn). */
+    @EventHandler(ignoreCancelled = true)
+    public void onMeleeDamage(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player player)
+                || event.getDamager() instanceof Projectile
+                || event.getDamager() == player) return;
+        boolean blocked = finBarrierActive(player);
+        if (!blocked && shieldActive(player)) {
+            Vector facing = player.getLocation().getDirection().setY(0);
+            Vector source = event.getDamager().getLocation().toVector()
+                    .subtract(player.getLocation().toVector()).setY(0);
+            blocked = facing.lengthSquared() > 1.0e-6 && source.dot(facing) >= 0;
+        }
+        if (!blocked) return;
+        double damage = event.getFinalDamage();
+        event.setCancelled(true);
+        registerBarrierHit(player, damage);
+        player.getWorld().playSound(player.getLocation(),
+                Sound.ITEM_SHIELD_BLOCK, 0.55f, 1.1f);
+    }
+
+
+    /** The target is picked exactly once on offhand activation, not retargeted every tick. */
+    private void toggleQubeleyAttack(Player player) {
+        if (!hasQubeleyOffhand(player)) return;
+        UUID id = player.getUniqueId();
+        long tick = player.getWorld().getGameTime();
+        Long previous = qubeleyToggleTicks.get(id);
+        if (previous != null && tick >= previous && tick - previous < 5) return;
+        qubeleyToggleTicks.put(id, tick);
+
+        double range = Math.max(3, Math.min(48,
+                getConfig().getDouble("qubeley.target-range", 24.0)));
+        Mob closest = null;
+        double best = range * range;
+        for (Mob mob : player.getWorld().getNearbyEntitiesByType(
+                Mob.class, range, range, range)) {
+            if (!mob.isValid() || mob.isDead()) continue;
+            double distance = mob.getLocation().distanceSquared(player.getLocation());
+            if (distance < best) { best = distance; closest = mob; }
+        }
+        if (closest == null) {
+            stopQubeleyAttack(id);
+            player.sendMessage("§7キュベレイ・ビット: 射程内にモブがいません。");
+            return;
+        }
+        QubeleyAttackState existing = qubeleyAttacks.get(id);
+        if (existing != null && existing.targetId.equals(closest.getUniqueId())) {
+            stopQubeleyAttack(id);
+            return;
+        }
+        stopQubeleyAttack(id);
+        qubeleyAttacks.put(id, new QubeleyAttackState(
+                closest.getUniqueId(), animationTick));
+    }
+
+    private void stopQubeleyAttack(UUID id) {
+        qubeleyAttacks.remove(id);
+        List<ItemDisplay> old = qubeleyAttackDisplays.remove(id);
+        if (old != null) for (ItemDisplay d : old) if (d.isValid()) d.remove();
+    }
+
+    private List<ItemDisplay> spawnQubeleyAttackDisplays(Player player, Mob target) {
+        List<ItemDisplay> created = new ArrayList<>(12);
+        try {
+            for (int index = 0; index < 12; index++) {
+                final int slot = index;
+                Location pos = qubeleyAttackLocation(target, slot);
+                ItemDisplay d = player.getWorld().spawn(pos, ItemDisplay.class, display -> {
+                    ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+                    ItemMeta meta = item.getItemMeta();
+                    meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_3"));
+                    meta.getPersistentDataContainer().set(
+                            variantKey, PersistentDataType.INTEGER, 3);
+                    item.setItemMeta(meta);
+                    display.setItemStack(item);
+                    display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                    float scale = (float) Math.max(0.1, Math.min(3.0,
+                            getConfig().getDouble("drones.model-scale", 1.45)));
+                    display.setTransformation(new Transformation(new Vector3f(),
+                            new AxisAngle4f(), new Vector3f(scale,scale,scale),
+                            new AxisAngle4f()));
+                    display.setPersistent(false);
+                    display.setGravity(false);
+                    display.setInvulnerable(true);
+                    display.setTeleportDuration(1);
+                    display.setInterpolationDuration(1);
+                    display.getPersistentDataContainer().set(
+                            displayKey, PersistentDataType.BYTE, (byte) 1);
+                });
+                created.add(d);
+            }
+        } catch (RuntimeException ex) {
+            for (ItemDisplay d : created) if (d.isValid()) d.remove();
+            throw ex;
+        }
+        return created;
+    }
+
+    private Location qubeleyAttackLocation(Mob target, int index) {
+        QubeleyAttackGeometry.Position offset =
+                QubeleyAttackGeometry.position(index, animationTick);
+        Location center = target.getLocation().add(0,
+                Math.max(0.5, target.getHeight() * 0.55), 0);
+        Location pos = center.clone().add(offset.x(), offset.y(), offset.z());
+        Vector toward = center.toVector().subtract(pos.toVector());
+        // The new conical model points along LOCAL -Z (the slender tip).
+        // Entity yaw 0 faces world +Z; add 180 to face the nozzle at the mob.
+        pos.setYaw((float) (Math.toDegrees(
+                Math.atan2(-toward.getX(), toward.getZ())) + 180.0));
+        pos.setPitch(0f);
+        return pos;
+    }
+
+    private void updateQubeleyAttacks() {
+        for (UUID id : new ArrayList<>(qubeleyAttacks.keySet())) {
+            QubeleyAttackState state = qubeleyAttacks.get(id);
+            if (state == null) continue;
+            Player player = Bukkit.getPlayer(id);
+            if (player == null || !player.isOnline() || player.isDead()
+                    || !hasQubeleyOffhand(player)) {
+                stopQubeleyAttack(id);
+                continue;
+            }
+            Entity entity = Bukkit.getEntity(state.targetId);
+            if (!(entity instanceof Mob target) || !target.isValid() || target.isDead()
+                    || target.getWorld() != player.getWorld()) {
+                stopQubeleyAttack(id);
+                continue;
+            }
+            double range = Math.max(3, Math.min(48,
+                    getConfig().getDouble("qubeley.target-range", 24.0)));
+            if (target.getLocation().distanceSquared(player.getLocation()) > range * range) {
+                stopQubeleyAttack(id);
+                continue;
+            }
+            List<ItemDisplay> displays = qubeleyAttackDisplays.get(id);
+            boolean broken = displays == null || displays.size() != 12;
+            if (!broken) for (ItemDisplay d : displays) {
+                if (!d.isValid() || d.getWorld() != player.getWorld()) {
+                    broken = true;
+                    break;
+                }
+            }
+            if (broken) {
+                stopQubeleyAttackDisplays(id);
+                try {
+                    displays = spawnQubeleyAttackDisplays(player, target);
+                    qubeleyAttackDisplays.put(id, displays);
+                } catch (RuntimeException ex) {
+                    getLogger().warning("Qubeley attack displays failed: " + ex.getMessage());
+                    stopQubeleyAttack(id);
+                    continue;
+                }
+            }
+            for (int i = 0; i < 12; i++)
+                displays.get(i).teleport(qubeleyAttackLocation(target, i));
+
+            int interval = Math.max(2, Math.min(60,
+                    getConfig().getInt("qubeley.fire-interval-ticks", 8)));
+            if (animationTick - state.lastShotTick < interval) continue;
+            int shooterIndex = state.nextShooter++ % 12;
+            state.lastShotTick = animationTick;
+            ItemDisplay shooter = displays.get(shooterIndex);
+            Location muzzle = shooter.getLocation();
+            Location aim = target.getLocation().add(
+                    0, Math.max(0.5, target.getHeight() * 0.55), 0);
+            Vector beam = aim.toVector().subtract(muzzle.toVector());
+            double length = beam.length();
+            if (length <= 0.001) continue;
+            Vector dir = beam.clone().multiply(1.0 / length);
+            RayTraceResult wall = player.getWorld().rayTraceBlocks(
+                    muzzle, dir, length, FluidCollisionMode.NEVER, true);
+            if (wall != null && wall.getHitPosition().distanceSquared(
+                    muzzle.toVector()) < length * length - 0.04) continue;
+            Particle.DustOptions dust = new Particle.DustOptions(
+                    Color.fromRGB(223, 65, 165), 1.0f);
+            for (double distance = 0; distance <= length; distance += 0.45) {
+                Vector point = muzzle.toVector().add(
+                        dir.clone().multiply(distance));
+                player.getWorld().spawnParticle(Particle.DUST,
+                        point.getX(), point.getY(), point.getZ(),
+                        1, 0, 0, 0, 0, dust);
+            }
+            player.getWorld().spawnParticle(Particle.END_ROD, aim,
+                    3, 0.1, 0.1, 0.1, 0.0);
+            player.getWorld().playSound(aim, Sound.ENTITY_GUARDIAN_ATTACK,
+                    0.24f, 1.95f);
+            if (target.isValid() && !target.isDead()) {
+                target.damage(Math.min(0.5, Math.max(0,
+                        getConfig().getDouble("qubeley.damage", 0.5))), player);
+            }
+        }
+    }
+
+    private void stopQubeleyAttackDisplays(UUID id) {
+        List<ItemDisplay> old = qubeleyAttackDisplays.remove(id);
+        if (old != null) for (ItemDisplay d : old) if (d.isValid()) d.remove();
+    }
+
     private boolean hasController(Player player) {
         return player.isOnline() && !player.isDead() && isWeapon(player.getInventory().getItemInMainHand());
     }
@@ -972,6 +1250,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     @EventHandler public void onQuit(PlayerQuitEvent e) {
         stopShield(e.getPlayer().getUniqueId());
         stopFinBarrier(e.getPlayer().getUniqueId());
+        stopQubeleyAttack(e.getPlayer().getUniqueId());
+        qubeleyToggleTicks.remove(e.getPlayer().getUniqueId());
         shieldToggleTicks.remove(e.getPlayer().getUniqueId());
         shotAnimationStart.remove(e.getPlayer().getUniqueId());
         shotAimTargets.remove(e.getPlayer().getUniqueId());
@@ -980,12 +1260,14 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     @EventHandler public void onChangedWorld(PlayerChangedWorldEvent e) {
         stopFinBarrier(e.getPlayer().getUniqueId());
         stopShield(e.getPlayer().getUniqueId());
+        stopQubeleyAttack(e.getPlayer().getUniqueId());
         removeDrones(e.getPlayer().getUniqueId());
         shotAnimationStart.remove(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onDeath(PlayerDeathEvent e) {
         stopFinBarrier(e.getEntity().getUniqueId());
         stopShield(e.getEntity().getUniqueId());
+        stopQubeleyAttack(e.getEntity().getUniqueId());
         removeDrones(e.getEntity().getUniqueId());
         shotAnimationStart.remove(e.getEntity().getUniqueId());
         shotAimTargets.remove(e.getEntity().getUniqueId());
@@ -1010,6 +1292,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             if (hasFinOffhand(event.getPlayer())) {
                 event.setCancelled(true);
                 toggleFinBarrier(event.getPlayer());
+                return;
+            }
+            if (hasQubeleyOffhand(event.getPlayer())) {
+                event.setCancelled(true);
+                toggleQubeleyAttack(event.getPlayer());
                 return;
             }
             if (!hasUnicornOffhand(event.getPlayer())) return;
@@ -1038,6 +1325,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     private double firstBeamShieldHit(Player shooter, Location eye, Vector dir, double length) {
         double closest = Double.POSITIVE_INFINITY;
+        Player closestOwner = null;
         if (length <= 0) return closest;
         Vector a = eye.toVector();
         Vector b = a.clone().add(dir.clone().multiply(length));
@@ -1053,13 +1341,21 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             double bR = rb.dot(right), bF = rb.dot(front), bY = rb.getY();
             if (shieldActive(owner) && ShieldGuardGeometry.intercepts(aR, aY, aF, bR, bY, bF)) {
                 double t = (aF - ShieldGuardGeometry.PLANE_DISTANCE) / (aF - bF);
-                closest = Math.min(closest, t * length);
+                double hit = t * length;
+                if (hit < closest) { closest = hit; closestOwner = owner; }
             }
             if (finBarrierActive(owner)) {
                 double t = FinBarrierGeometry.entryT(aR, aY, aF, bR, bY, bF);
-                if (Double.isFinite(t)) closest = Math.min(closest, t * length);
+                double hit = t * length;
+                if (Double.isFinite(hit) && hit < closest) {
+                    closest = hit;
+                    closestOwner = owner;
+                }
             }
         }
+        if (closestOwner != null)
+            registerBarrierHit(closestOwner, Math.min(0.5, Math.max(0,
+                    getConfig().getDouble("beam.damage", 0.5))));
         return closest;
     }
 
