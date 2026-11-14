@@ -915,7 +915,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Mob closest = null;
         double best = range * range;
         for (Mob mob : player.getWorld().getNearbyEntitiesByType(
-                Mob.class, range, range, range)) {
+                Mob.class, player.getLocation(), range, range, range)) {
             if (!mob.isValid() || mob.isDead()) continue;
             double distance = mob.getLocation().distanceSquared(player.getLocation());
             if (distance < best) { best = distance; closest = mob; }
