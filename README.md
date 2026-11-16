@@ -650,3 +650,11 @@ A new, opt-in preview based on the user's disassembled physical GUND-bit referen
 OP commands: `/funnel aerial preview <1..11|shield|clear>`. They display one nonpersistent ItemDisplay without changing any live equipment, combat, approved BBModel, existing 11 flying bit models, or the current native shield/rifle visuals. This allows iterative review piece-by-piece before adopting the assembled geometry.
 
 The assembled test shield contains precisely the union of the 11 authored bit geometries (229 cuboid elements); it does not contain the detached dark mounting frame. The existing Aerial palette is reused. In-game visual checks and piece-by-piece approval are still required.
+
+## v0.8.21 — Joined shield rebuilt after reference-photo comparison
+
+The v0.8.20 preview was visibly incorrect: pieces were separated as if still laid out on the table, the outline was too wide, the upper white fins and lower white/grey rails were disconnected, and the yellow/blue/front-face details were too crude.
+
+The **same eleven independent bit recipes** now use compact *joined* positions based on the left-hand assembled shield in the user-provided image, while the detached right-hand parts remain the references for the individual bit contours. The preview now has 834 cuboid surfaces and an overall height/width of about 3.16. The large white panels use the brighter reference white texture tile, and the bits gain narrower/tapered edges, colored bevels, vent detail, and small blue nozzle rings. Tests guard the joined outline and keep the 11-part union invariant.
+
+This is still an unapproved **preview**, not a replacement for the existing shield, rifle, in-flight bits, or any BBModel source. The existing `/funnel aerial preview 1..11|shield|clear` commands still work. User acceptance requires a new Minecraft screenshot.

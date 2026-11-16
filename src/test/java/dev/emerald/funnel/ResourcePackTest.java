@@ -190,6 +190,26 @@ class ResourcePackTest {
                 "The joined shield may only use geometry authored in the 11 standalone bits");
         assertEquals("funnel:item/aerial_escutcheon",
                 joined.getAsJsonObject("textures").get("0").getAsString());
+        // The earlier preview accidentally reproduced the EX-PLODED pieces rather than
+        // the joined reference: enforce a tight, tall shield silhouette.
+        double minX=Double.POSITIVE_INFINITY, minY=Double.POSITIVE_INFINITY;
+        double maxX=Double.NEGATIVE_INFINITY, maxY=Double.NEGATIVE_INFINITY;
+        int brightWhiteFaces=0;
+        for(var element : joined.getAsJsonArray("elements")) {
+            var cube=element.getAsJsonObject();
+            minX=Math.min(minX,cube.getAsJsonArray("from").get(0).getAsDouble());
+            minY=Math.min(minY,cube.getAsJsonArray("from").get(1).getAsDouble());
+            maxX=Math.max(maxX,cube.getAsJsonArray("to").get(0).getAsDouble());
+            maxY=Math.max(maxY,cube.getAsJsonArray("to").get(1).getAsDouble());
+            var uv=cube.getAsJsonObject("faces").getAsJsonObject("north").getAsJsonArray("uv");
+            if(uv.get(0).getAsDouble()>4.0 && uv.get(0).getAsDouble()<5.0
+                    && uv.get(1).getAsDouble()<2.0) brightWhiteFaces++;
+        }
+        assertTrue((maxY-minY)/(maxX-minX)>2.7,
+                "The joined shield must retain the compact, tall silhouette in the reference photo");
+        assertTrue(brightWhiteFaces>80,
+                "White front armor must use the brighter white texture patch rather than dark grey");
+        assertTrue(count>=600,"Surface bevels and colored details must survive bit-first joining");
     }
 
     @Test
