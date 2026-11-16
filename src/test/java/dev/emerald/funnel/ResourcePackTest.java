@@ -99,7 +99,7 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
-                        if (entry.getName().matches("assets/funnel/models/item/aerial_[a-z0-9_]+\\.json")) {
+                        if (entry.getName().equals("assets/funnel/models/item/aerial_bettermodel_hidden.json")) {\n                            assertEquals(0, model.getAsJsonArray("elements").size());\n                            zip.closeEntry();\n                            continue;\n                        }\n                        if (entry.getName().matches("assets/funnel/models/item/aerial_[a-z0-9_]+\\.json")) {
                             if (model.has("elements")) {
                                 assertTrue(model.getAsJsonArray("elements").size() > 0, entry.getName());
                                 assertTrue(model.getAsJsonObject("textures").get("0").getAsString()
