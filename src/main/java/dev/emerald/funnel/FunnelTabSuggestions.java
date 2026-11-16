@@ -31,6 +31,7 @@ public final class FunnelTabSuggestions {
         List<String> candidates = new ArrayList<>();
         String action = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 1) {
+            candidates.add("aerial");
             candidates.add("pack");
             candidates.add("status");
             if (player) {
@@ -45,6 +46,14 @@ public final class FunnelTabSuggestions {
             }
         } else {
             switch (action) {
+                case "aerial" -> {
+                    if (args.length == 2) {
+                        candidates.add("status");
+                        if (admin) candidates.add("give");
+                    } else if (args.length == 3 && args[1].equalsIgnoreCase("give") && admin)
+                        candidates.addAll(onlineNames);
+                    else return List.of();
+                }
                 case "formation" -> {
                     if (!player || args.length != 2) return List.of();
                     if (variant == 1) for (FinFormationMode mode : FinFormationMode.values()) candidates.add(mode.id());

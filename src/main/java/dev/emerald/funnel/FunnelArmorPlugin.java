@@ -1486,13 +1486,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     public List<String> onTabComplete(CommandSender sender, Command command,
                                       String alias, String[] args) {
         if (!command.getName().equalsIgnoreCase("funnel")) return List.of();
-        if (args.length >= 1 && args[0].equalsIgnoreCase("aerial")) {
-            if (args.length == 2) return sender.hasPermission("funnel.admin")
-                    ? List.of("give", "status") : List.of("status");
-            if (args.length == 3 && args[1].equalsIgnoreCase("give") && sender.hasPermission("funnel.admin"))
-                return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-            return List.of();
-        }
         // Never disclose admin-only actions or offer player targets to non-admins.
         List<String> online = Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName).toList();
