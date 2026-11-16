@@ -57,6 +57,13 @@ class ResourcePackTest {
                 assertTrue(entries.contains("assets/funnel/items/" + name + ".json"));
                 assertTrue(entries.contains("assets/funnel/models/item/" + name + ".json"));
             }
+            for (int i=1;i<=11;i++) {
+                String name = String.format(java.util.Locale.ROOT, "aerial_bit_%02d", i);
+                assertTrue(entries.contains("assets/funnel/items/" + name + ".json"));
+                assertTrue(entries.contains("assets/funnel/models/item/" + name + ".json"));
+            }
+            assertTrue(entries.contains("assets/funnel/textures/item/aerial_escutcheon.png"));
+            assertTrue(entries.contains("assets/funnel/textures/item/aerial_gunbit_rifle.png"));
         }
     }
 
@@ -66,6 +73,7 @@ class ResourcePackTest {
             assertNotNull(stream);
             int checked = 0;
             int aerialAliases = 0;
+            int aerialExports = 0;
             try (ZipInputStream zip = new ZipInputStream(stream)) {
                 ZipEntry entry;
                 while ((entry = zip.getNextEntry()) != null) {
@@ -74,11 +82,21 @@ class ResourcePackTest {
                         JsonObject model = parse(zip.readAllBytes());
                         // Aerial previews temporarily inherit existing verified models.
                         // Final approved free-mesh BBModels are separately tracked under models/.
-                        if (entry.getName().matches("assets/funnel/models/item/aerial_[a-z_]+\\.json")) {
-                            assertTrue(model.has("parent"), entry.getName() + " must declare a parent");
-                            assertTrue(model.get("parent").getAsString().startsWith("funnel:item/funnel_drone_"),
-                                    "Unexpected Aerial placeholder model parent");
-                            aerialAliases++;
+                        if (entry.getName().matches("assets/funnel/models/item/aerial_[a-z0-9_]+\\.json")) {
+                            if (model.has("elements")) {
+                                assertTrue(model.getAsJsonArray("elements").size() > 0, entry.getName());
+                                assertTrue(model.getAsJsonObject("textures").get("0").getAsString()
+                                                .startsWith("funnel:item/aerial_"),
+                                        "Aerial source-based preview needs its own texture");
+                                for (var element : model.getAsJsonArray("elements")) {
+                                    for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet())
+                                        assertEquals("#0", face.getValue().getAsJsonObject().get("texture").getAsString());
+                                }
+                                aerialExports++;
+                            } else {
+                                assertTrue(model.has("parent"), entry.getName() + " must declare a parent");
+                                aerialAliases++;
+                            }
                             zip.closeEntry();
                             continue;
                         }
@@ -107,7 +125,8 @@ class ResourcePackTest {
             }
             assertEquals(10, checked,
                     "4 drones + folded fin + quad + controller + 3 barrier arm segments");
-            assertEquals(4, aerialAliases, "Aerial needs controller, bit, shield and rifle preview models");
+            assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
+            assertEquals(13, aerialExports, "11 distinct bits + shield + assembled rifle");
         }
     }
 

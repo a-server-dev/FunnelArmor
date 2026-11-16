@@ -418,3 +418,7 @@ assembly with 11 custom ItemDisplays and a temporary assembled display.
 **Approved 3D mesh rendering, exact part-to-part transformation, and in-game
 visual verification remain outstanding.** The BBModels are preserved, not
 modified or claimed to be usable as vanilla models.
+
+### Aerial approximated source-derived item models
+
+The resource pack additionally includes **11 different Aerial bit visual models**, a shield model, and a rifle model, all derived from their approved BBModel sources. Each free-mesh part is approximated by a bounding cuboid, retaining the source element's sampled palette material. The approved BBModels remain untouched. This is a **low-fidelity preview**, not lossless free-mesh rendering. Unchanged source meshes still require a compatible runtime/exporter for full detail.

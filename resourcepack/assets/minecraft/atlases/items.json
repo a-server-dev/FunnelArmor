@@ -24,6 +24,16 @@
       "type": "single",
       "resource": "funnel:item/funnel_drone_3",
       "sprite": "funnel:item/funnel_drone_3"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/aerial_escutcheon",
+      "sprite": "funnel:item/aerial_escutcheon"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/aerial_gunbit_rifle",
+      "sprite": "funnel:item/aerial_gunbit_rifle"
     }
   ]
 }

@@ -263,7 +263,7 @@ final class AerialCombat implements Listener {
         if (st.bits.size() != BITS || st.bits.stream().anyMatch(d -> !d.isValid() || d.getWorld()!=p.getWorld())) {
             for (ItemDisplay display : st.bits) if (display.isValid()) display.remove();
             st.bits.clear();
-            for (int i=0; i<BITS; i++) st.bits.add(spawn(p, "aerial_bit", 0.39f));
+            for (int i=0; i<BITS; i++) st.bits.add(spawn(p, "aerial_bit_" + String.format(java.util.Locale.ROOT, "%02d", i + 1), 0.39f));
         }
         String model = st.mode == Mode.SHIELD ? "aerial_escutcheon" :
                 st.mode == Mode.RIFLE ? "aerial_gunbit_rifle" : null;
