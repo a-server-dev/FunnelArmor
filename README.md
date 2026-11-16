@@ -670,3 +670,7 @@ The 0.8.22 test showed the widened lower white shells becoming bulbous and round
 ## v0.8.24 — Narrow internal gaps and reduce banding
 
 The 0.8.23 in-game screenshot showed large voids between the white outer plates, exposed charcoal blades, and central crest. In the new preview, the **inner** edge of both white side armor bits extends toward the center without moving their sharp outside edges outward (avoids the bulbous 0.8.22 shape). The inner charcoal elements rise closer to the central V crest and the blue shoulders become smaller and closer together. Long uninterrupted white front panels conceal horizontal row seams. All 11 parts remain independent; the assembled preview is their exact union. The live shield, autonomous flying bits, rifle, battle behavior and original approved BBModels have not been changed. Minecraft in-game visual approval is still pending.
+
+## v0.8.25 — White nose and blue shoulder detail pass
+
+The **0.8.24 assembled preview silhouette is preserved**. Only standalone GUND part 04 (central white nose) and mirrored 05/06 (blue shoulders with gold vents) were updated: the nose now has a sharper six-station pointed front outline, two long side facets and a restrained white vertical ridge; shoulder bits have tapered, layered blue armor and a compact diagonal gold cartridge. The other eight generated part model JSON files are byte-identical to 0.8.24, and no 11-part placements moved. This is still isolated to the OP preview; existing armed shield, original BBModels, rifle, automatic bit visuals and combat logic remain unchanged.

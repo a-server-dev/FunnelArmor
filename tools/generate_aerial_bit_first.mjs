@@ -10,8 +10,10 @@ function buildBitFirst(){
  const recipes={
   core:{shade:"blue",depth:.90,profile:[[0,-.89,.89],[.6,-1.44,1.44],[1.48,-1.42,1.42],[2.10,-1.14,1.14],[3.25,-.91,.91],[4.58,-.72,.72],[5.08,-.44,.44]],front:"cobalt"},
   upper:{shade:"white",depth:.76,profile:[[0,-.49,.68],[.80,-.87,.84],[1.62,-.98,.88],[2.41,-.84,.79],[3.85,-.66,.65],[5.37,-.43,.44],[6.58,-.18,.20]],front:"porcelain"},
-  nose:{shade:"white",depth:1.04,profile:[[0,-.24,.24],[.43,-.64,.64],[1.08,-1.03,1.03],[2.33,-1.15,1.15],[3.31,-.98,.98],[4.19,-.63,.63],[4.83,-.40,.40]],front:"porcelain"},
-  shoulder:{shade:"blue",depth:1.05,profile:[[0,-.58,.63],[.50,-.88,.91],[1.22,-.93,.96],[1.97,-.77,.83],[2.74,-.58,.65],[3.26,-.41,.44]],front:"cobalt"},
+  // Pointed, angular six-sided main white nose, not a rounded capsule.
+  nose:{shade:"white",depth:1.04,profile:[[0,-.12,.12],[.50,-.54,.54],[1.40,-1.00,1.00],[2.00,-1.06,1.06],[3.20,-1.06,1.06],[4.10,-.74,.74],[4.83,-.39,.39]],front:"porcelain"},
+  // Hard-edged sloped blue shoulder, with compact gold inset.
+  shoulder:{shade:"blue",depth:1.05,profile:[[0,-.44,.48],[.39,-.76,.80],[1.20,-.98,1.00],[1.86,-.93,.97],[2.57,-.71,.73],[3.26,-.43,.46]],front:"cobalt"},
   outer:{shade:"white",depth:.96,profile:[[0,-.28,.53],[1.12,-.43,.73],[2.53,-.57,.96],[4.47,-.72,1.26],[6.55,-.91,1.47],[7.59,-1.03,1.50],[8.24,-.66,1.19],[8.82,-.69,1.24],[10.65,-.79,1.30],[12.12,-.63,1.06],[13.10,-.43,.81],[14.18,-.29,.49]],front:"porcelain",edge:"cobalt"},
   crest:{shade:"white",depth:.91,profile:[[0,-.21,.21],[.60,-.74,.74],[1.18,-1.13,1.13],[2.31,-1.46,1.46],[3.44,-1.58,1.58],[4.46,-1.37,1.37]],front:"porcelain"},
   inner:{shade:"charcoal",depth:.74,profile:[[0,-.28,.28],[1.20,-.40,.43],[2.93,-.51,.56],[4.24,-.63,.62],[5.71,-.77,.70],[6.65,-.72,.66],[7.60,-.57,.54],[8.34,-.38,.42]],front:"steel"}
@@ -76,20 +78,35 @@ function buildBitFirst(){
     p([-.30,2.24,thick/2+.025],[.30,5.75,thick/2+.12],"porcelain");
     break;
    case "nose":
-    p([-.62,.43,.56],[.62,.65,.72],"cobalt");
-    p([-.96,1.13,.58],[.96,3.77,.70],"white");
-    p([-.40,4.02,.59],[.40,4.59,.73],"porcelain");
-    p([-.19,4.19,.74],[.19,4.48,.79],"steel");
-    p([-.27,.12,.73],[.27,.33,.80],"cobalt");
+    // Tall central ridge with narrow side facets. The silhouette stays pointed.
+    p([-.53,1.26,thick/2+.018],[.53,3.72,thick/2+.145],"porcelain");
+    p([-.86,1.67,thick/2+.014],[-.65,3.27,thick/2+.095],"white");
+    p([.65,1.67,thick/2+.014],[.86,3.27,thick/2+.095],"white");
+    p([-.39,3.85,thick/2+.018],[.39,4.46,thick/2+.14],"porcelain");
+    p([-.20,4.18,thick/2+.15],[.20,4.48,thick/2+.21],"steel");
+    // Two cobalt lower facets form the nose's tiny V-point.
+    p([-.40,.48,thick/2+.035],[-.15,.79,thick/2+.18],"cobalt");
+    p([.15,.48,thick/2+.035],[.40,.79,thick/2+.18],"cobalt");
+    p([-.13,1.98,thick/2+.155],[.13,3.45,thick/2+.22],"white");
+    p([-.91,1.69,thick/2+.020],[-.77,2.83,thick/2+.105],"porcelain");
+    p([.77,1.69,thick/2+.020],[.91,2.83,thick/2+.105],"porcelain");
     break;
    case "shoulder":
+    // Sharp blue shoulder faces, with five gold steps on a diagonal recess.
+    p([-.78,.54,thick/2+.012],[-.59,1.79,thick/2+.19],"cobalt");
+    p([.55,.48,thick/2+.012],[.72,1.59,thick/2+.16],"cobalt");
+    p([-.56,1.76,thick/2+.014],[.53,2.06,thick/2+.12],"blue");
+    p([-.70,2.19,thick/2+.024],[.43,2.85,thick/2+.09],"dark");
     for(let i=0;i<5;i++){
-     let x=-.80+i*.23, y=2.37+i*.10;
-     p([x,y,thick/2+.11],[x+.29,y+.49,thick/2+.36],"gold");
+     let x=-.73+i*.20, y=2.17+i*.105;
+     p([x,y,thick/2+.12],[x+.23,y+.49,thick/2+.34],"gold");
     }
-    p([-.96,.29,.66],[-.77,1.67,.77],"trim");
-    p([.56,.26,.65],[.73,1.79,.74],"dark");
-    p([-.49,.01,-.69],[.49,.70,-.56],"graphite");
+    p([-.74,.26,thick/2+.02],[-.53,1.37,thick/2+.13],"trim");
+    p([.45,.26,thick/2+.02],[.60,1.38,thick/2+.14],"dark");
+    p([-.45,.08,-thick/2-.10],[.45,.58,-thick/2-.015],"graphite");
+    p([-.28,.055,thick/2+.020],[.28,.29,thick/2+.095],"white");
+    p([-.49,1.05,thick/2+.025],[-.35,2.09,thick/2+.14],"blue");
+    p([.33,1.05,thick/2+.025],[.46,2.09,thick/2+.14],"cobalt");
     break;
    case "outer":
     // Continuous white faces fill the inner armor without widening the outer edge.
@@ -140,11 +157,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: compact front panels (not yet approved)",
+ "# Bit-first Escutcheon preview: sharper nose and shoulders (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
  "",
- "0.8.24 extends the INSIDE edges of the two lower white GUND parts toward the grey central elements without widening the outer silhouette. It lifts the grey elements closer to the central V part, slims the shoulders, and replaces many horizontal face bands with long continuous white plates. This is still preview only.",
+ "0.8.25 keeps the 0.8.24 silhouette and all 11 join placements unchanged. Independently authored part 04 receives a sharp, six-sided tapered white nose with raised center ridge and two blue lower facets. The left/right shoulder bits 05 and 06 become stepped, tapered blue armor with diagonal compact gold vents rather than large box-shaped surfaces. All eight other bits, the official shield, rifle and approved BBModel sources are unchanged; preview only.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

@@ -211,6 +211,16 @@ class ResourcePackTest {
         assertTrue(brightWhiteFaces>45,
                 "White front armor must use the brighter white texture patch rather than dark grey");
         assertTrue(count>=180,"Surface bevels and colored details must survive bit-first joining");
+        // Regression: the approved 0.8.24 outline is left untouched.
+        for (int id : new int[]{4,5,6}) {
+            String partPath = String.format(java.util.Locale.ROOT,
+                    "assets/funnel/models/item/aerial_v2_bit_%02d.json",id);
+            JsonObject part = models.get(partPath);
+            assertNotNull(part);
+            assertTrue(part.getAsJsonArray("elements").size() >= (id==4 ? 20 : 23),
+                    "Nose/shoulder angular facets must survive generation: " + partPath);
+        }
+
         for (int i : new int[]{7,8}) {
             String bit = String.format(java.util.Locale.ROOT,
                     "assets/funnel/models/item/aerial_v2_bit_%02d.json",i);
