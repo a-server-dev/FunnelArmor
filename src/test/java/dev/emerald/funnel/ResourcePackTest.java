@@ -240,13 +240,13 @@ class ResourcePackTest {
                 if (h > 3.0) longPanels++;
             }
             assertTrue(longPanels >= 2, "External white armor must have continuous surfaces");
-            double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
+            double bitMinY = Double.POSITIVE_INFINITY, bitMaxY = Double.NEGATIVE_INFINITY;
             for(var element : part.getAsJsonArray("elements")) {
                 var cube = element.getAsJsonObject();
-                minY = Math.min(minY,cube.getAsJsonArray("from").get(1).getAsDouble());
-                maxY = Math.max(maxY,cube.getAsJsonArray("to").get(1).getAsDouble());
+                bitMinY = Math.min(bitMinY,cube.getAsJsonArray("from").get(1).getAsDouble());
+                bitMaxY = Math.max(bitMaxY,cube.getAsJsonArray("to").get(1).getAsDouble());
             }
-            assertTrue(maxY-minY > 15.09,
+            assertTrue(bitMaxY-bitMinY > 15.09,
                     "White outer bit "+i+" must reach behind its blue shoulder (close the gap)");
         }
 
