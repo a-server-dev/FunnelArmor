@@ -131,6 +131,41 @@ class ResourcePackTest {
     }
 
     @Test
+    void legacyInventoryIconsAreFramedWithoutChangingWorldDisplays() throws Exception {
+        java.util.Map<String, Double> expected = java.util.Map.of(
+                "funnel_drone_1", .70,
+                "funnel_drone_2", .95,
+                "funnel_drone_3", .42,
+                "funnel_drone_4", .48);
+        java.util.Set<String> checked = new java.util.HashSet<>();
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip");
+             ZipInputStream zip = new ZipInputStream(stream)) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                for (var check : expected.entrySet()) {
+                    if (!entry.getName().equals("assets/funnel/models/item/" +
+                            check.getKey() + ".json")) continue;
+                    JsonObject model = parse(zip.readAllBytes());
+                    JsonObject display = model.getAsJsonObject("display");
+                    assertNotNull(display, entry.getName());
+                    assertEquals(check.getValue(),
+                            display.getAsJsonObject("gui").getAsJsonArray("scale")
+                                    .get(0).getAsDouble(), .000001);
+                    var fixed = display.getAsJsonObject("fixed").getAsJsonArray("scale");
+                    for (int i = 0; i < 3; i++)
+                        assertEquals(1.0, fixed.get(i).getAsDouble(), .000001,
+                                "Never change in-world ItemDisplay dimensions");
+                    assertTrue(model.getAsJsonArray("elements").size() > 0);
+                    checked.add(check.getKey());
+                    break;
+                }
+                zip.closeEntry();
+            }
+        }
+        assertEquals(expected.keySet(), checked, "All four original variants must be present");
+    }
+
+    @Test
     void barrierSegmentsPreserveAll145FinModelCubes() throws Exception {
         try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
             assertNotNull(stream);

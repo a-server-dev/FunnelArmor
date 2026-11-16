@@ -426,8 +426,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         Long prev = finBarrierToggleTicks.get(id);
         if (prev != null && tick >= prev && tick - prev < 5) return;
         finBarrierToggleTicks.put(id, tick);
-        if (!finBarrierGuards.add(id)) finBarrierHealth.remove(id);
-        else finBarrierHealth.put(id, new BarrierDurability.State(0, 0));
+        boolean deployed = FinBarrierToggleState.toggle(finBarrierGuards, id);
+        if (deployed) finBarrierHealth.put(id, new BarrierDurability.State(0, 0));
+        else finBarrierHealth.remove(id);
+        player.sendActionBar(Component.text(deployed
+                ? "§bフィン・ファンネル：バリア展開"
+                : "§7フィン・ファンネル：バリア収納"));
         updateFinBarrierDisplays(player, finBarrierProgress.getOrDefault(id, 0.0));
     }
     private Location finBarrierLocation(Player player, int i, double progress) {

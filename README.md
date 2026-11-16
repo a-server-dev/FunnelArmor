@@ -457,3 +457,24 @@ server visual test.**
   unchanged by this update. If the old visuals differ, check `/funnel
   diagnose`, `/funnel status`, `/funnel pack`, and client latest.log
   for pack errors. An in-game rendering check is still needed.
+
+### v0.8.3 — Fin barrier retraction and legacy inventory icon framing
+
+- Fix variant 1 (Fin Funnel) offhand right-click **retraction**: the
+  guard membership is now actually removed on its second toggle.
+  This permits `deploy → retract → deploy`, and preserves the
+  existing glass and shield retraction animation. A new unit test verifies
+  toggles and independence between players.
+- `/funnel barrier` shares the same corrected toggle implementation.
+- Reframe **inventory GUI only** for the original heavy (variant 2),
+  Qubeley (variant 3), and Unicorn shield (variant 4) weapon item icons.
+  Variant 3's long Z-axis model previously extended beyond the normal
+  icon frame; it now uses a side-facing view with lower GUI scale.
+  Variants 2/4 have separately tuned GUI scaling and centering.
+- The **elements, texture references, in-world ItemDisplay fixed and hand
+  transforms**, and all four original combat implementations are unchanged.
+  The fin icon is unchanged. Unit tests assert all four original model
+  definitions remain packaged with their existing world-scale transforms.
+- GUI framing is a code-side correction: final appearance still requires
+  a client test with the new pack. After upgrading the JAR and restarting,
+  send the refreshed pack using `/funnel pack` and reload client resources.
