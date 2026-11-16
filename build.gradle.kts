@@ -1,7 +1,7 @@
 plugins { java }
 
 group = "dev.emerald"
-version = "0.8.14-SNAPSHOT"
+version = "0.8.15-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -57,7 +57,8 @@ sourceSets {
 }
 
 tasks.processResources {
-    from("models/aerial_escutcheon.bbmodel") { rename { "aerial-escutcheon-experiment.bbmodel" } }
+    from("models/funnel_aerial_escutcheon_bettermodel.bbmodel") { rename { "aerial-escutcheon-experiment.bbmodel" } }
+    from("models/aerial_escutcheon.bbmodel") { rename { "aerial-escutcheon-original.bbmodel" } }
     from(packageResourcePack)
     dependsOn(packageResourcePack)
 }
