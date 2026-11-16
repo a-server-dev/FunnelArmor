@@ -209,7 +209,7 @@ class ResourcePackTest {
         JsonObject rifle = found.get("aerial_gunbit_rifle.json");
         assertEquals(677, shield.getAsJsonArray("elements").size(),
                 "Escutcheon must preserve the approved outline using fine cross-section elements");
-        assertEquals(270, rifle.getAsJsonArray("elements").size());
+        assertEquals(540, rifle.getAsJsonArray("elements").size(), "Rifle has mirrored geometry on both sides");
         assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("firstperson_lefthand"));
         assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("thirdperson_lefthand"));
         assertNotNull(rifle.getAsJsonObject("display").getAsJsonObject("firstperson_righthand"));
