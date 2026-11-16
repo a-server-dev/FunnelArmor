@@ -207,7 +207,7 @@ class ResourcePackTest {
                 .getAsJsonArray("scale").get(0).getAsDouble() > 1.0);
         JsonObject shield = found.get("aerial_escutcheon.json");
         JsonObject rifle = found.get("aerial_gunbit_rifle.json");
-        assertEquals(677, shield.getAsJsonArray("elements").size(),
+        assertEquals(681, shield.getAsJsonArray("elements").size(),
                 "Escutcheon must preserve the approved outline using fine cross-section elements");
         assertEquals(540, rifle.getAsJsonArray("elements").size(), "Rifle has mirrored geometry on both sides");
         assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("firstperson_lefthand"));
@@ -250,7 +250,7 @@ class ResourcePackTest {
                 custom.getAsJsonObject("on_true").get("model").getAsString());
         JsonObject idle = found.get("assets/funnel/models/item/aerial_escutcheon.json");
         JsonObject raised = found.get("assets/funnel/models/item/aerial_escutcheon_blocking.json");
-        assertEquals(677, idle.getAsJsonArray("elements").size());
+        assertEquals(681, idle.getAsJsonArray("elements").size());
         assertEquals(idle.get("elements"), raised.get("elements"),
                 "Blocking must only change pose, never remove GUND bits");
         assertEquals(idle.get("textures"), raised.get("textures"));
