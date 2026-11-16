@@ -72,6 +72,10 @@ final class AerialCombat implements Listener {
         long started;
         long lastToggle = -100;
         long shieldCooldown, rifleCooldown, nextAuto;
+        AerialFlightMath.Offset[] transitionFrom;
+        int lastShotBit = -1;
+        long lastShotTick = -100;
+        Location shotTarget;
         int rifleShots;
         BarrierDurability.State health = new BarrierDurability.State(0, 0);
     }
@@ -155,6 +159,26 @@ final class AerialCombat implements Listener {
         for (UUID id : new ArrayList<>(active.keySet())) clear(id);
     }
 
+    /** Capture current visual positions before mode switches (no teleport at activation). */
+    private void changeMode(Player player, State st, Mode mode) {
+        AerialFlightMath.Offset[] start = new AerialFlightMath.Offset[BITS];
+        Vector front = horizontal(player);
+        Vector right = new Vector(front.getZ(), 0, -front.getX());
+        for (int i = 0; i < BITS; i++) {
+            if (i < st.bits.size() && st.bits.get(i).isValid()
+                    && st.bits.get(i).getWorld() == player.getWorld()) {
+                Vector rel = st.bits.get(i).getLocation().toVector()
+                        .subtract(player.getLocation().toVector());
+                start[i] = new AerialFlightMath.Offset(rel.dot(right), rel.getY(), rel.dot(front));
+            } else {
+                start[i] = AerialFlightMath.free(tick, i);
+            }
+        }
+        st.transitionFrom = start;
+        st.mode = mode;
+        st.started = tick;
+    }
+
     private void clear(UUID id) {
         State st = active.remove(id);
         if (st == null) return;
@@ -186,14 +210,13 @@ final class AerialCombat implements Listener {
             if (tick - st.lastToggle < 5) return;
             st.lastToggle = tick;
             if (st.mode == Mode.SHIELD) {
-                st.mode = Mode.FREE;
+                changeMode(player, st, Mode.FREE);
                 player.sendActionBar(Component.text("§7エスカッシャン解除"));
             } else if (tick < st.shieldCooldown) {
                 player.sendActionBar(Component.text("§c盾クールダウン: " + (st.shieldCooldown-tick) + "t"));
             } else {
-                if (st.mode == Mode.RIFLE) endRifle(st);
-                st.mode = Mode.SHIELD;
-                st.started = tick;
+                if (st.mode == Mode.RIFLE) endRifle(player, st);
+                changeMode(player, st, Mode.SHIELD);
                 st.health = new BarrierDurability.State(0, 0);
                 player.sendActionBar(Component.text("§bエスカッシャン変形開始"));
             }
@@ -206,7 +229,7 @@ final class AerialCombat implements Listener {
             if (tick - st.lastToggle < 5) return;
             st.lastToggle = tick;
             if (st.mode == Mode.RIFLE) {
-                endRifle(st);
+                endRifle(player, st);
                 player.sendActionBar(Component.text("§7ガンビットライフル解除・冷却開始"));
                 return;
             }
@@ -214,8 +237,7 @@ final class AerialCombat implements Listener {
                 player.sendActionBar(Component.text("§cライフル冷却中: " + (st.rifleCooldown-tick) + "t"));
                 return;
             }
-            st.mode = Mode.RIFLE;
-            st.started = tick;
+            changeMode(player, st, Mode.RIFLE);
             st.rifleShots = intCfg("rifle-shots", 5, 1);
             player.sendActionBar(Component.text("§bガンビットライフルへ変形中"));
             return;
@@ -228,13 +250,13 @@ final class AerialCombat implements Listener {
         st.rifleShots--;
         player.sendActionBar(Component.text("§bGUNDビットライフル: 残弾 " + st.rifleShots));
         if (st.rifleShots <= 0) {
-            endRifle(st);
+            endRifle(player, st);
             player.sendActionBar(Component.text("§e5発射撃終了・ライフル冷却開始"));
         }
     }
 
-    private void endRifle(State st) {
-        st.mode = Mode.FREE;
+    private void endRifle(Player player, State st) {
+        changeMode(player, st, Mode.FREE);
         st.rifleShots = 0;
         st.rifleCooldown = tick + intCfg("rifle-cooldown-ticks", 200, 1);
         rifleCooldowns.put(st.owner, st.rifleCooldown);
@@ -298,43 +320,50 @@ final class AerialCombat implements Listener {
 
     private void animate(Player p, State st) {
         Vector front = horizontal(p);
-        Vector right = new Vector(front.getZ(),0,-front.getX());
-        double progress = Math.min(1,Math.max(0,(tick-st.started)/(double)intCfg("assembly-ticks", 10, 1)));
-        for (int i=0;i<BITS;i++) {
-            double t = tick*.045 + i*2.39996;
-            double radius = 1.65 + .34*Math.sin(t*.61+i*2.3);
-            Vector offset;
-            if (st.mode == Mode.SHIELD) {
-                double x = (i%4-1.5)*.59;
-                double y = ((i/4)-1)*.60;
-                offset = front.clone().multiply(1.2).add(right.clone().multiply(x))
-                        .add(new Vector(0,1.5+y,0));
-            } else if (st.mode == Mode.RIFLE) {
-                offset = front.clone().multiply(1.0 + (i%5)*.25)
-                        .add(right.clone().multiply(.47+(i/5)*.16))
-                        .add(new Vector(0,1.55+((i%2)*2-1)*.18,0));
-            } else {
-                offset = right.clone().multiply(Math.cos(t)*radius)
-                        .add(front.clone().multiply(Math.sin(t)*radius))
-                        .add(new Vector(0,1.85+.68*Math.sin(t*1.23+i),0));
-            }
+        Vector right = new Vector(front.getZ(), 0, -front.getX());
+        double progress = AerialFlightMath.progress(tick, st.started,
+                intCfg("assembly-ticks", 10, 1));
+        for (int i = 0; i < BITS; i++) {
+            AerialFlightMath.Offset destination = switch (st.mode) {
+                case FREE -> AerialFlightMath.free(tick, i);
+                case SHIELD -> AerialFlightMath.shield(i);
+                case RIFLE -> AerialFlightMath.rifle(i);
+            };
+            AerialFlightMath.Offset target = st.transitionFrom != null
+                    ? AerialFlightMath.mix(st.transitionFrom[i], destination, progress)
+                    : destination;
             ItemDisplay bit = st.bits.get(i);
-            // Hide the source bit displays after the combined shield/rifle
-            // model appears, then restore their normal size when released.
             float size = st.mode != Mode.FREE && progress >= 1.0 ? 0.001f : 0.39f;
             if (Math.abs(bit.getTransformation().getScale().x() - size) > .0001f)
-                bit.setTransformation(new Transformation(new Vector3f(0,0,0),
+                bit.setTransformation(new Transformation(new Vector3f(0, 0, 0),
                         new AxisAngle4f(), new Vector3f(size,size,size), new AxisAngle4f()));
-            Location goal = p.getLocation().add(offset);
+            Location goal = p.getLocation().add(
+                    right.clone().multiply(target.side()))
+                    .add(front.clone().multiply(target.forward()))
+                    .add(0,target.height(),0);
+            if (st.mode == Mode.FREE && st.lastShotBit == i && tick-st.lastShotTick <= 6
+                    && st.shotTarget != null && st.shotTarget.getWorld() == p.getWorld()) {
+                Vector aim = st.shotTarget.toVector().subtract(goal.toVector());
+                if (aim.lengthSquared() > .001) {
+                    goal.setDirection(aim);
+                    goal.setYaw(goal.getYaw() +
+                            (float) plugin.getConfig().getDouble("aerial.bit-yaw-offset-degrees", 90));
+                }
+            } else {
+                goal.setYaw((float)(tick * 2.0 + i * 137.5));
+            }
             bit.teleport(goal);
-            bit.setRotation((float)Math.toDegrees(t) % 360, 0);
         }
+        if (progress >= 1) st.transitionFrom = null;
         if (st.assembled != null && st.assembled.isValid()) {
             Vector center = front.clone().multiply(st.mode == Mode.SHIELD ? 1.15 : .92)
                     .add(right.clone().multiply(st.mode == Mode.RIFLE ? .42 : 0))
                     .add(new Vector(0,1.55,0));
             Location goal = p.getLocation().add(center);
-            goal.setYaw(p.getLocation().getYaw());
+            float yawOffset = (float) plugin.getConfig().getDouble(
+                    st.mode == Mode.RIFLE ? "aerial.rifle-yaw-offset-degrees"
+                            : "aerial.shield-yaw-offset-degrees", st.mode == Mode.RIFLE ? 90 : 0);
+            goal.setYaw(p.getLocation().getYaw() + yawOffset);
             goal.setPitch(st.mode == Mode.RIFLE ? p.getLocation().getPitch() : 0);
             st.assembled.teleport(goal);
         }
@@ -379,10 +408,21 @@ final class AerialCombat implements Listener {
     private void autoFire(Player p, State st) {
         LivingEntity target = findTarget(p);
         if (target == null) return;
-        ItemDisplay bit = st.bits.get(ThreadLocalRandom.current().nextInt(BITS));
-        Location start = bit.getLocation().add(0,.09,0);
+        int shooterIndex = ThreadLocalRandom.current().nextInt(BITS);
+        ItemDisplay bit = st.bits.get(shooterIndex);
         Location end = target.getEyeLocation();
+        Vector aim = end.toVector().subtract(bit.getLocation().toVector());
+        if (aim.lengthSquared() <= 0.0001) return;
+        Location start = bit.getLocation().add(aim.clone().normalize().multiply(.20));
         if (!clearLine(start,end)) return;
+        st.lastShotBit = shooterIndex;
+        st.lastShotTick = tick;
+        st.shotTarget = end.clone();
+        Location facing = bit.getLocation().clone();
+        facing.setDirection(aim);
+        facing.setYaw(facing.getYaw() +
+                (float) plugin.getConfig().getDouble("aerial.bit-yaw-offset-degrees", 90));
+        bit.teleport(facing);
         beam(p.getWorld(),start,end,Color.fromRGB(60,245,255));
         target.damage(dblCfg("auto-damage", .5, 0), p);
     }
@@ -399,7 +439,13 @@ final class AerialCombat implements Listener {
         LivingEntity victim = hit != null && hit.getHitEntity() instanceof LivingEntity living ? living : null;
         Location end = victim == null ? eye.clone().add(dir.clone().multiply(dist))
                 : hit.getHitPosition().toLocation(p.getWorld());
-        Location muzzle = st.assembled == null ? eye : st.assembled.getLocation().add(0,.12,0);
+        Location muzzle = st.assembled == null ? eye
+                : st.assembled.getLocation().add(
+                    dir.clone().multiply(dblCfg("rifle-muzzle-forward-offset", 1.1, 0)))
+                .add(0,plugin.getConfig().getDouble("aerial.rifle-muzzle-up-offset", .12),0);
+        // Never start the beam beyond its target if the target is very close.
+        if (muzzle.distanceSquared(end) > 0 && muzzle.toVector().subtract(eye.toVector())
+                .dot(dir) >= eye.distance(end)) muzzle = eye;
         beam(p.getWorld(),muzzle,end,Color.fromRGB(100,200,255));
         if (victim != null) victim.damage(dblCfg("rifle-damage", 1.5, .01),p);
     }
@@ -471,8 +517,8 @@ final class AerialCombat implements Listener {
                 clear(id); continue;
             }
             State st=active.get(id);
-            if (st.mode==Mode.RIFLE && !main(p)) endRifle(st);
-            if (st.mode==Mode.SHIELD && !off(p)) st.mode=Mode.FREE;
+            if (st.mode==Mode.RIFLE && !main(p)) endRifle(p, st);
+            if (st.mode==Mode.SHIELD && !off(p)) changeMode(p, st, Mode.FREE);
         }
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p.isDead() || (!main(p) && !off(p))) continue;

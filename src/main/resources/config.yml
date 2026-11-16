@@ -112,3 +112,11 @@ aerial:
   rifle-range: 32.0
   rifle-shot-interval-ticks: 8
   rifle-cooldown-ticks: 200
+
+  # The approved source rifle was authored along -X; rotate its displayed muzzle
+  # toward Minecraft's forward axis. Tweak after an in-game orientation check.
+  rifle-yaw-offset-degrees: 90.0
+  shield-yaw-offset-degrees: 0.0
+  bit-yaw-offset-degrees: 90.0
+  rifle-muzzle-forward-offset: 1.1
+  rifle-muzzle-up-offset: 0.12

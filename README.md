@@ -422,3 +422,19 @@ modified or claimed to be usable as vanilla models.
 ### Aerial approximated source-derived item models
 
 The resource pack additionally includes **11 different Aerial bit visual models**, a shield model, and a rifle model, all derived from their approved BBModel sources. Each free-mesh part is approximated by a bounding cuboid, retaining the source element's sampled palette material. The approved BBModels remain untouched. This is a **low-fidelity preview**, not lossless free-mesh rendering. Unchanged source meshes still require a compatible runtime/exporter for full detail.
+
+### Aerial flight and orientation calibration
+
+Aerial's eleven bit display positions use `AerialFlightMath` (world-space
+player-relative offsets). Switching between autonomous flight, shield formation,
+and rifle formation interpolates over `aerial.assembly-ticks` rather than
+teleporting the bits directly. The selected firing bit briefly aims at its target.
+The assembled rifle beam begins near the rendered muzzle instead of the display
+center. Orientation and emitter position are configurable through
+`aerial.rifle-yaw-offset-degrees`,
+`aerial.shield-yaw-offset-degrees`,
+`aerial.bit-yaw-offset-degrees`,
+`aerial.rifle-muzzle-forward-offset` and `aerial.rifle-muzzle-up-offset`.
+Unit tests cover formations and interpolation; **the actual orientation,
+visual scale and bit-to-cube mesh approximation still require a live Paper
+server visual test.**
