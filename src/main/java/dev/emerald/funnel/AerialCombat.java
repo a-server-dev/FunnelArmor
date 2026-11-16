@@ -57,10 +57,15 @@ final class AerialCombat implements Listener {
     private final NamespacedKey controllerKey;
     private final NamespacedKey displayKey;
     private final Map<UUID, State> active = new HashMap<>();
+    // Retain cooldowns even when a player unequips a controller or changes world.
+    private final Map<UUID, Long> shieldCooldowns = new HashMap<>();
+    private final Map<UUID, Long> rifleCooldowns = new HashMap<>();
     private long tick;
 
     private enum Mode { FREE, SHIELD, RIFLE }
     private static final class State {
+        final UUID owner;
+        State(UUID owner) { this.owner = owner; }
         Mode mode = Mode.FREE;
         final List<ItemDisplay> bits = new ArrayList<>();
         ItemDisplay assembled;
@@ -75,6 +80,15 @@ final class AerialCombat implements Listener {
         this.plugin = plugin;
         this.displayKey = displayKey;
         this.controllerKey = new NamespacedKey(plugin, "aerial_controller");
+    }
+
+    private State state(UUID id) {
+        return active.computeIfAbsent(id, ignored -> {
+            State st = new State(id);
+            st.shieldCooldown = shieldCooldowns.getOrDefault(id, 0L);
+            st.rifleCooldown = rifleCooldowns.getOrDefault(id, 0L);
+            return st;
+        });
     }
 
     private int intCfg(String key, int fallback, int min) {
@@ -158,6 +172,7 @@ final class AerialCombat implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (!plugin.getConfig().getBoolean("aerial.enabled", true)) return;
         Player player = e.getPlayer();
         UUID id = player.getUniqueId();
         // A controller held in both hands prioritizes shield; never execute
@@ -167,7 +182,7 @@ final class AerialCombat implements Listener {
         }
         if (e.getHand() == EquipmentSlot.OFF_HAND && off(player)) {
             e.setCancelled(true);
-            State st = active.computeIfAbsent(id, unused -> new State());
+            State st = state(id);
             if (tick - st.lastToggle < 5) return;
             st.lastToggle = tick;
             if (st.mode == Mode.SHIELD) {
@@ -186,7 +201,7 @@ final class AerialCombat implements Listener {
         }
         if (e.getHand() != EquipmentSlot.HAND || !main(player)) return;
         e.setCancelled(true);
-        State st = active.computeIfAbsent(id, unused -> new State());
+        State st = state(id);
         if (player.isSneaking()) {
             if (tick - st.lastToggle < 5) return;
             st.lastToggle = tick;
@@ -222,6 +237,7 @@ final class AerialCombat implements Listener {
         st.mode = Mode.FREE;
         st.rifleShots = 0;
         st.rifleCooldown = tick + intCfg("rifle-cooldown-ticks", 200, 1);
+        rifleCooldowns.put(st.owner, st.rifleCooldown);
     }
 
     private ItemDisplay spawn(Player p, String model, float size) {
@@ -381,6 +397,7 @@ final class AerialCombat implements Listener {
     private void breakShield(Player p, State st) {
         st.mode = Mode.FREE;
         st.shieldCooldown = tick + intCfg("shield-cooldown-ticks",200,1);
+        shieldCooldowns.put(p.getUniqueId(), st.shieldCooldown);
         p.getWorld().playSound(p.getLocation(),Sound.ITEM_SHIELD_BREAK,1f,1.2f);
         p.sendMessage("§cエスカッシャン耐久限界！ §7クールダウン開始");
     }
@@ -434,6 +451,10 @@ final class AerialCombat implements Listener {
 
     void update() {
         tick+=2;
+        if (!plugin.getConfig().getBoolean("aerial.enabled", true)) { stop(); return; }
+        // Expire stored cooldowns to avoid retaining old UUIDs indefinitely.
+        shieldCooldowns.values().removeIf(until -> until <= tick);
+        rifleCooldowns.values().removeIf(until -> until <= tick);
         for (UUID id : new ArrayList<>(active.keySet())) {
             Player p=Bukkit.getPlayer(id);
             if (p==null || !p.isOnline() || p.isDead() || (!main(p) && !off(p))) {
@@ -445,7 +466,7 @@ final class AerialCombat implements Listener {
         }
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p.isDead() || (!main(p) && !off(p))) continue;
-            State st=active.computeIfAbsent(p.getUniqueId(),unused->new State());
+            State st=state(p.getUniqueId());
             ensureDisplays(p,st);
             animate(p,st);
             if (shieldReady(p,st)) {

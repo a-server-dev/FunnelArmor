@@ -53,6 +53,10 @@ class ResourcePackTest {
             }
             assertTrue(entries.contains("assets/funnel/items/funnel_controller.json"));
             assertTrue(entries.contains("assets/funnel/models/item/funnel_controller.json"));
+            for (String name : java.util.List.of("aerial_controller", "aerial_bit", "aerial_escutcheon", "aerial_gunbit_rifle")) {
+                assertTrue(entries.contains("assets/funnel/items/" + name + ".json"));
+                assertTrue(entries.contains("assets/funnel/models/item/" + name + ".json"));
+            }
         }
     }
 
@@ -61,12 +65,23 @@ class ResourcePackTest {
         try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
             assertNotNull(stream);
             int checked = 0;
+            int aerialAliases = 0;
             try (ZipInputStream zip = new ZipInputStream(stream)) {
                 ZipEntry entry;
                 while ((entry = zip.getNextEntry()) != null) {
                     if (entry.getName().startsWith("assets/funnel/models/item/")
                             && entry.getName().endsWith(".json")) {
                         JsonObject model = parse(zip.readAllBytes());
+                        // Aerial previews temporarily inherit existing verified models.
+                        // Final approved free-mesh BBModels are separately tracked under models/.
+                        if (entry.getName().matches("assets/funnel/models/item/aerial_[a-z_]+\\.json")) {
+                            assertTrue(model.has("parent"), entry.getName() + " must declare a parent");
+                            assertTrue(model.get("parent").getAsString().startsWith("funnel:item/funnel_drone_"),
+                                    "Unexpected Aerial placeholder model parent");
+                            aerialAliases++;
+                            zip.closeEntry();
+                            continue;
+                        }
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
@@ -92,6 +107,7 @@ class ResourcePackTest {
             }
             assertEquals(10, checked,
                     "4 drones + folded fin + quad + controller + 3 barrier arm segments");
+            assertEquals(4, aerialAliases, "Aerial needs controller, bit, shield and rifle preview models");
         }
     }
 
