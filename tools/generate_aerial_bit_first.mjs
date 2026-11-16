@@ -151,23 +151,34 @@ function buildBitFirst(){
   // Existing item-definition model references are unchanged.
  }
  const whole=parts.flatMap(part=>convert(part.boxes,[part.x,part.y,part.z]));
+ // The grey rear handle is separate mounting hardware, not one of the 11 bits.
+ // Add only to the assembled shield. All pieces remain behind the centre plate.
+ const rearMount=[
+  {from:[-1.16,4.33,-1.66],to:[1.16,4.71,-1.34],material:"graphite"},
+  {from:[-.33,4.66,-1.43],to:[.33,5.26,.075],material:"steel"},
+  {from:[-.33,3.78,-1.43],to:[.33,4.38,.075],material:"steel"},
+  {from:[-.68,5.05,-.83],to:[.68,5.32,.080],material:"charcoal"},
+  {from:[-.68,3.71,-.83],to:[.68,3.98,.080],material:"charcoal"}
+ ];
+ if(rearMount.some(x=>x.to[2]>.1))throw Error("Grip passes through front");
+ whole.push(...convert(rearMount,[0,0,0]));
  outputs["resourcepack/assets/funnel/models/item/aerial_v2_escutcheon.json"]=JSON.stringify(model(whole,shieldDisplay))+"\n";
  const maxX=Math.max(...whole.map(x=>x.to[0])),minX=Math.min(...whole.map(x=>x.from[0])),maxY=Math.max(...whole.map(x=>x.to[1])),minY=Math.min(...whole.map(x=>x.from[1]));
- if(whole.length!==parts.reduce((a,p)=>a+p.boxes.length,0))throw Error("Failed bit-first join");
+ if(whole.length!==parts.reduce((a,p)=>a+p.boxes.length,0)+rearMount.length)throw Error("Failed bit-first join and grip");
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: sharper nose and shoulders (not yet approved)",
+ "# Bit-first Escutcheon preview: rear hand grip added (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
  "",
- "0.8.25 keeps the 0.8.24 silhouette and all 11 join placements unchanged. Independently authored part 04 receives a sharp, six-sided tapered white nose with raised center ridge and two blue lower facets. The left/right shoulder bits 05 and 06 become stepped, tapered blue armor with diagonal compact gold vents rather than large box-shaped surfaces. All eight other bits, the official shield, rifle and approved BBModel sources are unchanged; preview only.",
+ "0.8.26 retains the approved-for-preview sharp nose, blue shoulders, 11 standalone bit geometries, and join positions from v0.8.25. Only the assembled shield receives the rear handle as separate non-bit mounting hardware: one horizontal charcoal grip, two steel supports, and two grey reinforcement plates. This preview does not affect the production shield or any source BBModel.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",
  ...parts.map(p=>`| ${p.id} | ${p.label} | ${p.x}, ${p.y}, ${p.z} | ${p.boxes.length} |`),
  "",
- `Total ${whole.length} cuboids; shield width ${round(maxX-minX)} vs height ${round(maxY-minY)} (height/width ratio ${round((maxY-minY)/(maxX-minX))}).`,
+ `Total ${whole.length} cuboids (11 standalone bits plus ${rearMount.length} rear-only handle parts); shield width ${round(maxX-minX)} vs height ${round(maxY-minY)} (height/width ratio ${round((maxY-minY)/(maxX-minX))}).`,
  "",
  "Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.",
  "",

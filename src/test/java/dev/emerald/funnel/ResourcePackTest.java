@@ -186,8 +186,14 @@ class ResourcePackTest {
         }
         JsonObject joined = models.get("assets/funnel/models/item/aerial_v2_escutcheon.json");
         assertNotNull(joined);
-        assertEquals(count,joined.getAsJsonArray("elements").size(),
-                "The joined shield may only use geometry authored in the 11 standalone bits");
+        assertEquals(count + 5,joined.getAsJsonArray("elements").size(),
+                "The assembled shield must retain eleven individual bits plus five rear grip blocks");
+        var cubes=joined.getAsJsonArray("elements");
+        for (int index=count;index<count+5;index++)
+            assertTrue(cubes.get(index).getAsJsonObject().getAsJsonArray("to").get(2).getAsDouble()<=8.10,
+                    "The rear grip must not penetrate the shield's front");
+        assertTrue(cubes.get(count).getAsJsonObject().getAsJsonArray("from").get(2).getAsDouble()<6.5,
+                "The crossbar must extend to the back of the assembled shield");
         assertEquals("funnel:item/aerial_escutcheon",
                 joined.getAsJsonObject("textures").get("0").getAsString());
         // The earlier preview accidentally reproduced the EX-PLODED pieces rather than

@@ -1,8 +1,8 @@
-# Bit-first Escutcheon preview: sharper nose and shoulders (not yet approved)
+# Bit-first Escutcheon preview: rear hand grip added (not yet approved)
 
 Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.
 
-0.8.25 keeps the 0.8.24 silhouette and all 11 join placements unchanged. Independently authored part 04 receives a sharp, six-sided tapered white nose with raised center ridge and two blue lower facets. The left/right shoulder bits 05 and 06 become stepped, tapered blue armor with diagonal compact gold vents rather than large box-shaped surfaces. All eight other bits, the official shield, rifle and approved BBModel sources are unchanged; preview only.
+0.8.26 retains the approved-for-preview sharp nose, blue shoulders, 11 standalone bit geometries, and join positions from v0.8.25. Only the assembled shield receives the rear handle as separate non-bit mounting hardware: one horizontal charcoal grip, two steel supports, and two grey reinforcement plates. This preview does not affect the production shield or any source BBModel.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
@@ -18,7 +18,7 @@ Each of the 11 detached GUND-bit parts is separately authored from the right-han
 | 10 | 左グレー内装 | -0.91, -6.23, -0.24 | 23 |
 | 11 | 右グレー内装 | 0.91, -6.23, -0.24 | 23 |
 
-Total 352 cuboids; shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
+Total 357 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
 
 Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.
 
