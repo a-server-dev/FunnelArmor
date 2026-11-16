@@ -51,12 +51,14 @@ final class AerialBetterModel {
         }
     }
 
-    void move(Object instance, Location where) {\n        DummyTracker model = instance instanceof DummyTracker d ? d : null;
+    void move(Object instance, Location where) {
+        DummyTracker model = instance instanceof DummyTracker d ? d : null;
         if (model != null && !model.isClosed())
             model.location(BukkitAdapter.adapt(where));
     }
 
-    void close(Object instance) {\n        DummyTracker model = instance instanceof DummyTracker d ? d : null;
+    void close(Object instance) {
+        DummyTracker model = instance instanceof DummyTracker d ? d : null;
         if (model != null && !model.isClosed()) model.close();
     }
 }
