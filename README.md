@@ -615,3 +615,13 @@ appearance need a client check.
 The GUND-bit rifle remains based on the approved rifle mesh but is now
 larger in the hand: 0.57 → 0.96 first person and 0.60 → 0.98 third person.
 Rifle geometry, firing damage, ammunition and cooldown are unchanged.
+
+
+## v0.8.14: Experimental BetterModel Escutcheon (OFF by default)
+
+- The **original** `models/aerial_escutcheon.bbmodel` is bundled in the JAR and, when the experiment is enabled, copied once to `plugins/BetterModel/models/funnel_aerial_escutcheon.bbmodel` if absent.
+- The existing shield mechanics (blocking, HP, input, cooldowns, inventory restoration) remain unchanged. Only the shield appearance is optionally rendered as a BetterModel dummy model near the offhand.
+- **Try it:** install BetterModel 3.x; start the server once with `aerial.bettermodel.enabled: true` in `plugins/FunnelArmor/config.yml`; have BetterModel reload its model files or restart after the file is installed, and use the updated BetterModel resource pack alongside FunnelArmor's pack. For existing configs, add the boolean explicitly.
+- If BetterModel is unavailable or has not loaded `funnel_aerial_escutcheon`, FunnelArmor retains the old resource-pack shield model rather than hiding it.
+- **Instant rollback via configuration:** set `aerial.bettermodel.enabled: false` and restart Paper; this restores the existing resource-pack shield rendering. No Git rollback or file removal required. The copy in BetterModel's models folder is left untouched.
+- This is a **runtime visual experiment**, not yet visually verified. The original BBModel has Blockbench free meshes. BetterModel 3.x and Minecraft 26.1+ are required for mesh rendering; actual model ingestion and client pack synchronization must be tested in game.
