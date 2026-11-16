@@ -267,6 +267,11 @@ final class AerialCombat implements Listener {
         }
         String model = st.mode == Mode.SHIELD ? "aerial_escutcheon" :
                 st.mode == Mode.RIFLE ? "aerial_gunbit_rifle" : null;
+        // Let the 11 individual bits travel into formation before displaying
+        // the assembled source-derived preview. Never render two copies of
+        // the same 11 bits on top of one another.
+        if (st.mode != Mode.FREE && tick - st.started < intCfg("assembly-ticks", 10, 1))
+            model = null;
         if (model == null) {
             if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
             st.assembled = null;
@@ -314,7 +319,12 @@ final class AerialCombat implements Listener {
                         .add(new Vector(0,1.85+.68*Math.sin(t*1.23+i),0));
             }
             ItemDisplay bit = st.bits.get(i);
-            // Tapered in-flight movement when transforming to either assembled form.
+            // Hide the source bit displays after the combined shield/rifle
+            // model appears, then restore their normal size when released.
+            float size = st.mode != Mode.FREE && progress >= 1.0 ? 0.001f : 0.39f;
+            if (Math.abs(bit.getTransformation().getScale().x() - size) > .0001f)
+                bit.setTransformation(new Transformation(new Vector3f(0,0,0),
+                        new AxisAngle4f(), new Vector3f(size,size,size), new AxisAngle4f()));
             Location goal = p.getLocation().add(offset);
             bit.teleport(goal);
             bit.setRotation((float)Math.toDegrees(t) % 360, 0);
