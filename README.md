@@ -538,3 +538,26 @@ load status of the newly published resource pack.
   representations are still cuboid approximations. This feature must be
   validated with a Paper server and client before calling the visual
   alignment final.
+
+
+### v0.8.6 — Restore approved GUND bit silhouettes in normal flight
+
+The previous Aerial normal-flight exporter converted each source free mesh
+into **one huge axis-aligned bounding cuboid**, which erased its tapered
+edges, nose, stepped plates, and gaps. This made normal GUND bits look
+different from the eleven approved parts inside
+\`models/aerial_escutcheon.bbmodel\`.
+
+Re-export all 11 normal-flight JSON item models from those **unchanged**
+approved 74 source meshes by taking repeated polygon cross-sections along
+each part's main longitudinal Y-axis and assembling short cuboids. This
+preserves taper and stepped armor much more faithfully than one cuboid per
+mesh. All 11 pieces remain distinct, with their own colors and proportions.
+
+Only \`resourcepack/assets/funnel/models/item/aerial_bit_01..11.json\`
+and tests are changed. The large per-bit in-world scale from v0.8.5,
+shield, rifle, animations, and approved .bbmodel files are untouched.
+
+This is still a cuboid-based approximation: native Minecraft item JSON
+does not preserve arbitrary free-mesh polygon faces from Blockbench. A
+lossless free-mesh pipeline would be required for pixel-perfect fidelity.

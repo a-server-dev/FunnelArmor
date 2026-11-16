@@ -215,6 +215,42 @@ class ResourcePackTest {
     }
 
     @Test
+    void aerialNormalBitProfilesRetainApprovedTapers() throws Exception {
+        int[] minimumCubes = {25, 25, 25, 20, 18, 18, 25, 90, 90, 45, 45};
+        int tested = 0;
+        try (InputStream input = getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(input);
+            try (ZipInputStream zip = new ZipInputStream(input)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    String name = entry.getName();
+                    if (name.matches("assets/funnel/models/item/aerial_bit_\\d\\d\\.json")) {
+                        int n = Integer.parseInt(name.substring(name.length()-7,name.length()-5));
+                        JsonObject m = parse(zip.readAllBytes());
+                        var elements = m.getAsJsonArray("elements");
+                        assertTrue(elements.size() >= minimumCubes[n-1],
+                            "Loss of original GUND-bit tapered profile: "+name);
+                        var minSizes = new java.util.HashSet<String>();
+                        for (var item : elements) {
+                            JsonObject e = item.getAsJsonObject();
+                            var lo = e.getAsJsonArray("from");
+                            var hi = e.getAsJsonArray("to");
+                            double x = hi.get(0).getAsDouble() - lo.get(0).getAsDouble();
+                            double y = hi.get(1).getAsDouble() - lo.get(1).getAsDouble();
+                            assertTrue(x > 0 && y > 0);
+                            minSizes.add(String.format(java.util.Locale.ROOT, "%.3f", x));
+                        }
+                        assertTrue(minSizes.size() >= 3,"Untapered, bounding-box only bit "+name);
+                        tested++;
+                    }
+                    zip.closeEntry();
+                }
+            }
+        }
+        assertEquals(11, tested);
+    }
+
+    @Test
     void barrierSegmentsPreserveAll145FinModelCubes() throws Exception {
         try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
             assertNotNull(stream);
