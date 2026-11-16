@@ -81,7 +81,7 @@ final class AerialCombat implements Listener {
         Location shotTarget;
         int rifleShots;
         long rifleChargeUntil = -1;
-        long rifleNextShot = -1;
+        long rifleNextShot = -1; // earliest next manual shot; -1 while uncharged
         BarrierDurability.State health = new BarrierDurability.State(0, 0);
     }
 
@@ -129,7 +129,7 @@ final class AerialCombat implements Listener {
             meta.lore(List.of(Component.text("§7右クリック長押し: 盾を構えて防御"),
                     Component.text("§7しゃがみ右クリック: 収納")));
         else
-            meta.lore(List.of(Component.text("§7右クリック: 1回チャージ → 5発自動連射"),
+            meta.lore(List.of(Component.text("§7初回右クリック: チャージ / 以降5回右クリックで射撃"),
                     Component.text("§7しゃがみ右クリック: 収納")));
         item.setItemMeta(meta);
         return item;
@@ -171,7 +171,7 @@ final class AerialCombat implements Listener {
                 Component.text("§7オフハンド右クリック: 盾に変形 / 長押しでガード"),
                 Component.text("§7盾を収納: しゃがみ＋オフハンド右クリック"),
                 Component.text("§7メインハンド＋しゃがみ右クリック: ライフル変形/解除"),
-                Component.text("§7ライフル中右クリック: チャージ後5発連射")));
+                Component.text("§7ライフル中右クリック: チャージ後5発手動射撃")));
         meta.setItemModel(new NamespacedKey("funnel", "aerial_bit_01"));
         meta.getPersistentDataContainer().set(controllerKey, PersistentDataType.BYTE, (byte)1);
         item.setItemMeta(meta);
@@ -347,11 +347,24 @@ final class AerialCombat implements Listener {
             }
             case RIFLE_FIRE -> {
                 if (st.mode != Mode.RIFLE || !isForm(heldMain,Material.BOW)) return;
-                if (st.rifleChargeUntil >= 0 || st.rifleNextShot >= 0) return;
+                if (st.rifleChargeUntil >= 0) return;
                 if (tick-st.started < intCfg("assembly-ticks",10,1)) return;
-                st.rifleChargeUntil = tick + intCfg("rifle-charge-ticks",20,1);
-                player.getWorld().playSound(player.getLocation(),Sound.BLOCK_BEACON_ACTIVATE,.5f,1.8f);
-                player.sendActionBar(Component.text("§bGUNDライフル: チャージ中…"));
+                if (st.rifleNextShot < 0) {
+                    st.rifleChargeUntil = tick + intCfg("rifle-charge-ticks",20,1);
+                    player.getWorld().playSound(player.getLocation(),Sound.BLOCK_BEACON_ACTIVATE,.5f,1.8f);
+                    player.sendActionBar(Component.text("§bGUNDライフル: チャージ中…"));
+                } else if (tick >= st.rifleNextShot) {
+                    fireRifle(player,st);
+                    st.rifleShots--;
+                    st.rifleNextShot = tick + intCfg("rifle-shot-interval-ticks",4,1);
+                    player.swingMainHand();
+                    if (st.rifleShots <= 0) {
+                        endRifle(player,st);
+                        player.sendActionBar(Component.text("§e5発射撃終了・冷却開始"));
+                    } else {
+                        player.sendActionBar(Component.text("§bGUNDライフル: 残弾 " + st.rifleShots));
+                    }
+                }
             }
             default -> {}
         }
@@ -645,20 +658,9 @@ final class AerialCombat implements Listener {
                 if (st.rifleChargeUntil >= 0 && tick >= st.rifleChargeUntil) {
                     st.rifleChargeUntil = -1;
                     st.rifleNextShot = tick;
-                    p.sendActionBar(Component.text("§bチャージ完了！ 5連射"));
+                    p.sendActionBar(Component.text("§bチャージ完了！ 右クリックで5発まで手動射撃"));
                 }
-                if (st.rifleNextShot >= 0 && tick >= st.rifleNextShot) {
-                    fireRifle(p,st);
-                    st.rifleShots--;
-                    p.swingMainHand();
-                    if (st.rifleShots <= 0) {
-                        endRifle(p,st);
-                        p.sendActionBar(Component.text("§e5連射終了・冷却開始"));
-                    } else {
-                        st.rifleNextShot = tick + intCfg("rifle-shot-interval-ticks",4,1);
-                        p.sendActionBar(Component.text("§bGUNDビットライフル: 残弾 " + st.rifleShots));
-                    }
-                }
+
             }
             if (shieldReady(p,st)) {
                 projectiles(p,st);
