@@ -1,7 +1,7 @@
 plugins { java }
 
 group = "dev.emerald"
-version = "0.8.12-SNAPSHOT"
+version = "0.8.13-SNAPSHOT"
 
 repositories {
     mavenCentral()
