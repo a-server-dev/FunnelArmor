@@ -1,7 +1,7 @@
 plugins { java }
 
 group = "dev.emerald"
-version = "0.8.13-SNAPSHOT"
+version = "0.8.14-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -10,6 +10,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.3.build.218-stable")
+    compileOnly("io.github.toxicity188:bettermodel-bukkit-api:3.6.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("com.google.code.gson:gson:2.11.0")
@@ -56,6 +57,7 @@ sourceSets {
 }
 
 tasks.processResources {
+    from("models/aerial_escutcheon.bbmodel") { rename { "aerial-escutcheon-experiment.bbmodel" } }
     from(packageResourcePack)
     dependsOn(packageResourcePack)
 }
