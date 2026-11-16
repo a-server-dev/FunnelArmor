@@ -34,6 +34,26 @@
       "type": "single",
       "resource": "funnel:item/aerial_gunbit_rifle",
       "sprite": "funnel:item/aerial_gunbit_rifle"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/funnel_icon_fin",
+      "sprite": "funnel:item/funnel_icon_fin"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/funnel_icon_shield",
+      "sprite": "funnel:item/funnel_icon_shield"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/funnel_icon_qubeley",
+      "sprite": "funnel:item/funnel_icon_qubeley"
+    },
+    {
+      "type": "single",
+      "resource": "funnel:item/funnel_icon_gund",
+      "sprite": "funnel:item/funnel_icon_gund"
     }
   ]
 }

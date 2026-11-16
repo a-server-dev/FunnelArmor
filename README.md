@@ -478,3 +478,28 @@ server visual test.**
 - GUI framing is a code-side correction: final appearance still requires
   a client test with the new pack. After upgrading the JAR and restarting,
   send the refreshed pack using `/funnel pack` and reload client resources.
+
+
+### v0.8.4 — Official inventory-only sprites (old prototype retired from giving)
+
+The four current controller icons are independent 2D transparent textures:
+fin, Qubeley, shield, and Aerial GUND-bit. Inventory controllers now point
+to \`funnel_icon_fin\`, \`funnel_icon_qubeley\`, \`funnel_icon_shield\`, or
+\`funnel_icon_gund\`. World \`ItemDisplay\` drones retain the approved
+\`funnel_drone_*\`, \`aerial_bit_*\`, shield, and rifle 3D item models.
+
+Every 40 ticks, online player storage and offhand controller item-model
+components are migrated to the new official icons **without altering PDC,
+formation settings, item names, or abilities**. Old prototype variant 2 is
+no longer offered by \`/funnel give\`, but previously obtained variant 2
+items are not deleted or broken.
+
+The new \`/funnel give all\` gives the **four current** types (Fin,
+Qubeley, Shield, GUND). Individual legacy options are 1, 3, and 4;
+\`/funnel aerial give\` remains available. The four icon JSON models
+are flat sprites whose first-/third-person hand transforms are hidden,
+without affecting hovering 3D displays.
+
+If previously issued icons still appear unchanged, verify the player's
+actual ItemModel component with \`/funnel diagnose\`, and the SHA1 and
+load status of the newly published resource pack.

@@ -118,10 +118,16 @@ final class AerialCombat implements Listener {
                 Component.text("§7オフハンド右クリック: エスカッシャンを展開/解除"),
                 Component.text("§7メインハンド＋しゃがみ右クリック: ライフル変形/解除"),
                 Component.text("§7ライフル中右クリック: 強化ビーム5発")));
-        meta.setItemModel(new NamespacedKey("funnel", "aerial_controller"));
+        meta.setItemModel(new NamespacedKey("funnel", "funnel_icon_gund"));
         meta.getPersistentDataContainer().set(controllerKey, PersistentDataType.BYTE, (byte)1);
         item.setItemMeta(meta);
         return item;
+    }
+
+    void grant(Player target) {
+        var leftovers = target.getInventory().addItem(device());
+        leftovers.values().forEach(item ->
+                target.getWorld().dropItemNaturally(target.getLocation(), item));
     }
 
     boolean command(CommandSender sender, String[] args) {
@@ -132,8 +138,7 @@ final class AerialCombat implements Listener {
             Player target = args.length >= 3 ? Bukkit.getPlayerExact(args[2])
                     : sender instanceof Player p ? p : null;
             if (target == null) { sender.sendMessage("§c対象のプレイヤーが見つかりません。"); return true; }
-            var leftovers = target.getInventory().addItem(device());
-            leftovers.values().forEach(i -> target.getWorld().dropItemNaturally(target.getLocation(), i));
+            grant(target);
             sender.sendMessage("§aエアリアル装備を " + target.getName() + " に渡しました。");
             return true;
         }

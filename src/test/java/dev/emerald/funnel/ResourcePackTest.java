@@ -45,6 +45,12 @@ class ResourcePackTest {
             assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_1.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_3.png"),
                     "Qubeley bit requires the dedicated 64x64 purple texture");
+            for (String name : java.util.List.of("funnel_icon_fin", "funnel_icon_shield",
+                    "funnel_icon_qubeley", "funnel_icon_gund")) {
+                assertTrue(entries.contains("assets/funnel/items/" + name + ".json"));
+                assertTrue(entries.contains("assets/funnel/models/item/" + name + ".json"));
+                assertTrue(entries.contains("assets/funnel/textures/item/" + name + ".png"));
+            }
             assertTrue(entries.contains("assets/funnel/textures/item/funnel_drone_4.png"),
                     "Unicorn-style shield needs its own 256px paint texture");
             for (int i = 1; i <= 4; i++) {
@@ -82,6 +88,16 @@ class ResourcePackTest {
                         JsonObject model = parse(zip.readAllBytes());
                         // Aerial previews temporarily inherit existing verified models.
                         // Final approved free-mesh BBModels are separately tracked under models/.
+                        if (entry.getName().matches("assets/funnel/models/item/funnel_icon_(fin|shield|qubeley|gund)\\.json")) {
+                            assertEquals("minecraft:item/generated", model.get("parent").getAsString());
+                            assertEquals("funnel:item/" + entry.getName().substring(
+                                    entry.getName().lastIndexOf('/')+1, entry.getName().length()-5),
+                                    model.getAsJsonObject("textures").get("layer0").getAsString());
+                            var gui = model.getAsJsonObject("display").getAsJsonObject("gui");
+                            assertEquals(1, gui.getAsJsonArray("scale").get(0).getAsDouble());
+                            zip.closeEntry();
+                            continue;
+                        }
                         if (entry.getName().matches("assets/funnel/models/item/aerial_[a-z0-9_]+\\.json")) {
                             if (model.has("elements")) {
                                 assertTrue(model.getAsJsonArray("elements").size() > 0, entry.getName());

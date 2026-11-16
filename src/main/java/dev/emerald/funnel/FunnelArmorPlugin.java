@@ -138,6 +138,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         aerialCombat.start();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
+        // Migrate the item-model COMPONENT of previously issued controllers.
+        // Do not change PDC, abilities, names, world ItemDisplays or inventories in chests.
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            for (Player player : Bukkit.getOnlinePlayers()) refreshControllerIcons(player);
+        }, 20L, 40L);
         if (getCommand("funnel") != null) {
             getCommand("funnel").setExecutor(this);
             getCommand("funnel").setTabCompleter(this);
@@ -293,7 +298,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Component.text(variant == 3
                         ? "§7オフハンド右クリック: 最寄りのモブを12基で追撃"
                         : "§7射程32 / ダメージ0.5HP")));
-        meta.setItemModel(new NamespacedKey("funnel", "funnel_drone_" + variant));
+        meta.setItemModel(new NamespacedKey("funnel", switch (variant) {
+            case 1 -> "funnel_icon_fin";
+            case 3 -> "funnel_icon_qubeley";
+            case 4 -> "funnel_icon_shield";
+            default -> "funnel_drone_2"; // legacy prototype retained for existing items only
+        }));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
         meta.getPersistentDataContainer().set(formationKey, PersistentDataType.STRING, FormationMode.ORBIT.id());
         if (variant == 1) meta.getPersistentDataContainer().set(
@@ -302,6 +312,42 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         stack.setItemMeta(meta);
         return stack;
     }
+    private boolean applyOfficialIcon(ItemStack item) {
+        if (item == null || item.getType() != Material.LEATHER_HORSE_ARMOR || !item.hasItemMeta())
+            return false;
+        ItemMeta meta = item.getItemMeta();
+        String desired = null;
+        if (meta.getPersistentDataContainer().has(itemKey, PersistentDataType.BYTE)) {
+            Integer variant = meta.getPersistentDataContainer().get(variantKey, PersistentDataType.INTEGER);
+            if (variant != null) desired = switch (variant) {
+                case 1 -> "funnel_icon_fin";
+                case 3 -> "funnel_icon_qubeley";
+                case 4 -> "funnel_icon_shield";
+                default -> null; // no migration for old prototype variant 2
+            };
+        } else if (meta.getPersistentDataContainer().has(
+                new NamespacedKey(this, "aerial_controller"), PersistentDataType.BYTE)) {
+            desired = "funnel_icon_gund";
+        }
+        if (desired == null) return false;
+        NamespacedKey expected = new NamespacedKey("funnel", desired);
+        if (expected.equals(meta.getItemModel())) return false;
+        meta.setItemModel(expected);
+        item.setItemMeta(meta); // preserve all existing PDC and state
+        return true;
+    }
+
+    private void refreshControllerIcons(Player player) {
+        var inv = player.getInventory();
+        ItemStack[] storage = inv.getStorageContents();
+        for (int i = 0; i < storage.length; i++) {
+            ItemStack item = storage[i];
+            if (applyOfficialIcon(item)) inv.setItem(i, item);
+        }
+        ItemStack offhand = inv.getItemInOffHand();
+        if (applyOfficialIcon(offhand)) inv.setItemInOffHand(offhand);
+    }
+
     private boolean isWeapon(ItemStack stack) {
         return stack != null && stack.getType() == Material.LEATHER_HORSE_ARMOR && stack.hasItemMeta()
                 && stack.getItemMeta().getPersistentDataContainer().has(itemKey, PersistentDataType.BYTE);
@@ -1503,7 +1549,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel aerial give [player] §7| §b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel aerial give [player] §7| §b/funnel give <1|3|4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
         if (args[0].equalsIgnoreCase("aerial")) return aerialCombat.command(sender, args);
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
@@ -1513,19 +1559,20 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 if (args.length > 1 && !all) {
                     try { variant = Integer.parseInt(args[1]); }
                     catch (NumberFormatException ex) {
-                        sender.sendMessage("§c指定: /funnel give <1-4|all> [player]");
+                        sender.sendMessage("§c指定: /funnel give <1|3|4|all> [player]");
                         return true;
                     }
-                    if (variant < 1 || variant > 4) {
-                        sender.sendMessage("§cファンネル番号は1～4です。");
+                    if (variant != 1 && variant != 3 && variant != 4) {
+                        sender.sendMessage("§c現在の対象は 1=フィン / 3=キュベレイ / 4=シールド です。旧試作2は新規配布を停止しました。");
                         return true;
                     }
                 }
                 Player target = args.length > 2 ? Bukkit.getPlayerExact(args[2]) : sender instanceof Player p ? p : null;
                 if (target == null) { sender.sendMessage("§cプレイヤーが見つかりません。"); return true; }
                 if (all) {
-                    for (int n = 1; n <= 4; n++) target.getInventory().addItem(weapon(n));
-                    sender.sendMessage("§a" + target.getName() + " に4種類のファンネルを渡しました。");
+                    for (int n : new int[]{1,3,4}) target.getInventory().addItem(weapon(n));
+                    aerialCombat.grant(target);
+                    sender.sendMessage("§a" + target.getName() + " に正式版4種類（フィン、キュベレイ、シールド、GUND）を渡しました。");
                 } else {
                     target.getInventory().addItem(weapon(variant));
                     sender.sendMessage("§a" + target.getName() + " にファンネル" + variant + "を渡しました。");

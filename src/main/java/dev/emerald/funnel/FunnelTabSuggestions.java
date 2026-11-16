@@ -64,7 +64,7 @@ public final class FunnelTabSuggestions {
                 }
                 case "give" -> {
                     if (!admin) return List.of();
-                    if (args.length == 2) candidates.addAll(List.of("1", "2", "3", "4", "all"));
+                    if (args.length == 2) candidates.addAll(List.of("1", "3", "4", "all"));
                     else if (args.length == 3) candidates.addAll(onlineNames);
                     else return List.of();
                 }
