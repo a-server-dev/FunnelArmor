@@ -8,28 +8,28 @@ function buildBitFirst(){
  // The x/y profiles are for eleven separate parts from the loose-piece photo.
  // z+ faces are the colored front surfaces; assembled positions use the LEFT joined shield photo.
  const recipes={
-  core:{shade:"blue",depth:.82,profile:[[0,-.95,.95],[.42,-1.42,1.42],[1.04,-1.50,1.50],[1.62,-1.21,1.21],[2.35,-1.0,1],[3.15,-.89,.89],[4.10,-.72,.72],[4.82,-.48,.48]],front:"cobalt"},
-  upper:{shade:"white",depth:.78,profile:[[0,-.52,.74],[.85,-1.0,.90],[1.55,-1.10,.85],[2.25,-.95,.78],[3.6,-.69,.70],[5.24,-.48,.48],[5.98,-.34,.33]],front:"porcelain"},
-  nose:{shade:"white",depth:1.05,profile:[[0,-.66,.66],[.33,-1.0,1],[.83,-1.32,1.32],[1.60,-1.42,1.42],[2.56,-1.16,1.16],[3.21,-.91,.91],[3.8,-.57,.57]],front:"porcelain"},
-  shoulder:{shade:"blue",depth:1.16,profile:[[0,-.82,.83],[.61,-1.09,1.06],[1.30,-1.17,1.12],[2.05,-.97,1.02],[2.77,-.78,.89],[3.34,-.66,.69]],front:"cobalt"},
-  outer:{shade:"white",depth:.94,profile:[[0,-.40,.49],[1.4,-.53,.60],[3.10,-.65,.69],[5.7,-.84,.82],[7.6,-1.08,.95],[8.2,-1.02,.98],[8.7,-.65,.73],[10.25,-.77,.87],[11.55,-.79,.79],[12.55,-.51,.56],[14.23,-.37,.43]],front:"porcelain",edge:"cobalt"},
-  crest:{shade:"white",depth:.93,profile:[[0,-.58,.58],[.36,-.95,.95],[1.35,-1.26,1.26],[2.25,-1.45,1.45],[3.43,-1.65,1.65],[4.48,-1.63,1.63]],front:"porcelain"},
-  inner:{shade:"charcoal",depth:.75,profile:[[0,-.25,.27],[1.10,-.35,.38],[2.8,-.42,.46],[4.15,-.54,.55],[5.55,-.79,.65],[6.42,-.74,.72],[7.5,-.56,.54],[8.92,-.36,.42]],front:"steel"}
+  core:{shade:"blue",depth:.90,profile:[[0,-.85,.85],[.6,-1.46,1.46],[1.48,-1.42,1.42],[2.10,-1.14,1.14],[3.25,-.91,.91],[4.65,-.72,.72],[5.10,-.44,.44]],front:"cobalt"},
+  upper:{shade:"white",depth:.72,profile:[[0,-.42,.56],[.75,-.70,.72],[1.70,-.87,.83],[2.55,-.79,.77],[4.40,-.57,.55],[6.05,-.35,.35],[6.75,-.20,.22]],front:"porcelain"},
+  nose:{shade:"white",depth:1.03,profile:[[0,-.46,.46],[.54,-.93,.93],[1.33,-1.17,1.17],[2.14,-1.18,1.18],[3.21,-1.04,1.04],[4.44,-.82,.82],[5.32,-.46,.46]],front:"porcelain"},
+  shoulder:{shade:"blue",depth:1.01,profile:[[0,-.59,.59],[.60,-.97,.97],[1.30,-1.03,1.01],[2.07,-.88,.88],[2.78,-.69,.70],[3.32,-.46,.50]],front:"cobalt"},
+  outer:{shade:"white",depth:1.03,profile:[[0,-.29,.34],[1.05,-.56,.56],[2.4,-.87,.90],[4.70,-1.22,1.28],[6.6,-1.50,1.49],[8.05,-1.52,1.55],[8.75,-1.13,1.47],[10.20,-1.24,1.49],[12.15,-1.13,1.34],[13.18,-.88,1.08],[14.54,-.68,.81]],front:"porcelain",edge:"cobalt"},
+  crest:{shade:"white",depth:.93,profile:[[0,-.22,.22],[.67,-.70,.70],[1.30,-1.04,1.04],[2.58,-1.44,1.44],[3.80,-1.56,1.56],[4.63,-1.41,1.41]],front:"porcelain"},
+  inner:{shade:"charcoal",depth:.74,profile:[[0,-.24,.23],[1.1,-.39,.40],[2.85,-.59,.61],[4.37,-.82,.74],[6.30,-.84,.78],[7.75,-.69,.67],[9.08,-.41,.44]],front:"steel"}
  };
  const placements=[
-  ["01","上部青コア","core",0,9.45,.56,false],
-  ["02","左上白ブレード","upper",-1.92,9.52,.12,false],
-  ["03","右上白ブレード","upper",1.92,9.52,.12,true],
-  ["04","中央白ノーズ","nose",0,6.13,.84,false],
-  ["05","左肩青＋黄ベント","shoulder",-2.17,7.20,.92,false],
-  ["06","右肩青＋黄ベント","shoulder",2.17,7.20,.92,true],
-  ["07","左下白外装","outer",-2.50,-7.10,.04,false],
-  ["08","右下白外装","outer",2.50,-7.10,.04,true],
-  ["09","中央白V字装甲","crest",0,1.69,.47,false],
-  ["10","左グレー内装","inner",-1.00,-7.02,.04,false],
-  ["11","右グレー内装","inner",1.00,-7.02,.04,true]
+  ["01","上部青コア","core",0,9.28,1.0,false],
+  ["02","左上白ブレード","upper",-2.07,9.68,.25,false],
+  ["03","右上白ブレード","upper",2.07,9.68,.25,true],
+  ["04","中央白ノーズ","nose",0,4.62,1.40,false],
+  ["05","左肩青＋黄ベント","shoulder",-2.27,7.17,1.04,false],
+  ["06","右肩青＋黄ベント","shoulder",2.27,7.17,1.04,true],
+  ["07","左下白外装","outer",-3.41,-8.32,.25,false],
+  ["08","右下白外装","outer",3.41,-8.32,.25,true],
+  ["09","中央白V字装甲","crest",0,.85,1.0,false],
+  ["10","左グレー内装","inner",-1.24,-8.20,.08,false],
+  ["11","右グレー内装","inner",1.24,-8.20,.08,true]
  ];
- const step=.24,round=n=>Math.round(n*1e5)/1e5;
+ const step=.53,round=n=>Math.round(n*1e5)/1e5;
  function piece(type,mirror){
   const recipe=recipes[type],stations=recipe.profile,thick=recipe.depth;
   let boxes=[];
@@ -43,18 +43,17 @@ function buildBitFirst(){
   for(let y=0;y<end-1e-6;y+=step){
    let y2=Math.min(end,y+step),aa=bounds(y),bb=bounds(y2),lo=Math.min(aa[0],bb[0]),hi=Math.max(aa[1],bb[1]);
    put([lo,y,-thick/2],[hi,y2,thick/2],recipe.shade);
-   // independently authored beveled surface inset to avoid a flat plank.
-   if(y>0.24&&y2<end-.4&&hi-lo>.65){
-    const inset=type==="outer"?.21:.18;
-    put([lo+inset,y+.014,thick/2],[hi-inset,y2-.014,thick/2+.085],recipe.front);
-   }
+   // Leave each large front face uninterrupted. Earlier per-slice overlays
+   // created dark horizontal zebra stripes and thick rectangular plates.
    if(recipe.edge&&y2<end-.25){
-    put([lo,y,thick/2-.005],[Math.min(lo+.16,hi-.1),y2,thick/2+.13],recipe.edge);
+    put([lo,y,thick/2+.018],[Math.min(lo+.19,hi-.1),y2,thick/2+.18],recipe.edge);
+    if(y>2 && y2<end-1 && hi-lo>1.55)
+     put([hi-.33,y+.022,thick/2+.02],[hi-.1,y2-.022,thick/2+.115],"porcelain");
    }
   }
   const p=(from,to,mat)=>put(from,to,mat);
   function bore(x,y,r=.30){
-   let z=thick/2+.12; // black recess backed by eight small blue ring facets
+   let z=thick/2+.47; // keep sockets in FRONT of the blue armor, never buried by its inset
    p([x-r*.65,y-r*.65,z],[x+r*.65,y+r*.65,z+.04],"bore");
    const slices=8;
    for(let k=0;k<slices;k++){
@@ -67,55 +66,52 @@ function buildBitFirst(){
     p([-1.16,.63,.51],[1.16,1.14,.68],"cobalt");
     p([-.84,1.27,.56],[.84,3.31,.72],"blue");
     p([-.57,3.52,.55],[.57,4.64,.68],"cobalt");
-    bore(0,3.42,.29);bore(-1.09,1.16,.23);bore(1.09,1.16,.23);
-    p([-.85,4.7,-.24],[-.61,5.78,.26],"white");
-    p([.61,4.7,-.24],[.85,5.78,.26],"white");
+    bore(0,3.80,.42);bore(-.84,1.30,.32);bore(.84,1.30,.32);
+    p([-.85,4.76,-.26],[-.63,6.50,.25],"white");
+    p([.63,4.76,-.26],[.85,6.50,.25],"white");
     p([-.42,.08,.45],[.42,.38,.61],"dark");
     break;
    case "upper":
-    p([-.69,.40,.43],[.28,1.42,.57],"porcelain");
+    p([-.61,.29,.39],[.40,1.21,.53],"porcelain");
     p([-.41,.57,.61],[-.14,1.33,.67],"steel");
     p([-.33,.74,.69],[-.20,1.15,.73],"bore");
     p([-.37,1.70,.48],[.50,2.20,.55],"white");
     break;
    case "nose":
-    p([-1.13,.25,.52],[1.13,.53,.68],"cobalt");
-    p([-1.00,.50,.72],[1.00,1.95,.78],"white");
-    p([-.43,2.72,.65],[.43,3.62,.77],"porcelain");
-    p([-.25,3.02,.78],[.25,3.47,.83],"steel");
+    p([-.77,.35,.57],[.77,.64,.69],"cobalt");
+    p([-.97,1.05,.68],[.97,3.64,.80],"white");
+    p([-.45,4.39,.63],[.45,5.06,.80],"porcelain");
+    p([-.24,4.62,.81],[.24,4.96,.87],"steel");
+    p([-.38,.08,.69],[.38,.34,.80],"cobalt");
     break;
    case "shoulder":
     // Slanted gold vent made of staggered narrow steps.
-    for(let i=0;i<6;i++){
-     let x=-.87+i*.22, y=2.30+i*.105;
-     p([x,y,thick/2+.12],[x+.27,y+.48,thick/2+.32],"gold");
+    for(let i=0;i<5;i++){
+     let x=-.69+i*.21, y=2.48+i*.09;
+     p([x,y,thick/2+.13],[x+.27,y+.49,thick/2+.37],"gold");
     }
     p([-.96,.29,.66],[-.77,1.67,.77],"trim");
     p([.56,.26,.65],[.73,1.79,.74],"dark");
     p([-.49,.01,-.69],[.49,.70,-.56],"graphite");
     break;
    case "outer":
-    // Beveled outer edge follows every bend, long white face stays wide.
-    for(let y=.7;y<end-1.4;y+=1.0){
-     let y2=Math.min(end-1.4,y+.62),[lo]=bounds(y);
-     p([lo+.26,y,thick/2+.10],[lo+.37,y2,thick/2+.18],"white");
-    }
-    p([.25,9.58,.51],[.34,10.43,.58],"steel");
-    p([.27,4.76,.51],[.38,5.88,.58],"steel");
-    p([-.23,.90,.51],[-.08,1.43,.58],"porcelain");
+    // Broad white armor, only limited edge panel details and outside blue rim.
+    p([.78,9.62,thick/2+.03],[.94,10.78,thick/2+.15],"steel");
+    p([.69,5.02,thick/2+.03],[.83,6.18,thick/2+.15],"porcelain");
+    p([-.21,.90,thick/2+.03],[-.05,1.55,thick/2+.15],"porcelain");
     break;
    case "crest":
-    p([-1.54,3.06,.51],[-1.14,4.37,.63],"porcelain");
-    p([1.14,3.06,.51],[1.54,4.37,.63],"porcelain");
-    p([-.37,.20,.55],[.37,.88,.77],"white");
-    p([-.23,.22,.78],[.23,.53,.83],"steel");
-    p([-.73,1.22,.52],[.73,2.68,.60],"porcelain");
+    p([-1.33,3.27,.51],[-1.13,4.36,.65],"porcelain");
+    p([1.13,3.27,.51],[1.33,4.36,.65],"porcelain");
+    p([-.32,.24,.57],[.32,.92,.78],"cobalt");
+    p([-.20,.16,.79],[.20,.48,.86],"white");
+    p([-.93,2.09,.52],[.93,3.23,.69],"porcelain");
     break;
    case "inner":
-    p([-.24,1.10,.42],[.22,5.46,.52],"steel");
-    p([-.25,6.51,.41],[.27,7.11,.52],"charcoal");
-    p([-.18,3.36,.53],[.02,4.93,.60],"graphite");
-    p([.12,2.15,.52],[.25,3.22,.60],"dark");
+    p([-.31,1.04,.42],[.24,7.45,.52],"steel");
+    p([-.22,7.53,.41],[.22,8.20,.52],"charcoal");
+    p([-.14,2.83,.53],[.02,6.57,.60],"shine");
+    p([.13,2.12,.52],[.26,3.29,.60],"dark");
     break;
   }
   return boxes;
@@ -142,14 +138,15 @@ function buildBitFirst(){
  outputs["resourcepack/assets/funnel/models/item/aerial_v2_escutcheon.json"]=JSON.stringify(model(whole,shieldDisplay),null,2)+"\n";
  const maxX=Math.max(...whole.map(x=>x.to[0])),minX=Math.min(...whole.map(x=>x.from[0])),maxY=Math.max(...whole.map(x=>x.to[1])),minY=Math.min(...whole.map(x=>x.from[1]));
  if(whole.length!==parts.reduce((a,p)=>a+p.boxes.length,0))throw Error("Failed bit-first join");
- if((maxY-minY)/(maxX-minX)<2.4)throw Error("Shield looks too wide relative to reference");
+ if((maxY-minY)/(maxX-minX)<2.10 || (maxY-minY)/(maxX-minX)>2.70)
+   throw Error("Joined shield should match the primary reference, not look like two thin sticks");
  if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview, v3 revised fit (not yet approved)",
+ "# Bit-first Escutcheon preview, v4 primary front reference (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
  "",
- "The first (0.8.20) draft looked like an exploded shield because part placements copied the spacing of the loose pieces. In 0.8.21, each join transform is tightened, the upper core/side-armor/nose/crest and white/grey lower rails are brought into contact, the white palette is corrected, and new layered bevels, blue outlines, gold vent and nozzle-ring details are included.",
+ "This 0.8.22 iteration targets the SECOND image (stylized frontal joined shield) as the primary silhouette. The THIRD physical photo defines the 11 separate component shapes. Compared with 0.8.21, the white upper fins are narrower and longer; the blue core's three sockets move in front of its surfaces; the white central nose is longer and sharper; gold shoulder vents become compact and slanted; the side armor is broadened inward with blue exterior edge; the grey center blades are inset and gain blue/cyan channels. Redundant per-slice raised face plates were removed to reduce zebra striping.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

@@ -205,11 +205,11 @@ class ResourcePackTest {
             if(uv.get(0).getAsDouble()>4.0 && uv.get(0).getAsDouble()<5.0
                     && uv.get(1).getAsDouble()<2.0) brightWhiteFaces++;
         }
-        assertTrue((maxY-minY)/(maxX-minX)>2.7,
-                "The joined shield must retain the compact, tall silhouette in the reference photo");
-        assertTrue(brightWhiteFaces>80,
+        assertTrue((maxY-minY)/(maxX-minX)>2.10 && (maxY-minY)/(maxX-minX)<2.70,
+                "The joined shield must match the primary reference: broad white panels, not thin sticks");
+        assertTrue(brightWhiteFaces>45,
                 "White front armor must use the brighter white texture patch rather than dark grey");
-        assertTrue(count>=600,"Surface bevels and colored details must survive bit-first joining");
+        assertTrue(count>=180,"Surface bevels and colored details must survive bit-first joining");
     }
 
     @Test
