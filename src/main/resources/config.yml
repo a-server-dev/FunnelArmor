@@ -109,7 +109,7 @@ aerial:
   shield-max-hits: 5
   shield-max-absorbed-damage: 20.0
   shield-cooldown-ticks: 200
-  # One right click charges, then automatically fires exactly five beams.
+  # First right click charges once, then five separate right clicks fire manually.
   rifle-shots: 5
   rifle-charge-ticks: 20
   rifle-damage: 1.5
