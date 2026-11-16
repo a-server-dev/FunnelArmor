@@ -353,6 +353,9 @@ final class AerialCombat implements Listener {
                                     + player.getName() + "; vanilla shield remains "
                                     + (plugin.getConfig().getBoolean("aerial.bettermodel.hide-vanilla-shield", false) ? "hidden" : "visible"));
                         }
+                    } else if (betterModel != null) {
+                        plugin.getLogger().warning("BetterModel Escutcheon model not registered: "
+                                + AerialBetterModel.ID + " (try /bettermodel reload and verify its resource pack)");
                     }
                     player.getInventory().setItemInOffHand(shield);
                     player.sendActionBar(Component.text("§bエスカッシャン展開：右クリック長押しで防御"));

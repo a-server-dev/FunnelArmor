@@ -625,3 +625,12 @@ Rifle geometry, firing damage, ammunition and cooldown are unchanged.
 - If BetterModel is unavailable or has not loaded `funnel_aerial_escutcheon`, FunnelArmor retains the old resource-pack shield model rather than hiding it.
 - **Instant rollback via configuration:** set `aerial.bettermodel.enabled: false` and restart Paper; this restores the existing resource-pack shield rendering. No Git rollback or file removal required. The copy in BetterModel's models folder is left untouched.
 - This is a **runtime visual experiment**, not yet visually verified. The original BBModel has Blockbench free meshes. BetterModel 3.x and Minecraft 26.1+ are required for mesh rendering; actual model ingestion and client pack synchronization must be tested in game.
+
+## v0.8.18 — BetterModel Escutcheon display size and lighting diagnostics
+
+- Optional `aerial.bettermodel.model-scale` defaults to `2.0` and applies a clamped 0.1–8.0 scale only to FunnelArmor's BetterModel dummy tracker. This does not change the approved 74-mesh `.bbmodel`, vanilla Escutcheon rendering, combat behavior, or other drones.
+- `aerial.bettermodel.full-bright` defaults to `true`: the dummy tracker requests block and sky brightness 15/15. This is diagnostic; if the mesh remains black, inspect BetterModel's generated client pack and UV/texture mapping. The original texture file remains unchanged.
+- A per-deployment server log reports scale, full-bright and viewer count. An unregistered model now logs a warning instead of silently skipping its overlay.
+- Existing config files without these two new keys use the same defaults; `aerial.bettermodel.enabled` remains opt-in (`false` in the shipped config) and `hide-vanilla-shield` remains `false`.
+- **Test with the offhand GUND-bit controller on the server.** A standalone `/bettermodel spawn funnel_aerial_escutcheon` creates a tracker outside FunnelArmor and therefore does not inherit FunnelArmor's size or lighting settings.
+- Re-equip/redeploy the shield after changing the visual settings (and restart Paper when switching BetterModel integration on/off). Keep the vanilla shield visible until the overlay's shape, colors, placement and pack loading are verified in game.

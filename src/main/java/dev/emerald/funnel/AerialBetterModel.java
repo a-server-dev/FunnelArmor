@@ -3,6 +3,8 @@ package dev.emerald.funnel;
 import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.tracker.DummyTracker;
+import kr.toxicity.model.api.tracker.ModelScaler;
+import kr.toxicity.model.api.tracker.TrackerUpdateAction;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -57,8 +59,19 @@ final class AerialBetterModel {
             if (model == null) return null;
             DummyTracker tracker = model.create(BukkitAdapter.adapt(where));
             try {
+                // Source geometry stays untouched; tune only this FunnelArmor-owned display.
+                double configured = plugin.getConfig().getDouble("aerial.bettermodel.model-scale", 2.0);
+                if (!Double.isFinite(configured)) configured = 2.0;
+                float scale = (float) Math.max(0.1, Math.min(8.0, configured));
+                tracker.scaler(ModelScaler.value(scale));
                 for (Player viewer : where.getWorld().getPlayers())
                     tracker.spawn(BukkitAdapter.adapt(viewer));
+                // Diagnostic lighting: if the model remains black at full light,
+                // inspect the generated BetterModel mesh/UV/texture pack instead.
+                boolean fullBright = plugin.getConfig().getBoolean("aerial.bettermodel.full-bright", true);
+                if (fullBright) tracker.update(TrackerUpdateAction.brightness(15, 15));
+                plugin.getLogger().info("BetterModel Escutcheon display: scale=" + scale
+                        + ", full-bright=" + fullBright + ", viewers=" + where.getWorld().getPlayers().size());
                 return tracker;
             } catch (RuntimeException | LinkageError ex) {
                 tracker.close();
