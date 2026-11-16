@@ -26,7 +26,7 @@ final class AerialBetterModel {
             // Never overwrite someone's custom version. This file is solely owned by the experiment.
             if (!Files.exists(target)) {
                 try (InputStream in = plugin.getResource("aerial-escutcheon-experiment.bbmodel")) {
-                    if (in != null) Files.copy(in, target, StandardCopyOption.COPY_ATTRIBUTES);
+                    if (in != null) Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
                 }
                 plugin.getLogger().info("BetterModel experiment source copied to " + target
                         + "; reload BetterModel's models before enabling the experiment.");
@@ -41,7 +41,7 @@ final class AerialBetterModel {
         catch (RuntimeException | LinkageError ex) { return false; }
     }
 
-    DummyTracker spawn(Location where) {
+    Object spawn(Location where) {
         try {
             var model = BetterModel.modelOrNull(ID);
             return model == null ? null : model.create(BukkitAdapter.adapt(where));
@@ -51,12 +51,12 @@ final class AerialBetterModel {
         }
     }
 
-    void move(DummyTracker model, Location where) {
+    void move(Object instance, Location where) {\n        DummyTracker model = instance instanceof DummyTracker d ? d : null;
         if (model != null && !model.isClosed())
             model.location(BukkitAdapter.adapt(where));
     }
 
-    void close(DummyTracker model) {
+    void close(Object instance) {\n        DummyTracker model = instance instanceof DummyTracker d ? d : null;
         if (model != null && !model.isClosed()) model.close();
     }
 }
