@@ -472,10 +472,25 @@ class ResourcePackTest {
                     paths.add(entry.getName());
                     if (entry.getName().startsWith("assets/funnel/items/") && entry.getName().endsWith(".json")) {
                         JsonObject item = parse(zip.readAllBytes());
-                        String modelId = item.getAsJsonObject("model").get("model").getAsString();
-                        assertTrue(modelId.startsWith("funnel:item/"), modelId);
-                        referencedModels.add("assets/funnel/models/item/" +
-                                modelId.substring("funnel:item/".length()) + ".json");
+                        JsonObject definition = item.getAsJsonObject("model");
+                        if ("minecraft:condition".equals(definition.get("type").getAsString())) {
+                            assertEquals("minecraft:using_item",
+                                    definition.get("property").getAsString());
+                            for (String state : java.util.List.of("on_false", "on_true")) {
+                                JsonObject child = definition.getAsJsonObject(state);
+                                assertEquals("minecraft:model", child.get("type").getAsString());
+                                String id = child.get("model").getAsString();
+                                assertTrue(id.startsWith("funnel:item/"), id);
+                                referencedModels.add("assets/funnel/models/item/" +
+                                        id.substring("funnel:item/".length()) + ".json");
+                            }
+                        } else {
+                            assertEquals("minecraft:model", definition.get("type").getAsString());
+                            String modelId = definition.get("model").getAsString();
+                            assertTrue(modelId.startsWith("funnel:item/"), modelId);
+                            referencedModels.add("assets/funnel/models/item/" +
+                                    modelId.substring("funnel:item/".length()) + ".json");
+                        }
                     }
                     zip.closeEntry();
                 }
