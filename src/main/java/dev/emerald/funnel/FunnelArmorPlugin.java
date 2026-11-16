@@ -299,9 +299,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                         ? "§7オフハンド右クリック: 最寄りのモブを12基で追撃"
                         : "§7射程32 / ダメージ0.5HP")));
         meta.setItemModel(new NamespacedKey("funnel", switch (variant) {
-            case 1 -> "funnel_icon_fin";
-            case 3 -> "funnel_icon_qubeley";
-            case 4 -> "funnel_icon_shield";
+            case 1 -> "funnel_drone_1";
+            case 3 -> "funnel_drone_3";
+            case 4 -> "funnel_drone_4";
             default -> "funnel_drone_2"; // legacy prototype retained for existing items only
         }));
         meta.getPersistentDataContainer().set(variantKey, PersistentDataType.INTEGER, variant);
@@ -320,14 +320,14 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (meta.getPersistentDataContainer().has(itemKey, PersistentDataType.BYTE)) {
             Integer variant = meta.getPersistentDataContainer().get(variantKey, PersistentDataType.INTEGER);
             if (variant != null) desired = switch (variant) {
-                case 1 -> "funnel_icon_fin";
-                case 3 -> "funnel_icon_qubeley";
-                case 4 -> "funnel_icon_shield";
+                case 1 -> "funnel_drone_1";
+                case 3 -> "funnel_drone_3";
+                case 4 -> "funnel_drone_4";
                 default -> null; // no migration for old prototype variant 2
             };
         } else if (meta.getPersistentDataContainer().has(
                 new NamespacedKey(this, "aerial_controller"), PersistentDataType.BYTE)) {
-            desired = "funnel_icon_gund";
+            desired = "aerial_bit_01";
         }
         if (desired == null) return false;
         NamespacedKey expected = new NamespacedKey("funnel", desired);

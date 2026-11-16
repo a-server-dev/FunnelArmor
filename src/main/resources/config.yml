@@ -99,6 +99,8 @@ fin-funnel:
 # Aerial (separate controller, does not change four existing variants).
 aerial:
   enabled: true
+  # 11 GUND bit meshes are individually scaled to approx. 0.8 block length.
+  bit-size-multiplier: 1.0
   target-range: 20.0
   auto-damage: 0.5
   auto-min-interval-ticks: 10
@@ -119,4 +121,5 @@ aerial:
   shield-yaw-offset-degrees: 0.0
   bit-yaw-offset-degrees: 90.0
   rifle-muzzle-forward-offset: 1.1
-  rifle-muzzle-up-offset: 0.12
+  rifle-muzzle-up-offset: -0.28
+  rifle-muzzle-right-offset: 0.33

@@ -503,3 +503,38 @@ without affecting hovering 3D displays.
 If previously issued icons still appear unchanged, verify the player's
 actual ItemModel component with \`/funnel diagnose\`, and the SHA1 and
 load status of the newly published resource pack.
+
+
+### v0.8.5 — Hand-equipped Aerial shield and beam rifle; restored 3D inventory icons
+
+- Restore 3D references for the three approved legacy controllers:
+  Fin \`funnel_drone_1\`, Qubeley \`funnel_drone_3\`, Unicorn shield
+  \`funnel_drone_4\`. The Aerial controller now uses the 3D
+  \`aerial_bit_01\` model. Previously issued inventory items are migrated
+  by the existing PDC-preserving icon update; the discarded 2D icons are
+  not needed for gameplay.
+- The 11 Aerial bit meshes now use **per-piece ItemDisplay scaling**
+  calculated from their individual dimensions. The intended longest side
+  is approximately 0.8 world blocks per bit. The server can tune the
+  multiplier at \`aerial.bit-size-multiplier\`.
+- Offhand normal right-click with a GUND controller transforms that same
+  held item into a **real vanilla SHIELD** with the approved
+  source-derived Escutcheon model. **After transformation, hold
+  right-click to raise/guard** (normal vanilla shield-use pose).
+  **Sneak + right-click with offhand shield retracts** it. The shield
+  still has 5-hit / 20-HP durability and cooldown, and the custom
+  interception now requires native blocking pose.
+- Main-hand sneak + right-click transforms the same GUND controller into
+  a **real vanilla BOW** using the source-derived GUND-bit Rifle model.
+  It is visible as a held main-hand weapon. Right-click shoots a
+  1.5-HP beam, max 5 shots; sneak + right-click reverts the weapon.
+  Vanilla arrow shooting is suppressed for the GUND-tagged BOW.
+- The floating duplicate full-size shield/rifle ItemDisplays are removed.
+  The separated bits converge and then hide when a held item takes over.
+- On disconnect, world change, death, restart, or switching away from
+  transformed equipment, temporary SHIELD/BOW items are restored to
+  the original GUND controller. No unrelated inventory items are cleared.
+- The BBModels in \`models/\` remain untouched, and the in-game JSON
+  representations are still cuboid approximations. This feature must be
+  validated with a Paper server and client before calling the visual
+  alignment final.

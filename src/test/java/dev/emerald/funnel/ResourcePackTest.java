@@ -182,6 +182,39 @@ class ResourcePackTest {
     }
 
     @Test
+    void approved3DControllerAndHandModelsHaveExpectedTransforms() throws Exception {
+        java.util.Map<String, JsonObject> found = new java.util.HashMap<>();
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(stream);
+            try (ZipInputStream zip = new ZipInputStream(stream)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    String name = entry.getName();
+                    if (name.equals("assets/funnel/models/item/aerial_bit_01.json")
+                            || name.equals("assets/funnel/models/item/aerial_escutcheon.json")
+                            || name.equals("assets/funnel/models/item/aerial_gunbit_rifle.json")) {
+                        found.put(name.substring(name.lastIndexOf('/') + 1), parse(zip.readAllBytes()));
+                    }
+                    zip.closeEntry();
+                }
+            }
+        }
+        assertEquals(3, found.size());
+        JsonObject bit = found.get("aerial_bit_01.json");
+        assertTrue(bit.getAsJsonArray("elements").size() > 0);
+        assertTrue(bit.getAsJsonObject("display").getAsJsonObject("gui")
+                .getAsJsonArray("scale").get(0).getAsDouble() > 1.0);
+        JsonObject shield = found.get("aerial_escutcheon.json");
+        JsonObject rifle = found.get("aerial_gunbit_rifle.json");
+        assertEquals(74, shield.getAsJsonArray("elements").size());
+        assertEquals(270, rifle.getAsJsonArray("elements").size());
+        assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("firstperson_lefthand"));
+        assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("thirdperson_lefthand"));
+        assertNotNull(rifle.getAsJsonObject("display").getAsJsonObject("firstperson_righthand"));
+        assertNotNull(rifle.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand"));
+    }
+
+    @Test
     void barrierSegmentsPreserveAll145FinModelCubes() throws Exception {
         try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
             assertNotNull(stream);

@@ -22,10 +22,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -55,6 +57,7 @@ final class AerialCombat implements Listener {
     private static final int BITS = 11;
     private final FunnelArmorPlugin plugin;
     private final NamespacedKey controllerKey;
+    private final NamespacedKey formKey;
     private final NamespacedKey displayKey;
     private final Map<UUID, State> active = new HashMap<>();
     // Retain cooldowns even when a player unequips a controller or changes world.
@@ -84,6 +87,7 @@ final class AerialCombat implements Listener {
         this.plugin = plugin;
         this.displayKey = displayKey;
         this.controllerKey = new NamespacedKey(plugin, "aerial_controller");
+        this.formKey = new NamespacedKey(plugin, "aerial_equipment_form");
     }
 
     private State state(UUID id) {
@@ -102,10 +106,57 @@ final class AerialCombat implements Listener {
         return Math.max(min, plugin.getConfig().getDouble("aerial." + key, fallback));
     }
     private boolean isAerial(ItemStack item) {
-        return item != null && item.getType() == Material.LEATHER_HORSE_ARMOR
+        return item != null && (item.getType() == Material.LEATHER_HORSE_ARMOR
+                || item.getType() == Material.SHIELD || item.getType() == Material.BOW)
                 && item.hasItemMeta() && item.getItemMeta().getPersistentDataContainer()
                 .has(controllerKey, PersistentDataType.BYTE);
     }
+    private boolean isForm(ItemStack item, Material type) {
+        return isAerial(item) && item.getType() == type;
+    }
+
+    private ItemStack formItem(Material material, String form, String model, String name) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(Component.text(name));
+        meta.setUnbreakable(true);
+        meta.setItemModel(new NamespacedKey("funnel", model));
+        meta.getPersistentDataContainer().set(controllerKey, PersistentDataType.BYTE, (byte)1);
+        meta.getPersistentDataContainer().set(formKey, PersistentDataType.STRING, form);
+        if (material == Material.SHIELD)
+            meta.lore(List.of(Component.text("§7右クリック長押し: 盾を構えて防御"),
+                    Component.text("§7しゃがみ右クリック: 収納")));
+        else
+            meta.lore(List.of(Component.text("§7右クリック: GUNDビーム（5発）"),
+                    Component.text("§7しゃがみ右クリック: 収納")));
+        item.setItemMeta(meta);
+        return item;
+    }
+    private ItemStack shieldItem() {
+        return formItem(Material.SHIELD, "shield", "aerial_escutcheon", "§bエスカッシャン（GUNDシールド）");
+    }
+    private ItemStack rifleItem() {
+        return formItem(Material.BOW, "rifle", "aerial_gunbit_rifle", "§bガンビットライフル");
+    }
+    private void restoreForms(Player player) {
+        var inv = player.getInventory();
+        ItemStack[] storage = inv.getStorageContents();
+        for (int slot=0;slot<storage.length;slot++) {
+            ItemStack item = storage[slot];
+            if (isForm(item, Material.SHIELD) || isForm(item, Material.BOW))
+                inv.setItem(slot, device());
+        }
+        ItemStack offhand = inv.getItemInOffHand();
+        if (isForm(offhand, Material.SHIELD) || isForm(offhand, Material.BOW))
+            inv.setItemInOffHand(device());
+    }
+    private void retractShield(Player player, State st) {
+        if (isForm(player.getInventory().getItemInOffHand(), Material.SHIELD))
+            player.getInventory().setItemInOffHand(device());
+        changeMode(player, st, Mode.FREE);
+        restoreForms(player);
+    }
+
     private boolean main(Player p) { return isAerial(p.getInventory().getItemInMainHand()); }
     private boolean off(Player p) { return isAerial(p.getInventory().getItemInOffHand()); }
 
@@ -115,10 +166,11 @@ final class AerialCombat implements Listener {
         meta.displayName(Component.text("§b◆ エアリアル GUNDビット（11基）"));
         meta.lore(List.of(
                 Component.text("§7メインハンド: 11基が不規則に飛行し敵対Mobを自律射撃"),
-                Component.text("§7オフハンド右クリック: エスカッシャンを展開/解除"),
+                Component.text("§7オフハンド右クリック: 盾に変形 / 長押しでガード"),
+                Component.text("§7盾を収納: しゃがみ＋オフハンド右クリック"),
                 Component.text("§7メインハンド＋しゃがみ右クリック: ライフル変形/解除"),
                 Component.text("§7ライフル中右クリック: 強化ビーム5発")));
-        meta.setItemModel(new NamespacedKey("funnel", "funnel_icon_gund"));
+        meta.setItemModel(new NamespacedKey("funnel", "aerial_bit_01"));
         meta.getPersistentDataContainer().set(controllerKey, PersistentDataType.BYTE, (byte)1);
         item.setItemMeta(meta);
         return item;
@@ -157,11 +209,13 @@ final class AerialCombat implements Listener {
 
     void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        Bukkit.getOnlinePlayers().forEach(this::restoreForms);
         Bukkit.getScheduler().runTaskTimer(plugin, this::update, 4L, 2L);
     }
 
     void stop() {
         for (UUID id : new ArrayList<>(active.keySet())) clear(id);
+        for (Player p : Bukkit.getOnlinePlayers()) restoreForms(p);
     }
 
     /** Capture current visual positions before mode switches (no teleport at activation). */
@@ -189,14 +243,32 @@ final class AerialCombat implements Listener {
         if (st == null) return;
         st.bits.forEach(display -> { if (display.isValid()) display.remove(); });
         if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
+        Player p = Bukkit.getPlayer(id);
+        if (p != null) restoreForms(p);
     }
 
     @EventHandler
-    public void onQuit(PlayerQuitEvent e) { clear(e.getPlayer().getUniqueId()); }
+    public void onJoin(PlayerJoinEvent event) {
+        // A server restart can leave a transformed item in saved inventory.
+        Bukkit.getScheduler().runTask(plugin, () -> restoreForms(event.getPlayer()));
+    }
     @EventHandler
-    public void onWorld(PlayerChangedWorldEvent e) { clear(e.getPlayer().getUniqueId()); }
+    public void onQuit(PlayerQuitEvent e) {
+        clear(e.getPlayer().getUniqueId());
+        restoreForms(e.getPlayer());
+    }
     @EventHandler
-    public void onDeath(PlayerDeathEvent e) { clear(e.getEntity().getUniqueId()); }
+    public void onWorld(PlayerChangedWorldEvent e) {
+        clear(e.getPlayer().getUniqueId());
+        restoreForms(e.getPlayer());
+    }
+    @EventHandler
+    public void onDeath(PlayerDeathEvent e) {
+        e.getDrops().replaceAll(item -> isForm(item, Material.SHIELD)
+                || isForm(item, Material.BOW) ? device() : item);
+        clear(e.getEntity().getUniqueId());
+        restoreForms(e.getEntity());
+    }
 
     // Bukkit may pre-cancel RIGHT_CLICK_AIR when vanilla has no use action
     // (such as leather horse armor). Never ignore such events for controllers.
@@ -209,11 +281,28 @@ final class AerialCombat implements Listener {
             return;
         Player player = e.getPlayer();
         UUID id = player.getUniqueId();
-        State current = active.get(id);
+        State previous = active.get(id);
+        ItemStack heldOff = player.getInventory().getItemInOffHand();
+        ItemStack heldMain = player.getInventory().getItemInMainHand();
+
+        // A deployed native SHIELD must receive ordinary right clicks to raise
+        // the arm and block. Intercept only the deliberate sneak+right-click
+        // retraction gesture; never cancel the normal shield-use packet.
+        if (previous != null && previous.mode == Mode.SHIELD
+                && isForm(heldOff, Material.SHIELD)) {
+            if (e.getHand() == EquipmentSlot.HAND) return;
+            if (!player.isSneaking()) return;
+            e.setCancelled(true);
+            if (tick - previous.lastToggle < 5) return;
+            previous.lastToggle = tick;
+            retractShield(player,previous);
+            player.sendActionBar(Component.text("§7エスカッシャン収納"));
+            return;
+        }
+        boolean mainHand = e.getHand() == EquipmentSlot.HAND;
         AerialInputRouting.Intent intent = AerialInputRouting.route(
-                e.getHand() == EquipmentSlot.HAND,
-                main(player), off(player), player.isSneaking(),
-                current != null && current.mode == Mode.RIFLE);
+                mainHand, main(player), off(player), player.isSneaking(),
+                previous != null && previous.mode == Mode.RIFLE);
         if (intent == AerialInputRouting.Intent.NONE) return;
         e.setCancelled(true);
         State st = state(id);
@@ -222,41 +311,48 @@ final class AerialCombat implements Listener {
                 if (tick - st.lastToggle < 5) return;
                 st.lastToggle = tick;
                 if (st.mode == Mode.SHIELD) {
-                    changeMode(player, st, Mode.FREE);
-                    player.sendActionBar(Component.text("§7エスカッシャン解除"));
+                    retractShield(player,st);
+                    player.sendActionBar(Component.text("§7エスカッシャン収納"));
                 } else if (tick < st.shieldCooldown) {
                     player.sendActionBar(Component.text("§c盾クールダウン: " + (st.shieldCooldown-tick) + "t"));
+                } else if (!off(player)) {
+                    player.sendActionBar(Component.text("§cGUNDビットをオフハンドに持ってください"));
                 } else {
                     if (st.mode == Mode.RIFLE) endRifle(player, st);
                     changeMode(player, st, Mode.SHIELD);
-                    st.health = new BarrierDurability.State(0, 0);
-                    player.sendActionBar(Component.text("§bエスカッシャン変形開始"));
+                    st.health = new BarrierDurability.State(0,0);
+                    player.getInventory().setItemInOffHand(shieldItem());
+                    player.sendActionBar(Component.text("§bエスカッシャン展開：右クリック長押しで防御"));
                 }
             }
             case RIFLE_TOGGLE -> {
                 if (tick - st.lastToggle < 5) return;
                 st.lastToggle = tick;
                 if (st.mode == Mode.RIFLE) {
-                    endRifle(player, st);
-                    player.sendActionBar(Component.text("§7ガンビットライフル解除・冷却開始"));
+                    endRifle(player,st);
+                    player.sendActionBar(Component.text("§7ライフル収納・冷却開始"));
                 } else if (tick < st.rifleCooldown) {
                     player.sendActionBar(Component.text("§cライフル冷却中: " + (st.rifleCooldown-tick) + "t"));
                 } else {
+                    if (st.mode == Mode.SHIELD) retractShield(player,st);
                     changeMode(player, st, Mode.RIFLE);
                     st.rifleShots = intCfg("rifle-shots", 5, 1);
-                    player.sendActionBar(Component.text("§bガンビットライフルへ変形中"));
+                    player.getInventory().setItemInMainHand(rifleItem());
+                    player.sendActionBar(Component.text("§bGUNDビットライフルを装備：右クリックで射撃"));
                 }
             }
             case RIFLE_FIRE -> {
-                if (tick - st.lastToggle < intCfg("rifle-shot-interval-ticks", 8, 1)) return;
-                if (tick - st.started < intCfg("assembly-ticks", 10, 1)) return;
+                if (st.mode != Mode.RIFLE || !isForm(heldMain,Material.BOW)) return;
+                if (tick - st.lastToggle < intCfg("rifle-shot-interval-ticks",8,1)) return;
+                if (tick-st.started < intCfg("assembly-ticks",10,1)) return;
                 st.lastToggle = tick;
-                fireRifle(player, st);
+                fireRifle(player,st);
                 st.rifleShots--;
+                player.swingMainHand();
                 player.sendActionBar(Component.text("§bGUNDビットライフル: 残弾 " + st.rifleShots));
                 if (st.rifleShots <= 0) {
-                    endRifle(player, st);
-                    player.sendActionBar(Component.text("§e5発射撃終了・ライフル冷却開始"));
+                    endRifle(player,st);
+                    player.sendActionBar(Component.text("§e5発射撃終了・冷却開始"));
                 }
             }
             default -> {}
@@ -264,7 +360,10 @@ final class AerialCombat implements Listener {
     }
 
     private void endRifle(Player player, State st) {
+        if (isForm(player.getInventory().getItemInMainHand(), Material.BOW))
+            player.getInventory().setItemInMainHand(device());
         changeMode(player, st, Mode.FREE);
+        restoreForms(player);
         st.rifleShots = 0;
         st.rifleCooldown = tick + intCfg("rifle-cooldown-ticks", 200, 1);
         rifleCooldowns.put(st.owner, st.rifleCooldown);
@@ -289,36 +388,29 @@ final class AerialCombat implements Listener {
         });
     }
 
+    private static final float[] NORMALIZED_BIT_SCALES = {
+            3.89f, 2.93f, 2.93f, 3.57f, 5.0f, 5.0f,
+            3.52f, 1.30f, 1.30f, 1.74f, 1.74f
+    };
+
+    private float bitScale(int i) {
+        return NORMALIZED_BIT_SCALES[i]
+                * (float) dblCfg("bit-size-multiplier", 1.0, .1);
+    }
+
     private void ensureDisplays(Player p, State st) {
         if (st.bits.size() != BITS || st.bits.stream().anyMatch(d -> !d.isValid() || d.getWorld()!=p.getWorld())) {
             for (ItemDisplay display : st.bits) if (display.isValid()) display.remove();
             st.bits.clear();
-            for (int i=0; i<BITS; i++) st.bits.add(spawn(p, "aerial_bit_" + String.format(java.util.Locale.ROOT, "%02d", i + 1), 0.39f));
+            for (int i=0; i<BITS; i++) st.bits.add(spawn(p,
+                    "aerial_bit_" + String.format(java.util.Locale.ROOT, "%02d", i + 1),
+                    bitScale(i)));
         }
-        String model = st.mode == Mode.SHIELD ? "aerial_escutcheon" :
-                st.mode == Mode.RIFLE ? "aerial_gunbit_rifle" : null;
-        // Let the 11 individual bits travel into formation before displaying
-        // the assembled source-derived preview. Never render two copies of
-        // the same 11 bits on top of one another.
-        if (st.mode != Mode.FREE && tick - st.started < intCfg("assembly-ticks", 10, 1))
-            model = null;
-        if (model == null) {
-            if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
-            st.assembled = null;
-        } else if (st.assembled == null || !st.assembled.isValid() || st.assembled.getWorld()!=p.getWorld()) {
-            if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
-            st.assembled = spawn(p, model, 1.0f);
-        } else {
-            ItemStack stack = st.assembled.getItemStack();
-            if (stack == null || !stack.hasItemMeta() || !model.equals(
-                    String.valueOf(stack.getItemMeta().getItemModel()).replace("funnel:",""))) {
-                ItemStack replacement = new ItemStack(Material.LEATHER_HORSE_ARMOR);
-                ItemMeta meta = replacement.getItemMeta();
-                meta.setItemModel(new NamespacedKey("funnel", model));
-                replacement.setItemMeta(meta);
-                st.assembled.setItemStack(replacement);
-            }
-        }
+        // Assembled items are now carried in the player's actual hands:
+        // SHIELD in offhand / BOW in main hand. Do not spawn another floating
+        // shield or rifle model, which would double-render the equipment.
+        if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
+        st.assembled = null;
     }
 
     private Vector horizontal(Player p) {
@@ -341,7 +433,7 @@ final class AerialCombat implements Listener {
                     ? AerialFlightMath.mix(st.transitionFrom[i], destination, progress)
                     : destination;
             ItemDisplay bit = st.bits.get(i);
-            float size = st.mode != Mode.FREE && progress >= 1.0 ? 0.001f : 0.39f;
+            float size = st.mode != Mode.FREE && progress >= 1.0 ? 0.001f : bitScale(i);
             if (Math.abs(bit.getTransformation().getScale().x() - size) > .0001f)
                 bit.setTransformation(new Transformation(new Vector3f(0, 0, 0),
                         new AxisAngle4f(), new Vector3f(size,size,size), new AxisAngle4f()));
@@ -447,10 +539,16 @@ final class AerialCombat implements Listener {
         LivingEntity victim = hit != null && hit.getHitEntity() instanceof LivingEntity living ? living : null;
         Location end = victim == null ? eye.clone().add(dir.clone().multiply(dist))
                 : hit.getHitPosition().toLocation(p.getWorld());
-        Location muzzle = st.assembled == null ? eye
-                : st.assembled.getLocation().add(
-                    dir.clone().multiply(dblCfg("rifle-muzzle-forward-offset", 1.1, 0)))
-                .add(0,plugin.getConfig().getDouble("aerial.rifle-muzzle-up-offset", .12),0);
+        Vector right = new Vector(-dir.getZ(), 0, dir.getX());
+        if (right.lengthSquared() < .0001) right = new Vector(1,0,0);
+        else right.normalize();
+        // Rifle is held in the right hand; originate the beam just ahead
+        // of that weapon instead of at an old floating display position.
+        Location muzzle = eye.clone()
+                .add(dir.clone().multiply(dblCfg("rifle-muzzle-forward-offset", 1.1, 0)))
+                .add(right.multiply(plugin.getConfig().getDouble(
+                        "aerial.rifle-muzzle-right-offset", .33)))
+                .add(0,plugin.getConfig().getDouble("aerial.rifle-muzzle-up-offset", -.28),0);
         // Never start the beam beyond its target if the target is very close.
         if (muzzle.distanceSquared(end) > 0 && muzzle.toVector().subtract(eye.toVector())
                 .dot(dir) >= eye.distance(end)) muzzle = eye;
@@ -459,7 +557,7 @@ final class AerialCombat implements Listener {
     }
 
     private void breakShield(Player p, State st) {
-        st.mode = Mode.FREE;
+        retractShield(p,st);
         st.shieldCooldown = tick + intCfg("shield-cooldown-ticks",200,1);
         shieldCooldowns.put(p.getUniqueId(), st.shieldCooldown);
         p.getWorld().playSound(p.getLocation(),Sound.ITEM_SHIELD_BREAK,1f,1.2f);
@@ -478,7 +576,9 @@ final class AerialCombat implements Listener {
     }
 
     private boolean shieldReady(Player p, State st) {
-        return st.mode == Mode.SHIELD && off(p) &&
+        return st.mode == Mode.SHIELD &&
+                isForm(p.getInventory().getItemInOffHand(),Material.SHIELD) &&
+                p.isBlocking() &&
                 tick-st.started >= intCfg("assembly-ticks",10,1);
     }
     private boolean fromFront(Player p, Location source) {
@@ -487,15 +587,22 @@ final class AerialCombat implements Listener {
         return relative.dot(horizontal(p)) >= .08;
     }
 
-    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=false)
     public void onDamage(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player p) || event.getDamager()==p) return;
         State st=active.get(p.getUniqueId());
         if (st==null || !shieldReady(p,st) || !fromFront(p,event.getDamager().getLocation())) return;
-        double dmg=event.getFinalDamage();
+        double dmg=Math.max(0,event.getDamage());
         event.setCancelled(true);
         if (event.getDamager() instanceof Projectile projectile && projectile.isValid()) projectile.remove();
         shieldHit(p,st,dmg);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST,ignoreCancelled = false)
+    public void onVanillaBowShot(EntityShootBowEvent e) {
+        // Our rifle uses five hitscan beams. Never fire vanilla arrows when
+        // a player has ammunition in their inventory.
+        if (isForm(e.getBow(), Material.BOW)) e.setCancelled(true);
     }
 
     private void projectiles(Player p, State st) {
@@ -525,8 +632,9 @@ final class AerialCombat implements Listener {
                 clear(id); continue;
             }
             State st=active.get(id);
-            if (st.mode==Mode.RIFLE && !main(p)) endRifle(p, st);
-            if (st.mode==Mode.SHIELD && !off(p)) changeMode(p, st, Mode.FREE);
+            if (st.mode==Mode.RIFLE && !isForm(p.getInventory().getItemInMainHand(),Material.BOW)) endRifle(p, st);
+            if (st.mode==Mode.SHIELD && !isForm(p.getInventory().getItemInOffHand(),Material.SHIELD))
+                retractShield(p, st);
         }
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p.isDead() || (!main(p) && !off(p))) continue;
