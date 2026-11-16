@@ -19,7 +19,11 @@ class FunnelTabSuggestionsTest {
 
     @Test void adminGetsAllSubcommandsAndGiveArguments() {
         var commands = FunnelTabSuggestions.complete(new String[]{""}, true, true, ONLINE);
-        assertTrue(commands.containsAll(List.of("aerial", "give", "angle", "pack", "reload", "status", "shield", "formation")));
+        assertTrue(commands.containsAll(List.of("aerial", "diagnose", "give", "angle", "pack", "reload", "status", "shield", "formation")));
+        assertEquals(List.of("diagnose"),
+                FunnelTabSuggestions.complete(new String[]{"diag"}, true, true, ONLINE));
+        assertEquals(List.of(),
+                FunnelTabSuggestions.complete(new String[]{"diag"}, false, true, ONLINE));
         assertEquals(List.of("1","2","3","4","all"),
                 FunnelTabSuggestions.complete(new String[]{"give",""}, true, true, ONLINE));
         assertEquals(List.of("3"), FunnelTabSuggestions.complete(new String[]{"GIVE","3"}, true, true, ONLINE));
@@ -77,7 +81,7 @@ class FunnelTabSuggestionsTest {
     }
 
     @Test void consoleOnlyGetsSafeRelevantCompletions() {
-        assertEquals(List.of("aerial","angle","give","pack","reload","status"),
+        assertEquals(List.of("aerial","angle","diagnose","give","pack","reload","status"),
                 FunnelTabSuggestions.complete(new String[]{""}, true, false, ONLINE));
         assertEquals(List.of("Pen4"),
                 FunnelTabSuggestions.complete(new String[]{"pack","pen"}, true, false, ONLINE));

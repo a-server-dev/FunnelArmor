@@ -40,6 +40,7 @@ public final class FunnelTabSuggestions {
                 candidates.add("barrier");
             }
             if (admin) {
+                candidates.add("diagnose");
                 candidates.add("give");
                 candidates.add("angle");
                 candidates.add("reload");

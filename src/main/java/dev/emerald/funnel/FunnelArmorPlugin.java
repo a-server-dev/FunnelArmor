@@ -109,6 +109,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private String sha1;
     private Path packPath;
     private AerialCombat aerialCombat;
+    private final Map<UUID, String> lastObservedPackStatus = new ConcurrentHashMap<>();
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -146,6 +147,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     @Override public void onDisable() {
         if (aerialCombat != null) aerialCombat.stop();
+        lastObservedPackStatus.clear();
         if (httpServer != null) httpServer.stop(0);
         lastShots.clear();
         shieldToggleTicks.clear();
@@ -1311,6 +1313,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         return loc;
     }
     @EventHandler public void onQuit(PlayerQuitEvent e) {
+        lastObservedPackStatus.remove(e.getPlayer().getUniqueId());
         stopShield(e.getPlayer().getUniqueId());
         stopFinBarrier(e.getPlayer().getUniqueId());
         stopQubeleyAttack(e.getPlayer().getUniqueId());
@@ -1336,6 +1339,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         shotAimTargets.remove(e.getEntity().getUniqueId());
     }
     @EventHandler public void onPack(PlayerResourcePackStatusEvent e) {
+        lastObservedPackStatus.put(e.getPlayer().getUniqueId(), e.getStatus().name());
         // getLogger().info("Resource pack " + e.getPlayer().getName() + ": " + e.getStatus());
         switch (e.getStatus()) {
             case SUCCESSFULLY_LOADED -> { /* e.getPlayer().sendMessage("§a[FunnelArmor] リソースパックの適用に成功しました。"); */ }
@@ -1625,6 +1629,35 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 sender.sendMessage("§a設定を再読み込みしました。フィン先端角度: §f"
                         + FinTipAngleSetting.effective(raw) + "° §7(config: " + raw + ")");
                 sender.sendMessage("§7モデル変更はJAR更新とサーバー再起動が必要です。");
+            }
+            case "diagnose" -> {
+                if (!sender.hasPermission("funnel.admin")) {
+                    sender.sendMessage("§c権限がありません。"); return true;
+                }
+                if (!(sender instanceof Player p)) {
+                    sender.sendMessage("§c/funnel diagnose はプレイヤーが実行してください。");
+                    return true;
+                }
+                sender.sendMessage("§b[FunnelArmor診断] §f" + getPluginMeta().getVersion());
+                for (EquipmentSlot hand : List.of(EquipmentSlot.HAND, EquipmentSlot.OFF_HAND)) {
+                    ItemStack held = hand == EquipmentSlot.HAND
+                            ? p.getInventory().getItemInMainHand()
+                            : p.getInventory().getItemInOffHand();
+                    ItemMeta meta = held.hasItemMeta() ? held.getItemMeta() : null;
+                    String model = meta != null ? String.valueOf(meta.getItemModel()) : "none";
+                    boolean legacy = isWeapon(held);
+                    boolean aerial = meta != null && meta.getPersistentDataContainer().has(
+                            new NamespacedKey(this, "aerial_controller"), PersistentDataType.BYTE);
+                    sender.sendMessage("§7" + hand + " §f" + held.getType() +
+                            " §7model=§f" + model +
+                            " §7legacy=§f" + legacy + " §7aerial=§f" + aerial);
+                    if (meta != null) sender.sendMessage("§7PDC: §f" +
+                            meta.getPersistentDataContainer().getKeys());
+                }
+                sender.sendMessage("§7Legacy variant (main): §f" + selectedVariant(p));
+                sender.sendMessage("§7Last observed pack event: §f" +
+                        lastObservedPackStatus.getOrDefault(p.getUniqueId(), "none/unknown"));
+                sender.sendMessage("§7Server pack SHA1: §f" + sha1);
             }
             case "status" -> {
                 sender.sendMessage("§bFunnelArmor version: §f" + getPluginMeta().getVersion());

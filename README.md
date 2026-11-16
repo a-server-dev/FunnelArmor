@@ -438,3 +438,22 @@ center. Orientation and emitter position are configurable through
 Unit tests cover formations and interpolation; **the actual orientation,
 visual scale and bit-to-cube mesh approximation still require a live Paper
 server visual test.**
+
+### v0.8.2 Controller input fix and compatibility diagnostics
+
+- Restores right-click-air handling for Aerial equipment even when Paper
+  initially marks a no-vanilla-action click as cancelled. This is required
+  for LEATHER_HORSE_ARMOR controllers.
+- Sneak+right-click in the main hand now selects rifle transformation even
+  when both hands hold Aerial controllers. In rifle mode, normal main-hand
+  right-click fires. Offhand right-click toggles the shield in other modes.
+- Other four funnel variants keep their existing interaction logic.
+- OP-only `/funnel diagnose` displays both held item models, the
+  persistent-data keys identifying controllers, the recognized old-funnel
+  variant, the last observed player resource-pack event, and the server pack
+  hash. This is intended to distinguish missing item tags from client
+  resource-pack loading problems.
+- Previously approved fin / heavy / Qubeley / Unicorn asset files remain
+  unchanged by this update. If the old visuals differ, check `/funnel
+  diagnose`, `/funnel status`, `/funnel pack`, and client latest.log
+  for pack errors. An in-game rendering check is still needed.

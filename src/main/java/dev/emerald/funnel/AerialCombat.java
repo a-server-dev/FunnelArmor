@@ -193,65 +193,68 @@ final class AerialCombat implements Listener {
     @EventHandler
     public void onDeath(PlayerDeathEvent e) { clear(e.getEntity().getUniqueId()); }
 
-    @EventHandler(ignoreCancelled = true)
+    // Bukkit may pre-cancel RIGHT_CLICK_AIR when vanilla has no use action
+    // (such as leather horse armor). Never ignore such events for controllers.
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInteract(PlayerInteractEvent e) {
-        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)
+            return;
         if (!plugin.getConfig().getBoolean("aerial.enabled", true)) return;
+        if (e.getHand() != EquipmentSlot.HAND && e.getHand() != EquipmentSlot.OFF_HAND)
+            return;
         Player player = e.getPlayer();
         UUID id = player.getUniqueId();
-        // A controller held in both hands prioritizes shield; never execute
-        // both actions from the same physical right-click.
-        if (e.getHand() == EquipmentSlot.HAND && main(player) && off(player)) {
-            e.setCancelled(true); return;
-        }
-        if (e.getHand() == EquipmentSlot.OFF_HAND && off(player)) {
-            e.setCancelled(true);
-            State st = state(id);
-            if (tick - st.lastToggle < 5) return;
-            st.lastToggle = tick;
-            if (st.mode == Mode.SHIELD) {
-                changeMode(player, st, Mode.FREE);
-                player.sendActionBar(Component.text("§7エスカッシャン解除"));
-            } else if (tick < st.shieldCooldown) {
-                player.sendActionBar(Component.text("§c盾クールダウン: " + (st.shieldCooldown-tick) + "t"));
-            } else {
-                if (st.mode == Mode.RIFLE) endRifle(player, st);
-                changeMode(player, st, Mode.SHIELD);
-                st.health = new BarrierDurability.State(0, 0);
-                player.sendActionBar(Component.text("§bエスカッシャン変形開始"));
-            }
-            return;
-        }
-        if (e.getHand() != EquipmentSlot.HAND || !main(player)) return;
+        State current = active.get(id);
+        AerialInputRouting.Intent intent = AerialInputRouting.route(
+                e.getHand() == EquipmentSlot.HAND,
+                main(player), off(player), player.isSneaking(),
+                current != null && current.mode == Mode.RIFLE);
+        if (intent == AerialInputRouting.Intent.NONE) return;
         e.setCancelled(true);
         State st = state(id);
-        if (player.isSneaking()) {
-            if (tick - st.lastToggle < 5) return;
-            st.lastToggle = tick;
-            if (st.mode == Mode.RIFLE) {
-                endRifle(player, st);
-                player.sendActionBar(Component.text("§7ガンビットライフル解除・冷却開始"));
-                return;
+        switch (intent) {
+            case SHIELD_TOGGLE -> {
+                if (tick - st.lastToggle < 5) return;
+                st.lastToggle = tick;
+                if (st.mode == Mode.SHIELD) {
+                    changeMode(player, st, Mode.FREE);
+                    player.sendActionBar(Component.text("§7エスカッシャン解除"));
+                } else if (tick < st.shieldCooldown) {
+                    player.sendActionBar(Component.text("§c盾クールダウン: " + (st.shieldCooldown-tick) + "t"));
+                } else {
+                    if (st.mode == Mode.RIFLE) endRifle(player, st);
+                    changeMode(player, st, Mode.SHIELD);
+                    st.health = new BarrierDurability.State(0, 0);
+                    player.sendActionBar(Component.text("§bエスカッシャン変形開始"));
+                }
             }
-            if (tick < st.rifleCooldown) {
-                player.sendActionBar(Component.text("§cライフル冷却中: " + (st.rifleCooldown-tick) + "t"));
-                return;
+            case RIFLE_TOGGLE -> {
+                if (tick - st.lastToggle < 5) return;
+                st.lastToggle = tick;
+                if (st.mode == Mode.RIFLE) {
+                    endRifle(player, st);
+                    player.sendActionBar(Component.text("§7ガンビットライフル解除・冷却開始"));
+                } else if (tick < st.rifleCooldown) {
+                    player.sendActionBar(Component.text("§cライフル冷却中: " + (st.rifleCooldown-tick) + "t"));
+                } else {
+                    changeMode(player, st, Mode.RIFLE);
+                    st.rifleShots = intCfg("rifle-shots", 5, 1);
+                    player.sendActionBar(Component.text("§bガンビットライフルへ変形中"));
+                }
             }
-            changeMode(player, st, Mode.RIFLE);
-            st.rifleShots = intCfg("rifle-shots", 5, 1);
-            player.sendActionBar(Component.text("§bガンビットライフルへ変形中"));
-            return;
-        }
-        if (st.mode != Mode.RIFLE) return; // free mode is deliberately autonomous
-        if (tick - st.lastToggle < intCfg("rifle-shot-interval-ticks", 8, 1)) return;
-        if (tick - st.started < intCfg("assembly-ticks", 10, 1)) return;
-        st.lastToggle = tick;
-        fireRifle(player, st);
-        st.rifleShots--;
-        player.sendActionBar(Component.text("§bGUNDビットライフル: 残弾 " + st.rifleShots));
-        if (st.rifleShots <= 0) {
-            endRifle(player, st);
-            player.sendActionBar(Component.text("§e5発射撃終了・ライフル冷却開始"));
+            case RIFLE_FIRE -> {
+                if (tick - st.lastToggle < intCfg("rifle-shot-interval-ticks", 8, 1)) return;
+                if (tick - st.started < intCfg("assembly-ticks", 10, 1)) return;
+                st.lastToggle = tick;
+                fireRifle(player, st);
+                st.rifleShots--;
+                player.sendActionBar(Component.text("§bGUNDビットライフル: 残弾 " + st.rifleShots));
+                if (st.rifleShots <= 0) {
+                    endRifle(player, st);
+                    player.sendActionBar(Component.text("§e5発射撃終了・ライフル冷却開始"));
+                }
+            }
+            default -> {}
         }
     }
 
