@@ -1,24 +1,24 @@
-# Bit-first Escutcheon preview: angular restoration (not yet approved)
+# Bit-first Escutcheon preview: compact front panels (not yet approved)
 
 Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.
 
-0.8.23 restores the narrow angular white panels of 0.8.21. The rounded bulges from 0.8.22 are removed. The exposed three blue-core apertures, thin upper fin tips, longer pointed nose, compact gold vents and blue edge trim remain. The grey inner pieces are slightly wider and shorter, set behind the white shells. Redundant white panel overlays have been removed.
+0.8.24 extends the INSIDE edges of the two lower white GUND parts toward the grey central elements without widening the outer silhouette. It lifts the grey elements closer to the central V part, slims the shoulders, and replaces many horizontal face bands with long continuous white plates. This is still preview only.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
-| 01 | 上部青コア | 0, 9.3, 0.8 | 53 |
-| 02 | 左上白ブレード | -1.99, 9.51, 0.12 | 30 |
-| 03 | 右上白ブレード | 1.99, 9.51, 0.12 | 30 |
-| 04 | 中央白ノーズ | 0, 5.1, 1.02 | 23 |
-| 05 | 左肩青＋黄ベント | -2.19, 7.13, 1.06 | 20 |
-| 06 | 右肩青＋黄ベント | 2.19, 7.13, 1.06 | 20 |
-| 07 | 左下白外装 | -2.67, -7.12, 0.13 | 67 |
-| 08 | 右下白外装 | 2.67, -7.12, 0.13 | 67 |
-| 09 | 中央白V字装甲 | 0, 1.42, 0.47 | 22 |
-| 10 | 左グレー内装 | -0.94, -6.71, -0.28 | 23 |
-| 11 | 右グレー内装 | 0.94, -6.71, -0.28 | 23 |
+| 01 | 上部青コア | 0, 9.3, 0.8 | 45 |
+| 02 | 左上白ブレード | -1.99, 9.51, 0.12 | 20 |
+| 03 | 右上白ブレード | 1.99, 9.51, 0.12 | 20 |
+| 04 | 中央白ノーズ | 0, 5.1, 1.02 | 16 |
+| 05 | 左肩青＋黄ベント | -2.08, 7.23, 1.06 | 16 |
+| 06 | 右肩青＋黄ベント | 2.08, 7.23, 1.06 | 16 |
+| 07 | 左下白外装 | -2.67, -7.12, 0.13 | 69 |
+| 08 | 右下白外装 | 2.67, -7.12, 0.13 | 69 |
+| 09 | 中央白V字装甲 | 0, 1.12, 0.56 | 16 |
+| 10 | 左グレー内装 | -0.91, -6.23, -0.24 | 23 |
+| 11 | 右グレー内装 | 0.91, -6.23, -0.24 | 23 |
 
-Total 378 cuboids; shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
+Total 333 cuboids; shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
 
 Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.
 

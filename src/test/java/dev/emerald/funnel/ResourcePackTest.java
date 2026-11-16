@@ -211,6 +211,21 @@ class ResourcePackTest {
         assertTrue(brightWhiteFaces>45,
                 "White front armor must use the brighter white texture patch rather than dark grey");
         assertTrue(count>=180,"Surface bevels and colored details must survive bit-first joining");
+        for (int i : new int[]{7,8}) {
+            String bit = String.format(java.util.Locale.ROOT,
+                    "assets/funnel/models/item/aerial_v2_bit_%02d.json",i);
+            var part = models.get(bit);
+            assertNotNull(part);
+            long longPanels = 0;
+            for (var element : part.getAsJsonArray("elements")) {
+                var cube = element.getAsJsonObject();
+                double h = cube.getAsJsonArray("to").get(1).getAsDouble()
+                         - cube.getAsJsonArray("from").get(1).getAsDouble();
+                if (h > 3.0) longPanels++;
+            }
+            assertTrue(longPanels >= 2, "External white armor must have continuous surfaces");
+        }
+
     }
 
     @Test

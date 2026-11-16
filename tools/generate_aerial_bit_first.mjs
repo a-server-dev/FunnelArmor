@@ -11,8 +11,8 @@ function buildBitFirst(){
   core:{shade:"blue",depth:.90,profile:[[0,-.89,.89],[.6,-1.44,1.44],[1.48,-1.42,1.42],[2.10,-1.14,1.14],[3.25,-.91,.91],[4.58,-.72,.72],[5.08,-.44,.44]],front:"cobalt"},
   upper:{shade:"white",depth:.76,profile:[[0,-.49,.68],[.80,-.87,.84],[1.62,-.98,.88],[2.41,-.84,.79],[3.85,-.66,.65],[5.37,-.43,.44],[6.58,-.18,.20]],front:"porcelain"},
   nose:{shade:"white",depth:1.04,profile:[[0,-.24,.24],[.43,-.64,.64],[1.08,-1.03,1.03],[2.33,-1.15,1.15],[3.31,-.98,.98],[4.19,-.63,.63],[4.83,-.40,.40]],front:"porcelain"},
-  shoulder:{shade:"blue",depth:1.10,profile:[[0,-.74,.76],[.60,-1.04,1.06],[1.33,-1.12,1.10],[2.12,-.93,.97],[2.74,-.74,.81],[3.31,-.52,.58]],front:"cobalt"},
-  outer:{shade:"white",depth:.96,profile:[[0,-.28,.41],[1.12,-.43,.55],[2.53,-.57,.75],[4.47,-.72,.94],[6.55,-.91,1.13],[7.59,-1.03,1.12],[8.24,-.66,.82],[8.82,-.69,.89],[10.65,-.79,.95],[12.12,-.63,.75],[13.10,-.43,.60],[14.18,-.29,.39]],front:"porcelain",edge:"cobalt"},
+  shoulder:{shade:"blue",depth:1.05,profile:[[0,-.58,.63],[.50,-.88,.91],[1.22,-.93,.96],[1.97,-.77,.83],[2.74,-.58,.65],[3.26,-.41,.44]],front:"cobalt"},
+  outer:{shade:"white",depth:.96,profile:[[0,-.28,.53],[1.12,-.43,.73],[2.53,-.57,.96],[4.47,-.72,1.26],[6.55,-.91,1.47],[7.59,-1.03,1.50],[8.24,-.66,1.19],[8.82,-.69,1.24],[10.65,-.79,1.30],[12.12,-.63,1.06],[13.10,-.43,.81],[14.18,-.29,.49]],front:"porcelain",edge:"cobalt"},
   crest:{shade:"white",depth:.91,profile:[[0,-.21,.21],[.60,-.74,.74],[1.18,-1.13,1.13],[2.31,-1.46,1.46],[3.44,-1.58,1.58],[4.46,-1.37,1.37]],front:"porcelain"},
   inner:{shade:"charcoal",depth:.74,profile:[[0,-.28,.28],[1.20,-.40,.43],[2.93,-.51,.56],[4.24,-.63,.62],[5.71,-.77,.70],[6.65,-.72,.66],[7.60,-.57,.54],[8.34,-.38,.42]],front:"steel"}
  };
@@ -21,13 +21,13 @@ function buildBitFirst(){
   ["02","左上白ブレード","upper",-1.99,9.51,.12,false],
   ["03","右上白ブレード","upper",1.99,9.51,.12,true],
   ["04","中央白ノーズ","nose",0,5.10,1.02,false],
-  ["05","左肩青＋黄ベント","shoulder",-2.19,7.13,1.06,false],
-  ["06","右肩青＋黄ベント","shoulder",2.19,7.13,1.06,true],
+  ["05","左肩青＋黄ベント","shoulder",-2.08,7.23,1.06,false],
+  ["06","右肩青＋黄ベント","shoulder",2.08,7.23,1.06,true],
   ["07","左下白外装","outer",-2.67,-7.12,.13,false],
   ["08","右下白外装","outer",2.67,-7.12,.13,true],
-  ["09","中央白V字装甲","crest",0,1.42,.47,false],
-  ["10","左グレー内装","inner",-.94,-6.71,-.28,false],
-  ["11","右グレー内装","inner",.94,-6.71,-.28,true]
+  ["09","中央白V字装甲","crest",0,1.12,.56,false],
+  ["10","左グレー内装","inner",-.91,-6.23,-.24,false],
+  ["11","右グレー内装","inner",.91,-6.23,-.24,true]
  ];
  const step=.44,round=n=>Math.round(n*1e5)/1e5;
  function piece(type,mirror){
@@ -44,10 +44,7 @@ function buildBitFirst(){
    let y2=Math.min(end,y+step),aa=bounds(y),bb=bounds(y2),lo=Math.min(aa[0],bb[0]),hi=Math.max(aa[1],bb[1]);
    put([lo,y,-thick/2],[hi,y2,thick/2],recipe.shade);
    // Keep outer armor an angular white panel: remove striped white overlays.
-   if(type!=="outer" && type!=="inner" && y>.45 && y2<end-.5 && hi-lo>.78) {
-     const inset=.20;
-     put([lo+inset,y+.045,thick/2+.018],[hi-inset,y2-.045,thick/2+.105],recipe.front);
-   }
+   // No raised plate per horizontal row; use continuous surfaces instead.
    if(recipe.edge&&y2<end-.25)
      put([lo,y,thick/2+.012],[Math.min(lo+.15,hi-.12),y2,thick/2+.14],recipe.edge);
   }
@@ -76,6 +73,7 @@ function buildBitFirst(){
     p([-.41,.57,.61],[-.14,1.33,.67],"steel");
     p([-.33,.74,.69],[-.20,1.15,.73],"bore");
     p([-.37,1.70,.48],[.50,2.20,.55],"white");
+    p([-.30,2.24,thick/2+.025],[.30,5.75,thick/2+.12],"porcelain");
     break;
    case "nose":
     p([-.62,.43,.56],[.62,.65,.72],"cobalt");
@@ -94,10 +92,12 @@ function buildBitFirst(){
     p([-.49,.01,-.69],[.49,.70,-.56],"graphite");
     break;
    case "outer":
-    // Flat hard-edged white panels with a narrow exterior blue seam.
-    p([.48,10.06,thick/2+.03],[.59,11.06,thick/2+.11],"porcelain");
-    p([.63,4.73,thick/2+.03],[.76,5.93,thick/2+.11],"porcelain");
-    p([-.15,1.01,thick/2+.03],[-.04,1.63,thick/2+.11],"porcelain");
+    // Continuous white faces fill the inner armor without widening the outer edge.
+    p([-.29,2.85,thick/2+.022],[.66,7.10,thick/2+.11],"porcelain");
+    p([-.30,8.94,thick/2+.022],[.60,11.95,thick/2+.11],"porcelain");
+    p([.77,10.20,thick/2+.025],[.88,11.18,thick/2+.13],"white");
+    p([.71,4.82,thick/2+.025],[.83,5.83,thick/2+.13],"white");
+    p([-.15,1.10,thick/2+.025],[-.04,1.55,thick/2+.13],"white");
     break;
    case "crest":
     p([-1.54,3.06,.51],[-1.14,4.37,.63],"porcelain");
@@ -140,11 +140,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: angular restoration (not yet approved)",
+ "# Bit-first Escutcheon preview: compact front panels (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
  "",
- "0.8.23 restores the narrow angular white panels of 0.8.21. The rounded bulges from 0.8.22 are removed. The exposed three blue-core apertures, thin upper fin tips, longer pointed nose, compact gold vents and blue edge trim remain. The grey inner pieces are slightly wider and shorter, set behind the white shells. Redundant white panel overlays have been removed.",
+ "0.8.24 extends the INSIDE edges of the two lower white GUND parts toward the grey central elements without widening the outer silhouette. It lifts the grey elements closer to the central V part, slims the shoulders, and replaces many horizontal face bands with long continuous white plates. This is still preview only.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

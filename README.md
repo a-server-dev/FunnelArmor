@@ -666,3 +666,7 @@ The **second user reference image** (front-on stylized 3D assembled shield) take
 ## v0.8.23 — Sharp-shell Escutcheon preview
 
 The 0.8.22 test showed the widened lower white shells becoming bulbous and rounded. This version restores the angular 0.8.21 proportions and narrow edge, retains the three raised core apertures, thin upper fins, pointed longer nose, gold vents, inset grey rails and blue outline, and removes overlaid white face strips that created zebra-like shading. It retains the 11 separate bit recipes and their derived shield assembly. This remains **preview only**; existing production shield, rifle, flying bits, combat code and approved BBModels are unchanged. Requires in-game visual review.
+
+## v0.8.24 — Narrow internal gaps and reduce banding
+
+The 0.8.23 in-game screenshot showed large voids between the white outer plates, exposed charcoal blades, and central crest. In the new preview, the **inner** edge of both white side armor bits extends toward the center without moving their sharp outside edges outward (avoids the bulbous 0.8.22 shape). The inner charcoal elements rise closer to the central V crest and the blue shoulders become smaller and closer together. Long uninterrupted white front panels conceal horizontal row seams. All 11 parts remain independent; the assembled preview is their exact union. The live shield, autonomous flying bits, rifle, battle behavior and original approved BBModels have not been changed. Minecraft in-game visual approval is still pending.
