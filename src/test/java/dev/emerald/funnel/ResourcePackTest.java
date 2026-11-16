@@ -265,7 +265,7 @@ class ResourcePackTest {
                 "A real Minecraft shield has separate holding and blocking positions");
         assertNotEquals(idleView.getAsJsonObject("firstperson_lefthand"),
                 raisedView.getAsJsonObject("firstperson_lefthand"));
-        assertEquals(0, idleView.getAsJsonObject("thirdperson_lefthand")
+        assertEquals(180, idleView.getAsJsonObject("thirdperson_lefthand")
                 .getAsJsonArray("rotation").get(1).getAsInt(),
                 "Escutcheon plate should face outward, not be edge-on");
     }
