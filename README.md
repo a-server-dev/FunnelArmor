@@ -561,3 +561,29 @@ shield, rifle, animations, and approved .bbmodel files are untouched.
 This is still a cuboid-based approximation: native Minecraft item JSON
 does not preserve arbitrary free-mesh polygon faces from Blockbench. A
 lossless free-mesh pipeline would be required for pixel-perfect fidelity.
+
+
+### v0.8.7 — Escutcheon replaces the visual model of the equipped Minecraft shield
+
+The GUND Escutcheon is still a **real \`Material.SHIELD\` item** in
+the player's offhand, with the same Aerial PDC and custom 5-hit/20-damage
+durability rules. The vanilla blocking mechanic, hand-raising animation
+and collision/blocking logic are preserved.
+
+The item model definition \`funnel:items/aerial_escutcheon.json\` now
+switches based on the vanilla \`minecraft:using_item\` condition:
+- not guarding: \`funnel:item/aerial_escutcheon\`
+- guarding: \`funnel:item/aerial_escutcheon_blocking\`
+
+Both use the same approved Escutcheon 74-part source-derived Minecraft model;
+only display transforms differ. Pose and positioning are based on Minecraft's
+normal/offhand blocking shield transforms, with a larger (1.9x normal,
+2.15x blocking, in third person) scale. Previously this was 1.18x, so
+the shield appeared much too small. First-person left-hand transforms
+have also been increased to 2.05x/2.25x.
+
+This *only* changes the appearance of the Aerial-tagged shield; it does not
+replace \`assets/minecraft/items/shield.json\` or alter ordinary shield
+items, the 11 independently flying GUND bits, the rifle, or the approved
+BBModel file. Confirm the visual angle/occlusion in first and third person
+on a Paper 26.3 client; automated tests cannot assess the final pose.
