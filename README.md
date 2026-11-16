@@ -587,3 +587,31 @@ replace \`assets/minecraft/items/shield.json\` or alter ordinary shield
 items, the 11 independently flying GUND bits, the rifle, or the approved
 BBModel file. Confirm the visual angle/occlusion in first and third person
 on a Paper 26.3 client; automated tests cannot assess the final pose.
+
+
+### v0.8.8 — Re-export the approved Escutcheon source instead of 74 large boxes
+
+The user's supplied \`gund_bits_shield_v03_tight(4).bbmodel\` was
+compared to \`models/aerial_escutcheon.bbmodel\`. All 74 source meshes,
+their vertices, face definitions, 11 groups and outliner agree exactly.
+The discrepancy was the resource-pack model exporter, **not a wrong
+source model**.
+
+Reconstructed the shield's packed geometry from the same 74 source meshes
+by intersecting each mesh with closely spaced longitudinal slices and
+building 677 narrow cuboids. This retains the original tapered rails,
+split silhouettes and the central V-shaped armor significantly better
+than the previous one-bounding-box-per-mesh export. Both holding and
+blocking use this same mesh-derived geometry. The hand model has been
+rotated away from the earlier side-on orientation to expose its broad
+front plate. First-/third-person holding and blocking offsets have also
+been adjusted.
+
+The approved BBModel, normal flight bits, shield durability and
+transformation rules are unchanged. **This is still a cuboid approximation,
+not lossless polygon rendering**, and in-game orientation and material
+appearance need a client check.
+
+The GUND-bit rifle remains based on the approved rifle mesh but is now
+larger in the hand: 0.57 → 0.96 first person and 0.60 → 0.98 third person.
+Rifle geometry, firing damage, ammunition and cooldown are unchanged.

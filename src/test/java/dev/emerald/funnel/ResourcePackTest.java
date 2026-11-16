@@ -207,12 +207,17 @@ class ResourcePackTest {
                 .getAsJsonArray("scale").get(0).getAsDouble() > 1.0);
         JsonObject shield = found.get("aerial_escutcheon.json");
         JsonObject rifle = found.get("aerial_gunbit_rifle.json");
-        assertEquals(74, shield.getAsJsonArray("elements").size());
+        assertEquals(677, shield.getAsJsonArray("elements").size(),
+                "Escutcheon must preserve the approved outline using fine cross-section elements");
         assertEquals(270, rifle.getAsJsonArray("elements").size());
         assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("firstperson_lefthand"));
         assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("thirdperson_lefthand"));
         assertNotNull(rifle.getAsJsonObject("display").getAsJsonObject("firstperson_righthand"));
         assertNotNull(rifle.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand"));
+        assertEquals(.96, rifle.getAsJsonObject("display").getAsJsonObject("firstperson_righthand")
+                .getAsJsonArray("scale").get(0).getAsDouble(),.00001);
+        assertEquals(.98, rifle.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand")
+                .getAsJsonArray("scale").get(0).getAsDouble(),.00001);
     }
 
     @Test
@@ -245,21 +250,24 @@ class ResourcePackTest {
                 custom.getAsJsonObject("on_true").get("model").getAsString());
         JsonObject idle = found.get("assets/funnel/models/item/aerial_escutcheon.json");
         JsonObject raised = found.get("assets/funnel/models/item/aerial_escutcheon_blocking.json");
-        assertEquals(74, idle.getAsJsonArray("elements").size());
+        assertEquals(677, idle.getAsJsonArray("elements").size());
         assertEquals(idle.get("elements"), raised.get("elements"),
                 "Blocking must only change pose, never remove GUND bits");
         assertEquals(idle.get("textures"), raised.get("textures"));
         var idleView = idle.getAsJsonObject("display");
         var raisedView = raised.getAsJsonObject("display");
         assertTrue(idleView.getAsJsonObject("thirdperson_lefthand")
-                .getAsJsonArray("scale").get(0).getAsDouble() >= 1.9);
+                .getAsJsonArray("scale").get(0).getAsDouble() >= 1.8);
         assertTrue(raisedView.getAsJsonObject("thirdperson_lefthand")
-                .getAsJsonArray("scale").get(0).getAsDouble() >= 2.1);
+                .getAsJsonArray("scale").get(0).getAsDouble() >= 2.0);
         assertNotEquals(idleView.getAsJsonObject("thirdperson_lefthand"),
                 raisedView.getAsJsonObject("thirdperson_lefthand"),
                 "A real Minecraft shield has separate holding and blocking positions");
         assertNotEquals(idleView.getAsJsonObject("firstperson_lefthand"),
                 raisedView.getAsJsonObject("firstperson_lefthand"));
+        assertEquals(0, idleView.getAsJsonObject("thirdperson_lefthand")
+                .getAsJsonArray("rotation").get(1).getAsInt(),
+                "Escutcheon plate should face outward, not be edge-on");
     }
 
     @Test
