@@ -341,9 +341,17 @@ final class AerialCombat implements Listener {
                         Object tracker = betterModel.spawn(shieldVisualLocation(player), player);
                         if (tracker != null) {
                             st.betterModelShield = tracker;
-                            ItemMeta hidden = shield.getItemMeta();
-                            hidden.setItemModel(new NamespacedKey("funnel", "aerial_bettermodel_hidden"));
-                            shield.setItemMeta(hidden);
+                            // The BetterModel tracker may exist even if its texture pack or
+                            // rendering failed on the client. Keep the native shield visible
+                            // by default until the experiment is visually verified.
+                            if (plugin.getConfig().getBoolean("aerial.bettermodel.hide-vanilla-shield", false)) {
+                                ItemMeta hidden = shield.getItemMeta();
+                                hidden.setItemModel(new NamespacedKey("funnel", "aerial_bettermodel_hidden"));
+                                shield.setItemMeta(hidden);
+                            }
+                            plugin.getLogger().info("BetterModel Escutcheon tracker created for "
+                                    + player.getName() + "; vanilla shield remains "
+                                    + (plugin.getConfig().getBoolean("aerial.bettermodel.hide-vanilla-shield", false) ? "hidden" : "visible"));
                         }
                     }
                     player.getInventory().setItemInOffHand(shield);
