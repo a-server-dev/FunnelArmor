@@ -4,6 +4,7 @@ import kr.toxicity.model.api.BetterModel;
 import kr.toxicity.model.api.bukkit.platform.BukkitAdapter;
 import kr.toxicity.model.api.tracker.DummyTracker;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -50,10 +51,19 @@ final class AerialBetterModel {
         catch (RuntimeException | LinkageError ex) { return false; }
     }
 
-    Object spawn(Location where) {
+    Object spawn(Location where, Player owner) {
         try {
             var model = BetterModel.modelOrNull(ID);
-            return model == null ? null : model.create(BukkitAdapter.adapt(where));
+            if (model == null) return null;
+            DummyTracker tracker = model.create(BukkitAdapter.adapt(where));
+            try {
+                for (Player viewer : where.getWorld().getPlayers())
+                    tracker.spawn(BukkitAdapter.adapt(viewer));
+                return tracker;
+            } catch (RuntimeException | LinkageError ex) {
+                tracker.close();
+                throw ex;
+            }
         } catch (RuntimeException | LinkageError ex) {
             plugin.getLogger().warning("BetterModel shield unavailable, using vanilla rendering: " + ex.getMessage());
             return null;
