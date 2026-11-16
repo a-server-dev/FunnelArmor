@@ -214,9 +214,9 @@ class ResourcePackTest {
         assertNotNull(shield.getAsJsonObject("display").getAsJsonObject("thirdperson_lefthand"));
         assertNotNull(rifle.getAsJsonObject("display").getAsJsonObject("firstperson_righthand"));
         assertNotNull(rifle.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand"));
-        assertEquals(.96, rifle.getAsJsonObject("display").getAsJsonObject("firstperson_righthand")
+        assertEquals(1.44, rifle.getAsJsonObject("display").getAsJsonObject("firstperson_righthand")
                 .getAsJsonArray("scale").get(0).getAsDouble(),.00001);
-        assertEquals(.98, rifle.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand")
+        assertEquals(1.47, rifle.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand")
                 .getAsJsonArray("scale").get(0).getAsDouble(),.00001);
     }
 
