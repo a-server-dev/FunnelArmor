@@ -69,6 +69,10 @@ class ResourcePackTest {
                 assertTrue(entries.contains("assets/funnel/models/item/" + name + ".json"));
             }
             assertTrue(entries.contains("assets/funnel/models/item/aerial_escutcheon_blocking.json"));
+            assertFalse(entries.contains("assets/funnel/items/aerial_bettermodel_hidden.json"),
+                    "Deprecated BetterModel overlay must not be in the vanilla resource pack");
+            assertFalse(entries.contains("assets/funnel/models/item/aerial_bettermodel_hidden.json"),
+                    "Deprecated BetterModel overlay must not be in the vanilla resource pack");
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_escutcheon.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_gunbit_rifle.png"));
         }
@@ -96,11 +100,6 @@ class ResourcePackTest {
                                     model.getAsJsonObject("textures").get("layer0").getAsString());
                             var gui = model.getAsJsonObject("display").getAsJsonObject("gui");
                             assertEquals(1, gui.getAsJsonArray("scale").get(0).getAsDouble());
-                            zip.closeEntry();
-                            continue;
-                        }
-                        if (entry.getName().equals("assets/funnel/models/item/aerial_bettermodel_hidden.json")) {
-                            assertEquals(0, model.getAsJsonArray("elements").size());
                             zip.closeEntry();
                             continue;
                         }

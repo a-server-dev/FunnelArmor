@@ -64,7 +64,6 @@ final class AerialCombat implements Listener {
     private final Map<UUID, Long> shieldCooldowns = new HashMap<>();
     private final Map<UUID, Long> rifleCooldowns = new HashMap<>();
     private long tick;
-    private AerialBetterModel betterModel;
 
 
     private enum Mode { FREE, SHIELD, RIFLE }
@@ -74,7 +73,6 @@ final class AerialCombat implements Listener {
         Mode mode = Mode.FREE;
         final List<ItemDisplay> bits = new ArrayList<>();
         ItemDisplay assembled;
-        Object betterModelShield;
         long started;
         long lastToggle = -100;
         long shieldCooldown, rifleCooldown, nextAuto;
@@ -213,11 +211,6 @@ final class AerialCombat implements Listener {
     }
 
     void start() {
-        if (plugin.getConfig().getBoolean("aerial.bettermodel.enabled", false)
-                && Bukkit.getPluginManager().isPluginEnabled("BetterModel")) {
-            try { betterModel = new AerialBetterModel(plugin); }
-            catch (LinkageError ex) { plugin.getLogger().warning("BetterModel experiment disabled: " + ex); }
-        }
         Bukkit.getPluginManager().registerEvents(this, plugin);
         Bukkit.getOnlinePlayers().forEach(this::restoreForms);
         Bukkit.getScheduler().runTaskTimer(plugin, this::update, 4L, 2L);
@@ -244,10 +237,6 @@ final class AerialCombat implements Listener {
             }
         }
         st.transitionFrom = start;
-        if (st.mode == Mode.SHIELD && mode != Mode.SHIELD && betterModel != null) {
-            betterModel.close(st.betterModelShield);
-            st.betterModelShield = null;
-        }
         st.mode = mode;
         st.started = tick;
     }
@@ -257,7 +246,6 @@ final class AerialCombat implements Listener {
         if (st == null) return;
         st.bits.forEach(display -> { if (display.isValid()) display.remove(); });
         if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
-        if (betterModel != null) betterModel.close(st.betterModelShield);
         Player p = Bukkit.getPlayer(id);
         if (p != null) restoreForms(p);
     }
@@ -337,26 +325,6 @@ final class AerialCombat implements Listener {
                     changeMode(player, st, Mode.SHIELD);
                     st.health = new BarrierDurability.State(0,0);
                     ItemStack shield = shieldItem();
-                    if (betterModel != null && betterModel.loaded()) {
-                        Object tracker = betterModel.spawn(shieldVisualLocation(player), player);
-                        if (tracker != null) {
-                            st.betterModelShield = tracker;
-                            // The BetterModel tracker may exist even if its texture pack or
-                            // rendering failed on the client. Keep the native shield visible
-                            // by default until the experiment is visually verified.
-                            if (plugin.getConfig().getBoolean("aerial.bettermodel.hide-vanilla-shield", false)) {
-                                ItemMeta hidden = shield.getItemMeta();
-                                hidden.setItemModel(new NamespacedKey("funnel", "aerial_bettermodel_hidden"));
-                                shield.setItemMeta(hidden);
-                            }
-                            plugin.getLogger().info("BetterModel Escutcheon tracker created for "
-                                    + player.getName() + "; vanilla shield remains "
-                                    + (plugin.getConfig().getBoolean("aerial.bettermodel.hide-vanilla-shield", false) ? "hidden" : "visible"));
-                        }
-                    } else if (betterModel != null) {
-                        plugin.getLogger().warning("BetterModel Escutcheon model not registered: "
-                                + AerialBetterModel.ID + " (try /bettermodel reload and verify its resource pack)");
-                    }
                     player.getInventory().setItemInOffHand(shield);
                     player.sendActionBar(Component.text("§bエスカッシャン展開：右クリック長押しで防御"));
                 }
@@ -458,15 +426,6 @@ final class AerialCombat implements Listener {
         // shield or rifle model, which would double-render the equipment.
         if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
         st.assembled = null;
-    }
-
-    private Location shieldVisualLocation(Player p) {
-        Vector front = horizontal(p);
-        Vector right = new Vector(front.getZ(), 0, -front.getX());
-        Location loc = p.getLocation().add(right.multiply(-.65)).add(front.multiply(.20)).add(0,1.20,0);
-        loc.setYaw(p.getLocation().getYaw()+180);
-        loc.setPitch(0);
-        return loc;
     }
 
     private Vector horizontal(Player p) {
@@ -697,8 +656,6 @@ final class AerialCombat implements Listener {
             State st=state(p.getUniqueId());
             ensureDisplays(p,st);
             animate(p,st);
-            if (st.mode == Mode.SHIELD && st.betterModelShield != null && betterModel != null)
-                betterModel.move(st.betterModelShield, shieldVisualLocation(p));
             if (st.mode == Mode.RIFLE) {
                 if (st.rifleChargeUntil >= 0 && tick >= st.rifleChargeUntil) {
                     st.rifleChargeUntil = -1;

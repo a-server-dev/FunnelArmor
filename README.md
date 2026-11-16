@@ -634,3 +634,11 @@ Rifle geometry, firing damage, ammunition and cooldown are unchanged.
 - Existing config files without these two new keys use the same defaults; `aerial.bettermodel.enabled` remains opt-in (`false` in the shipped config) and `hide-vanilla-shield` remains `false`.
 - **Test with the offhand GUND-bit controller on the server.** A standalone `/bettermodel spawn funnel_aerial_escutcheon` creates a tracker outside FunnelArmor and therefore does not inherit FunnelArmor's size or lighting settings.
 - Re-equip/redeploy the shield after changing the visual settings (and restart Paper when switching BetterModel integration on/off). Keep the vanilla shield visible until the overlay's shape, colors, placement and pack loading are verified in game.
+
+## v0.8.19 — Return exclusively to the standard Minecraft item-model pipeline
+
+- **BetterModel Escutcheon experiment ended.** FunnelArmor no longer uses or depends on BetterModel, spawns a dummy-model overlay, or copies model sources into other plugin folders.
+- The **existing vanilla-compatible resource-pack Escutcheon JSON** (idle and blocking poses) is the only equipped shield appearance. The prior hand transforms, 681 fine cuboids, normal blocking mechanics, 5-hit / 20-HP durability, rifle, and other funnel types stay unchanged.
+- The obsolete invisible overlay item definitions are removed from the pack, and the obsolete optional BetterModel configuration is removed from the shipped config. Any obsolete `aerial.bettermodel.*` keys in a server's existing config are now ignored and may be deleted.
+- `models/aerial_escutcheon.bbmodel` and other approved Blockbench sources are **unchanged**. The historical experimental `models/funnel_aerial_escutcheon_bettermodel.bbmodel` remains in source control only as an unused reference; it is no longer bundled into the JAR. Future visual corrections should edit only the vanilla-compatible resource-pack JSON (or a user-approved model source, if explicitly authorized).
+- After updating the JAR, restart Paper, then reapply FunnelArmor's resource pack via `/funnel pack`. BetterModel's generated pack and experimental spawned husk are no longer required by FunnelArmor. If BetterModel is used elsewhere on the server, it may remain installed.

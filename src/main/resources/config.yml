@@ -99,18 +99,6 @@ fin-funnel:
 # Aerial (separate controller, does not change four existing variants).
 aerial:
   enabled: true
-  bettermodel:
-    # Experimental: set true to try the source .bbmodel. Set false to roll back.
-    # BetterModel must load funnel_aerial_escutcheon (reload its models after first install).
-    enabled: false
-    # Scale only the BetterModel dummy overlay, not the approved BBModel source.
-    # Try 2.0 first, then adjust after an in-game comparison (0.1 to 8.0).
-    model-scale: 2.0
-    # Diagnostic full lighting for the BetterModel overlay; the vanilla shield is unaffected.
-    # If it stays black, check BetterModel's generated mesh/UV and client resource pack.
-    full-bright: true
-    # Keep old shield visible while diagnosing BetterModel rendering.
-    hide-vanilla-shield: false
   # 11 GUND bit meshes are individually scaled to approx. 0.8 block length.
   bit-size-multiplier: 1.0
   target-range: 20.0

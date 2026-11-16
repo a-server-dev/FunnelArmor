@@ -3,7 +3,6 @@ version: ${version}
 main: dev.emerald.funnel.FunnelArmorPlugin
 api-version: '26.3'
 author: Emerald
-softdepend: [BetterModel]
 commands:
   funnel:
     description: Funnel weapon and resource pack
