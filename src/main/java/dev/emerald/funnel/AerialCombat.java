@@ -338,7 +338,7 @@ final class AerialCombat implements Listener {
                     st.health = new BarrierDurability.State(0,0);
                     ItemStack shield = shieldItem();
                     if (betterModel != null && betterModel.loaded()) {
-                        Object tracker = betterModel.spawn(shieldVisualLocation(player));
+                        Object tracker = betterModel.spawn(shieldVisualLocation(player), player);
                         if (tracker != null) {
                             st.betterModelShield = tracker;
                             ItemMeta hidden = shield.getItemMeta();
