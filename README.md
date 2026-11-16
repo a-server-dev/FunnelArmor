@@ -662,3 +662,7 @@ This is still an unapproved **preview**, not a replacement for the existing shie
 ## v0.8.22 — Visual reference alignment for the bit-first preview
 
 The **second user reference image** (front-on stylized 3D assembled shield) takes precedence for the joined silhouette; the third photo defines the eleven separate components. We reauthor the 11 bit recipes (rather than editing an existing assembled shield), sharpen the upper white fins, expose three blue-core apertures, elongate the white center nose, compact the blue shoulder/gold vents, widen the lower white armor into panels with blue outside trim, and inset the grey inner blades with cyan lines. Redundant face layers causing horizontal striping are removed. This remains a **preview only**; the actual equipped shield, original bit models, rifle, and approved BBModels are unchanged.
+
+## v0.8.23 — Sharp-shell Escutcheon preview
+
+The 0.8.22 test showed the widened lower white shells becoming bulbous and rounded. This version restores the angular 0.8.21 proportions and narrow edge, retains the three raised core apertures, thin upper fins, pointed longer nose, gold vents, inset grey rails and blue outline, and removes overlaid white face strips that created zebra-like shading. It retains the 11 separate bit recipes and their derived shield assembly. This remains **preview only**; existing production shield, rifle, flying bits, combat code and approved BBModels are unchanged. Requires in-game visual review.
