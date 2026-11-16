@@ -642,3 +642,11 @@ Rifle geometry, firing damage, ammunition and cooldown are unchanged.
 - The obsolete invisible overlay item definitions are removed from the pack, and the obsolete optional BetterModel configuration is removed from the shipped config. Any obsolete `aerial.bettermodel.*` keys in a server's existing config are now ignored and may be deleted.
 - `models/aerial_escutcheon.bbmodel` and other approved Blockbench sources are **unchanged**. The historical experimental `models/funnel_aerial_escutcheon_bettermodel.bbmodel` remains in source control only as an unused reference; it is no longer bundled into the JAR. Future visual corrections should edit only the vanilla-compatible resource-pack JSON (or a user-approved model source, if explicitly authorized).
 - After updating the JAR, restart Paper, then reapply FunnelArmor's resource pack via `/funnel pack`. BetterModel's generated pack and experimental spawned husk are no longer required by FunnelArmor. If BetterModel is used elsewhere on the server, it may remain installed.
+
+## v0.8.20 — Bit-first Aerial visual preview
+
+A new, opt-in preview based on the user's disassembled physical GUND-bit reference photo is generated from 11 separately authored piece recipes, **not** by splitting an assembled model. See `docs/AERIAL_BIT_FIRST.md` and `tools/generate_aerial_bit_first.mjs`.
+
+OP commands: `/funnel aerial preview <1..11|shield|clear>`. They display one nonpersistent ItemDisplay without changing any live equipment, combat, approved BBModel, existing 11 flying bit models, or the current native shield/rifle visuals. This allows iterative review piece-by-piece before adopting the assembled geometry.
+
+The assembled test shield contains precisely the union of the 11 authored bit geometries (229 cuboid elements); it does not contain the detached dark mounting frame. The existing Aerial palette is reused. In-game visual checks and piece-by-piece approval are still required.

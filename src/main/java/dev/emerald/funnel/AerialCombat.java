@@ -60,6 +60,8 @@ final class AerialCombat implements Listener {
     private final NamespacedKey formKey;
     private final NamespacedKey displayKey;
     private final Map<UUID, State> active = new HashMap<>();
+    // Isolated OP-only visual previews: never replace approved live equipment.
+    private final Map<UUID, ItemDisplay> bitFirstPreviews = new HashMap<>();
     // Retain cooldowns even when a player unequips a controller or changes world.
     private final Map<UUID, Long> shieldCooldowns = new HashMap<>();
     private final Map<UUID, Long> rifleCooldowns = new HashMap<>();
@@ -186,6 +188,61 @@ final class AerialCombat implements Listener {
     }
 
     boolean command(CommandSender sender, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("preview")) {
+            if (!sender.hasPermission("funnel.admin")) {
+                sender.sendMessage("§c権限がありません。");
+                return true;
+            }
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§cプレビューはゲーム内のプレイヤー専用です。");
+                return true;
+            }
+            if (args.length != 3) {
+                sender.sendMessage("§7/funnel aerial preview <1..11|shield|clear>");
+                return true;
+            }
+            String selection = args[2].toLowerCase(java.util.Locale.ROOT);
+            if (selection.equals("clear")) {
+                removeBitFirstPreview(player.getUniqueId());
+                player.sendMessage("§7GUNDビット試作プレビューを削除しました。");
+                return true;
+            }
+            String model;
+            String label;
+            float scale;
+            if (selection.equals("shield")) {
+                model = "aerial_v2_escutcheon";
+                label = "11基結合エスカッシャン";
+                scale = 1.05f;
+            } else {
+                final int number;
+                try { number = Integer.parseInt(selection); }
+                catch (NumberFormatException ex) {
+                    player.sendMessage("§c番号は1～11、またはshield/clearを指定してください。");
+                    return true;
+                }
+                if (number < 1 || number > 11) {
+                    player.sendMessage("§cビット番号は1～11です。");
+                    return true;
+                }
+                model = String.format(java.util.Locale.ROOT, "aerial_v2_bit_%02d", number);
+                label = "GUNDビット試作" + number;
+                scale = 1.8f;
+            }
+            removeBitFirstPreview(player.getUniqueId());
+            Vector forward = player.getLocation().getDirection().setY(0);
+            if (forward.lengthSquared() < 1.0e-6) forward = new Vector(0,0,1);
+            Location at = player.getLocation().add(forward.normalize().multiply(2.6)).add(0, 1.7, 0);
+            at.setYaw(player.getLocation().getYaw() + 180f);
+            at.setPitch(0);
+            ItemDisplay display = spawn(player, model, scale);
+            display.setTeleportDuration(0);
+            display.teleport(at);
+            bitFirstPreviews.put(player.getUniqueId(), display);
+            player.sendMessage("§b" + label + "§7を前方に表示しました。"
+                    + " §7(/funnel aerial preview clear で削除)");
+            return true;
+        }
         if (args.length >= 2 && args[1].equalsIgnoreCase("give")) {
             if (!sender.hasPermission("funnel.admin")) {
                 sender.sendMessage("§c権限がありません。"); return true;
@@ -206,7 +263,7 @@ final class AerialCombat implements Listener {
                     + " / ライフルCD " + Math.max(0,st.rifleCooldown-tick) + "t");
             return true;
         }
-        sender.sendMessage("§7/funnel aerial give [player] §8(OP) §7| /funnel aerial status");
+        sender.sendMessage("§7/funnel aerial give [player] §8(OP) §7| /funnel aerial status §7| /funnel aerial preview <1..11|shield|clear> §8(OP)");
         return true;
     }
 
@@ -218,6 +275,7 @@ final class AerialCombat implements Listener {
 
     void stop() {
         for (UUID id : new ArrayList<>(active.keySet())) clear(id);
+        for (UUID id : new ArrayList<>(bitFirstPreviews.keySet())) removeBitFirstPreview(id);
         for (Player p : Bukkit.getOnlinePlayers()) restoreForms(p);
     }
 
@@ -241,7 +299,13 @@ final class AerialCombat implements Listener {
         st.started = tick;
     }
 
+    private void removeBitFirstPreview(UUID id) {
+        ItemDisplay display = bitFirstPreviews.remove(id);
+        if (display != null && display.isValid()) display.remove();
+    }
+
     private void clear(UUID id) {
+        removeBitFirstPreview(id);
         State st = active.remove(id);
         if (st == null) return;
         st.bits.forEach(display -> { if (display.isValid()) display.remove(); });

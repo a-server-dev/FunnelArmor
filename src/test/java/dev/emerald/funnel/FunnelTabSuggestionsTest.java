@@ -69,8 +69,16 @@ class FunnelTabSuggestionsTest {
                 FunnelTabSuggestions.complete(new String[]{"aer"}, false, true, ONLINE));
         assertEquals(List.of("status"),
                 FunnelTabSuggestions.complete(new String[]{"aerial", ""}, false, true, ONLINE));
-        assertEquals(List.of("give", "status"),
+        assertEquals(List.of("give", "preview", "status"),
                 FunnelTabSuggestions.complete(new String[]{"aerial", ""}, true, true, ONLINE));
+        assertEquals(List.of("1", "10", "11"),
+                FunnelTabSuggestions.complete(new String[]{"aerial", "preview", "1"}, true, true, ONLINE));
+        assertEquals(List.of("shield"),
+                FunnelTabSuggestions.complete(new String[]{"aerial", "preview", "sh"}, true, true, ONLINE));
+        assertEquals(List.of(),
+                FunnelTabSuggestions.complete(new String[]{"aerial", "preview", ""}, false, true, ONLINE));
+        assertEquals(List.of(),
+                FunnelTabSuggestions.complete(new String[]{"aerial", "preview", ""}, true, false, ONLINE));
         assertEquals(List.of("give"),
                 FunnelTabSuggestions.complete(new String[]{"AERIAL", "Gi"}, true, true, ONLINE));
         assertEquals(List.of("East"),

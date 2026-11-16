@@ -50,10 +50,17 @@ public final class FunnelTabSuggestions {
                 case "aerial" -> {
                     if (args.length == 2) {
                         candidates.add("status");
-                        if (admin) candidates.add("give");
+                        if (admin) {
+                            candidates.add("give");
+                            if (player) candidates.add("preview");
+                        }
                     } else if (args.length == 3 && args[1].equalsIgnoreCase("give") && admin)
                         candidates.addAll(onlineNames);
-                    else return List.of();
+                    else if (args.length == 3 && args[1].equalsIgnoreCase("preview") && admin && player) {
+                        for (int bit = 1; bit <= 11; bit++) candidates.add(Integer.toString(bit));
+                        candidates.add("shield");
+                        candidates.add("clear");
+                    } else return List.of();
                 }
                 case "formation" -> {
                     if (!player || args.length != 2) return List.of();

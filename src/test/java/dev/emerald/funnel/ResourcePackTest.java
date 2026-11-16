@@ -69,6 +69,13 @@ class ResourcePackTest {
                 assertTrue(entries.contains("assets/funnel/models/item/" + name + ".json"));
             }
             assertTrue(entries.contains("assets/funnel/models/item/aerial_escutcheon_blocking.json"));
+            for (int i=1;i<=11;i++) {
+                String part = String.format(java.util.Locale.ROOT, "aerial_v2_bit_%02d",i);
+                assertTrue(entries.contains("assets/funnel/items/" + part + ".json"));
+                assertTrue(entries.contains("assets/funnel/models/item/" + part + ".json"));
+            }
+            assertTrue(entries.contains("assets/funnel/items/aerial_v2_escutcheon.json"));
+            assertTrue(entries.contains("assets/funnel/models/item/aerial_v2_escutcheon.json"));
             assertFalse(entries.contains("assets/funnel/items/aerial_bettermodel_hidden.json"),
                     "Deprecated BetterModel overlay must not be in the vanilla resource pack");
             assertFalse(entries.contains("assets/funnel/models/item/aerial_bettermodel_hidden.json"),
@@ -147,8 +154,42 @@ class ResourcePackTest {
             assertEquals(10, checked,
                     "4 drones + folded fin + quad + controller + 3 barrier arm segments");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
-            assertEquals(14, aerialExports, "11 distinct bits + 2 shield poses + assembled rifle");
+            assertEquals(26, aerialExports, "14 existing Aerial models + 11 new bit-first pieces + assembled preview");
         }
+    }
+
+    @Test
+    void bitFirstEscutcheonIsExactlyTheUnionOfElevenIndependentBits() throws Exception {
+        java.util.Map<String, JsonObject> models = new java.util.HashMap<>();
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip");
+             ZipInputStream zip = new ZipInputStream(stream)) {
+            ZipEntry entry;
+            while ((entry=zip.getNextEntry()) != null) {
+                String path = entry.getName();
+                if (path.matches("assets/funnel/models/item/aerial_v2_bit_[0-9]{2}\\.json")
+                        || path.equals("assets/funnel/models/item/aerial_v2_escutcheon.json")) {
+                    models.put(path, parse(zip.readAllBytes()));
+                }
+                zip.closeEntry();
+            }
+        }
+        assertEquals(12, models.size(), "11 detached bits + joined Escutcheon");
+        int count = 0;
+        for (int i=1;i<=11;i++) {
+            String name = String.format(java.util.Locale.ROOT,
+                    "assets/funnel/models/item/aerial_v2_bit_%02d.json",i);
+            JsonObject model = models.get(name);
+            assertNotNull(model,name);
+            int size = model.getAsJsonArray("elements").size();
+            assertTrue(size >= 8, "Each bit must have individually authored surfaces: "+name);
+            count += size;
+        }
+        JsonObject joined = models.get("assets/funnel/models/item/aerial_v2_escutcheon.json");
+        assertNotNull(joined);
+        assertEquals(count,joined.getAsJsonArray("elements").size(),
+                "The joined shield may only use geometry authored in the 11 standalone bits");
+        assertEquals("funnel:item/aerial_escutcheon",
+                joined.getAsJsonObject("textures").get("0").getAsString());
     }
 
     @Test
