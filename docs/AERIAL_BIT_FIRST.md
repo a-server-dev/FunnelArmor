@@ -1,8 +1,8 @@
-# Bit-first Escutcheon preview: rear hand grip added (not yet approved)
+# Bit-first Escutcheon preview: shoulder seam bridging (not yet approved)
 
 Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.
 
-0.8.26 retains the approved-for-preview sharp nose, blue shoulders, 11 standalone bit geometries, and join positions from v0.8.25. Only the assembled shield receives the rear handle as separate non-bit mounting hardware: one horizontal charcoal grip, two steel supports, and two grey reinforcement plates. This preview does not affect the production shield or any source BBModel.
+0.8.27 connects lower white outer bits 07/08 to the blue shoulders 05/06 from behind. Each white outer bit now has a short stepped white collar and narrow blue edge connector at its top; these reach into the blue shoulder in frontal projection, closing the sky gap without widening the shield or touching the blue/white central nose. The shield-only five-piece charcoal rear hand grip from 0.8.26 remains exactly the same. No production equipment or approved BBModel changes.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
@@ -12,13 +12,13 @@ Each of the 11 detached GUND-bit parts is separately authored from the right-han
 | 04 | 中央白ノーズ | 0, 5.1, 1.02 | 21 |
 | 05 | 左肩青＋黄ベント | -2.08, 7.23, 1.06 | 23 |
 | 06 | 右肩青＋黄ベント | 2.08, 7.23, 1.06 | 23 |
-| 07 | 左下白外装 | -2.67, -7.12, 0.13 | 69 |
-| 08 | 右下白外装 | 2.67, -7.12, 0.13 | 69 |
+| 07 | 左下白外装 | -2.67, -7.12, 0.13 | 73 |
+| 08 | 右下白外装 | 2.67, -7.12, 0.13 | 73 |
 | 09 | 中央白V字装甲 | 0, 1.12, 0.56 | 16 |
 | 10 | 左グレー内装 | -0.91, -6.23, -0.24 | 23 |
 | 11 | 右グレー内装 | 0.91, -6.23, -0.24 | 23 |
 
-Total 357 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
+Total 365 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
 
 Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.
 

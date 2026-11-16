@@ -109,6 +109,16 @@ function buildBitFirst(){
     p([.33,1.05,thick/2+.025],[.46,2.09,thick/2+.14],"cobalt");
     break;
    case "outer":
+    // The lower white GUND-bit and the upper blue shoulder used to stop short
+    // of one another. Add a stepped collar at the UPPER (local +Y) edge of
+    // EACH white bit: it tucks BEHIND the blue armor and eliminates the
+    // visible sky gap without changing the narrow outside silhouette.
+    // p() mirrors this geometry automatically for right-hand bit 08.
+    p([-.23,13.66,-.28],[.57,14.38,.33],"white");
+    p([-.17,14.25,-.25],[.85,14.79,.34],"porcelain");
+    p([.05,14.64,-.21],[1.02,15.10,.29],"white");
+    // Small blue outside-edge link carries the outline into the blue shoulder.
+    p([-.24,13.79,.34],[-.10,14.43,.49],"cobalt");
     // Continuous white faces fill the inner armor without widening the outer edge.
     p([-.29,2.85,thick/2+.022],[.66,7.10,thick/2+.11],"porcelain");
     p([-.30,8.94,thick/2+.022],[.60,11.95,thick/2+.11],"porcelain");
@@ -168,11 +178,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: rear hand grip added (not yet approved)",
+ "# Bit-first Escutcheon preview: shoulder seam bridging (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
  "",
- "0.8.26 retains the approved-for-preview sharp nose, blue shoulders, 11 standalone bit geometries, and join positions from v0.8.25. Only the assembled shield receives the rear handle as separate non-bit mounting hardware: one horizontal charcoal grip, two steel supports, and two grey reinforcement plates. This preview does not affect the production shield or any source BBModel.",
+ "0.8.27 connects lower white outer bits 07/08 to the blue shoulders 05/06 from behind. Each white outer bit now has a short stepped white collar and narrow blue edge connector at its top; these reach into the blue shoulder in frontal projection, closing the sky gap without widening the shield or touching the blue/white central nose. The shield-only five-piece charcoal rear hand grip from 0.8.26 remains exactly the same. No production equipment or approved BBModel changes.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",
