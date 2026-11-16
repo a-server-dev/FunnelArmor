@@ -99,6 +99,10 @@ fin-funnel:
 # Aerial (separate controller, does not change four existing variants).
 aerial:
   enabled: true
+  bettermodel:
+    # Experimental: set true to try the source .bbmodel. Set false to roll back.
+    # BetterModel must load funnel_aerial_escutcheon (reload its models after first install).
+    enabled: false
   # 11 GUND bit meshes are individually scaled to approx. 0.8 block length.
   bit-size-multiplier: 1.0
   target-range: 20.0
