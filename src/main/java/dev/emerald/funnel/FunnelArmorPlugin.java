@@ -108,6 +108,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private byte[] packBytes;
     private String sha1;
     private Path packPath;
+    private AerialCombat aerialCombat;
 
     @Override public void onEnable() {
         saveDefaultConfig();
@@ -132,6 +133,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
         Bukkit.getPluginManager().registerEvents(this, this);
         cleanupOrphans();
+        aerialCombat = new AerialCombat(this, displayKey);
+        aerialCombat.start();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         if (getCommand("funnel") != null) {
@@ -142,6 +145,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 + " ready. Built-in resource pack SHA1: " + sha1);
     }
     @Override public void onDisable() {
+        if (aerialCombat != null) aerialCombat.stop();
         if (httpServer != null) httpServer.stop(0);
         lastShots.clear();
         shieldToggleTicks.clear();
@@ -1482,6 +1486,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     public List<String> onTabComplete(CommandSender sender, Command command,
                                       String alias, String[] args) {
         if (!command.getName().equalsIgnoreCase("funnel")) return List.of();
+        if (args.length >= 1 && args[0].equalsIgnoreCase("aerial")) {
+            if (args.length == 2) return sender.hasPermission("funnel.admin")
+                    ? List.of("give", "status") : List.of("status");
+            if (args.length == 3 && args[1].equalsIgnoreCase("give") && sender.hasPermission("funnel.admin"))
+                return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+            return List.of();
+        }
         // Never disclose admin-only actions or offer player targets to non-admins.
         List<String> online = Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName).toList();
@@ -1491,7 +1502,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel aerial give [player] §7| §b/funnel give <1-4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args[0].equalsIgnoreCase("aerial")) return aerialCombat.command(sender, args);
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }

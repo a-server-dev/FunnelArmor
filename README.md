@@ -388,3 +388,33 @@ exception; the server can only see the status, not the client's exact error.
 - Variant 3's twelve WINGS bit positions are now loosely scattered at staggered heights around the player's shoulders and above their head, with separate forwards/backwards offsets and slight hover movement. Other variants' WINGS formations are unchanged.
 - Offhand activation snapshots the player's location. All twelve Qubeley bits spawn around the player at distinct shoulder/back launch points, then fly to their orbiting mob positions on curved, smoothly eased flight paths with short per-bit departure delays. The last unit finishes deployment after roughly 35 ticks (1.75 seconds).
 - Repeated 0.5 HP beams start only after all twelve bits have arrived; existing target selection, tracking, gun aiming, and organic orbital motion remain in place. Models and resource-pack contents are unchanged.
+
+
+## v0.8.0 — Aerial gameplay (initial runtime implementation)
+
+The approved models under \`models/aerial_*.bbmodel\` are **not** vanilla
+Minecraft JSON item models. Aerial combat is now implemented in an isolated
+\`AerialCombat\` module; the temporary client item models are explicitly
+placeholders until a compatible BBModel free-mesh renderer/export pipeline is
+integrated. **Do not treat the temporary asset geometry as the approved final
+appearance.**
+
+- OP: \`/funnel aerial give [player]\`. Players: \`/funnel aerial status\`.
+- Main hand: 11 independently animated displays with irregular motion,
+  random-tick hostile-Mob detection and 0.5-HP automatic beam shots.
+- Offhand + right-click: Escutcheon mode with an assembly transition.
+  Protects from frontal physical/projectile damage. Breaks after 5 hits
+  or 20 HP absorbed; default 200-tick cooldown. Manual dismissal is allowed.
+- Main hand + sneak + right-click: toggle GUND-bit Rifle assembly.
+  Each ordinary right-click fires one stronger 1.5-HP beam, 5 shots total.
+  Empty magazine or manual cancellation starts a 200-tick cooldown.
+- Both-hand controller conflicts give priority to the offhand shield,
+  so one click cannot activate two modes simultaneously.
+- Death, disconnect, world change and plugin disable remove active displays.
+- Existing four funnel variants and their mechanics remain separate.
+
+Settings: \`aerial.*\` in config.yml. A vanilla-Paper preview represents
+assembly with 11 custom ItemDisplays and a temporary assembled display.
+**Approved 3D mesh rendering, exact part-to-part transformation, and in-game
+visual verification remain outstanding.** The BBModels are preserved, not
+modified or claimed to be usable as vanilla models.
