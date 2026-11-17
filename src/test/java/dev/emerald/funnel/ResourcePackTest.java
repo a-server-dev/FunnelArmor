@@ -217,6 +217,22 @@ class ResourcePackTest {
         assertTrue(brightWhiteFaces>45,
                 "White front armor must use the brighter white texture patch rather than dark grey");
         assertTrue(count>=180,"Surface bevels and colored details must survive bit-first joining");
+        // Shoulder preview v0.8.28: both independent shoulders have a narrower
+        // taper than the old broad box-like part. The finished shield still
+        // contains the eleven standalone bits and the unchanged rear grip.
+        for (int id : new int[]{5,6}) {
+            String partPath = String.format(java.util.Locale.ROOT,
+                    "assets/funnel/models/item/aerial_v2_bit_%02d.json",id);
+            var part=models.get(partPath);
+            double shoulderMin=Double.POSITIVE_INFINITY, shoulderMax=Double.NEGATIVE_INFINITY;
+            for(var element:part.getAsJsonArray("elements")) {
+                var cube=element.getAsJsonObject();
+                shoulderMin=Math.min(shoulderMin,cube.getAsJsonArray("from").get(0).getAsDouble());
+                shoulderMax=Math.max(shoulderMax,cube.getAsJsonArray("to").get(0).getAsDouble());
+            }
+            assertTrue(shoulderMax-shoulderMin < 2.0,
+                    "Blue shoulder bit " + id + " should have a compact tapered width");
+        }
         // Regression: the approved 0.8.24 outline is left untouched.
         for (int id : new int[]{4,5,6}) {
             String partPath = String.format(java.util.Locale.ROOT,

@@ -674,3 +674,7 @@ The 0.8.23 in-game screenshot showed large voids between the white outer plates,
 ## v0.8.25 — White nose and blue shoulder detail pass
 
 The **0.8.24 assembled preview silhouette is preserved**. Only standalone GUND part 04 (central white nose) and mirrored 05/06 (blue shoulders with gold vents) were updated: the nose now has a sharper six-station pointed front outline, two long side facets and a restrained white vertical ridge; shoulder bits have tapered, layered blue armor and a compact diagonal gold cartridge. The other eight generated part model JSON files are byte-identical to 0.8.24, and no 11-part placements moved. This is still isolated to the OP preview; existing armed shield, original BBModels, rifle, automatic bit visuals and combat logic remain unchanged.
+
+## v0.8.28 — Taper the blue-to-white shoulder join (preview only)
+
+The 0.8.27 reference screenshot showed an overly rectangular connection. Both blue shoulder bits 05/06 are now narrower and taper at their lower edge, moved 0.12 model pixels toward center and 0.11 up. The white shell connector on bits 07/08 is replaced with a three-stage diagonal tucked joint and a reduced cobalt seam. Only bits 05/06/07/08 and the assembled preview shield change; the rear grip, other seven bit models, the approved BBModel files, real equipped shield/rifle, and combat logic are unchanged. In-game visual approval remains necessary.

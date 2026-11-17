@@ -13,7 +13,7 @@ function buildBitFirst(){
   // Pointed, angular six-sided main white nose, not a rounded capsule.
   nose:{shade:"white",depth:1.04,profile:[[0,-.12,.12],[.50,-.54,.54],[1.40,-1.00,1.00],[2.00,-1.06,1.06],[3.20,-1.06,1.06],[4.10,-.74,.74],[4.83,-.39,.39]],front:"porcelain"},
   // Hard-edged sloped blue shoulder, with compact gold inset.
-  shoulder:{shade:"blue",depth:1.05,profile:[[0,-.44,.48],[.39,-.76,.80],[1.20,-.98,1.00],[1.86,-.93,.97],[2.57,-.71,.73],[3.26,-.43,.46]],front:"cobalt"},
+  shoulder:{shade:"blue",depth:1.00,profile:[[0,-.37,.41],[.39,-.68,.72],[1.20,-.86,.89],[1.86,-.81,.85],[2.57,-.62,.65],[3.18,-.36,.40]],front:"cobalt"},
   outer:{shade:"white",depth:.96,profile:[[0,-.28,.53],[1.12,-.43,.73],[2.53,-.57,.96],[4.47,-.72,1.26],[6.55,-.91,1.47],[7.59,-1.03,1.50],[8.24,-.66,1.19],[8.82,-.69,1.24],[10.65,-.79,1.30],[12.12,-.63,1.06],[13.10,-.43,.81],[14.18,-.29,.49]],front:"porcelain",edge:"cobalt"},
   crest:{shade:"white",depth:.91,profile:[[0,-.21,.21],[.60,-.74,.74],[1.18,-1.13,1.13],[2.31,-1.46,1.46],[3.44,-1.58,1.58],[4.46,-1.37,1.37]],front:"porcelain"},
   inner:{shade:"charcoal",depth:.74,profile:[[0,-.28,.28],[1.20,-.40,.43],[2.93,-.51,.56],[4.24,-.63,.62],[5.71,-.77,.70],[6.65,-.72,.66],[7.60,-.57,.54],[8.34,-.38,.42]],front:"steel"}
@@ -23,8 +23,8 @@ function buildBitFirst(){
   ["02","左上白ブレード","upper",-1.99,9.51,.12,false],
   ["03","右上白ブレード","upper",1.99,9.51,.12,true],
   ["04","中央白ノーズ","nose",0,5.10,1.02,false],
-  ["05","左肩青＋黄ベント","shoulder",-2.08,7.23,1.06,false],
-  ["06","右肩青＋黄ベント","shoulder",2.08,7.23,1.06,true],
+  ["05","左肩青＋黄ベント","shoulder",-1.96,7.34,1.06,false],
+  ["06","右肩青＋黄ベント","shoulder",1.96,7.34,1.06,true],
   ["07","左下白外装","outer",-2.67,-7.12,.13,false],
   ["08","右下白外装","outer",2.67,-7.12,.13,true],
   ["09","中央白V字装甲","crest",0,1.12,.56,false],
@@ -114,11 +114,13 @@ function buildBitFirst(){
     // EACH white bit: it tucks BEHIND the blue armor and eliminates the
     // visible sky gap without changing the narrow outside silhouette.
     // p() mirrors this geometry automatically for right-hand bit 08.
-    p([-.23,13.66,-.28],[.57,14.38,.33],"white");
-    p([-.17,14.25,-.25],[.85,14.79,.34],"porcelain");
-    p([.05,14.64,-.21],[1.02,15.10,.29],"white");
-    // Small blue outside-edge link carries the outline into the blue shoulder.
-    p([-.24,13.79,.34],[-.10,14.43,.49],"cobalt");
+    // Stepped diagonal joint: top narrows as it slides under the shoulder.
+    // Pieces 07/08 are mirrored, so both sides use identical join geometry.
+    p([-.12,13.74,-.24],[.38,14.24,.24],"white");
+    p([.06,14.08,-.18],[.72,14.56,.25],"porcelain");
+    p([.30,14.42,-.14],[.96,14.88,.20],"white");
+    // Preserve the thin exterior cobalt seam without a square plug.
+    p([-.22,13.86,.34],[-.11,14.24,.48],"cobalt");
     // Continuous white faces fill the inner armor without widening the outer edge.
     p([-.29,2.85,thick/2+.022],[.66,7.10,thick/2+.11],"porcelain");
     p([-.30,8.94,thick/2+.022],[.60,11.95,thick/2+.11],"porcelain");
@@ -178,11 +180,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: shoulder seam bridging (not yet approved)",
+ "# Bit-first Escutcheon preview: tapered shoulder join (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
  "",
- "0.8.27 connects lower white outer bits 07/08 to the blue shoulders 05/06 from behind. Each white outer bit now has a short stepped white collar and narrow blue edge connector at its top; these reach into the blue shoulder in frontal projection, closing the sky gap without widening the shield or touching the blue/white central nose. The shield-only five-piece charcoal rear hand grip from 0.8.26 remains exactly the same. No production equipment or approved BBModel changes.",
+ "0.8.28 refines the seam between the blue shoulder bits 05/06 and the white outer armor bits 07/08. Blue shoulder contours are slightly narrower with a tapered lower end, positioned 0.12 model px inward and 0.11 px higher. Each white bit has a three-stage diagonal inset (plus a thin blue seam) that slips underneath the shoulder rather than a square connector. The shield rear grip and all other seven standalone bits are unchanged. This is still an unapproved preview; the installed shield, combat, and approved BBModel sources remain untouched.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

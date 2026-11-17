@@ -1,8 +1,8 @@
-# Bit-first Escutcheon preview: shoulder seam bridging (not yet approved)
+# Bit-first Escutcheon preview: tapered shoulder join (not yet approved)
 
 Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.
 
-0.8.27 connects lower white outer bits 07/08 to the blue shoulders 05/06 from behind. Each white outer bit now has a short stepped white collar and narrow blue edge connector at its top; these reach into the blue shoulder in frontal projection, closing the sky gap without widening the shield or touching the blue/white central nose. The shield-only five-piece charcoal rear hand grip from 0.8.26 remains exactly the same. No production equipment or approved BBModel changes.
+0.8.28 refines the seam between the blue shoulder bits 05/06 and the white outer armor bits 07/08. Blue shoulder contours are slightly narrower with a tapered lower end, positioned 0.12 model px inward and 0.11 px higher. Each white bit has a three-stage diagonal inset (plus a thin blue seam) that slips underneath the shoulder rather than a square connector. The shield rear grip and all other seven standalone bits are unchanged. This is still an unapproved preview; the installed shield, combat, and approved BBModel sources remain untouched.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
@@ -10,8 +10,8 @@ Each of the 11 detached GUND-bit parts is separately authored from the right-han
 | 02 | 左上白ブレード | -1.99, 9.51, 0.12 | 20 |
 | 03 | 右上白ブレード | 1.99, 9.51, 0.12 | 20 |
 | 04 | 中央白ノーズ | 0, 5.1, 1.02 | 21 |
-| 05 | 左肩青＋黄ベント | -2.08, 7.23, 1.06 | 23 |
-| 06 | 右肩青＋黄ベント | 2.08, 7.23, 1.06 | 23 |
+| 05 | 左肩青＋黄ベント | -1.96, 7.34, 1.06 | 23 |
+| 06 | 右肩青＋黄ベント | 1.96, 7.34, 1.06 | 23 |
 | 07 | 左下白外装 | -2.67, -7.12, 0.13 | 73 |
 | 08 | 右下白外装 | 2.67, -7.12, 0.13 | 73 |
 | 09 | 中央白V字装甲 | 0, 1.12, 0.56 | 16 |
