@@ -706,3 +706,7 @@ The eleven standalone models (including all profiles, rotation angles and colors
 ## v0.8.33 — Placement-only white outer armor adjustment
 
 In the 0.8.32 Minecraft screenshot, grey bits 10/11 are visibly separate as intended, but white side armor 07/08 leaves small daylight triangles beneath the slanted blue shoulders. The assembled positions of white armor 07/08 are moved 0.08 inward and 0.14 upward, keeping the standalone bits unchanged. This is exclusively an assembly **translation**: all 11 independently generated parts, their rotations, faces, colors, the five-piece rear grip and other nine placement transforms are preserved, as are production models and approved BBModels. The overall assembled width is slightly narrower. In-game visual approval still pending.
+
+## v0.8.34 — Placement-only blue shoulder adjustment
+
+After the 0.8.33 in-game screenshot, adjust only the **joined positions** of shoulder GUND bits 05 and 06: each is shifted 0.06 model pixels inward and 0.08 down, keeping the ±22.5° rotation. All eleven standalone bit models, the white outer plates, central nose and crest, the now-separated gray inner blades, and the shield-only rear grip remain identical to 0.8.33. The prototype remains separate from the production equipped Escutcheon; no approved BBModel is edited. Screenshot validation is pending.

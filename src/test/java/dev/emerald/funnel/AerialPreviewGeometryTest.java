@@ -157,6 +157,25 @@ class AerialPreviewGeometryTest {
     }
 
     @Test
+    void joinedBlueShouldersAreRepositionedSymmetricallyWithoutRotationChanges() throws Exception {
+        var models = models();
+        var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
+        int start = 0;
+        for (int i = 1; i < 5; i++) start += bits(models, i).size();
+        double[][] target = {{5.48889, 15.12, 8.56}, {9.08951, 15.12, 8.56}};
+        for (int id : new int[]{5, 6}) {
+            var part = bits(models, id);
+            var cube = shield.get(start).getAsJsonObject();
+            for (int axis = 0; axis < 3; axis++)
+                assertEquals(target[id - 5][axis], coordinate(cube, "from", axis), .000021,
+                        "Joined shoulder translation must match the v0.8.34 placement");
+            assertEquals(id == 5 ? 22.5 : -22.5,
+                    cube.getAsJsonObject("rotation").get("angle").getAsDouble());
+            start += part.size();
+        }
+    }
+
+    @Test
     void lowerInnerArmorShowsTwoDistinctBladesWithBalancedMiddleGap() throws Exception {
         var models = models();
         var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
