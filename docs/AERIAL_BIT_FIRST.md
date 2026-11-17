@@ -1,8 +1,8 @@
-# Bit-first Escutcheon preview: placement-only alignment v0.8.32 (not yet approved)
+# Bit-first Escutcheon preview: outer-armor alignment v0.8.33 (not yet approved)
 
 Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.
 
-0.8.32 is strictly a position-only adjustment based on the user-approved 0.8.31 screenshot. Independent geometry, rotations, the 5-piece rear grip, outer dimensions and actual equipment are unchanged. In the assembly, bits 10/11 move outward, up and backward to form two visibly distinct grey blades; blue shoulders 05/06 move slightly inward and down; central white nose 04 moves slightly up/back, and white V crest 09 slightly down/forward. Every standalone bit JSON remains byte-identical to 0.8.31. Preview-only until the next Minecraft screenshot.
+0.8.33 is strictly a placement-only follow-up to the in-game 0.8.32 screenshot. White outer bits 07/08 each move 0.08 pixels inward and 0.14 upward to meet the blue shoulder bits more naturally. Independent geometry and rotations, all other join positions, the five rear grip elements, textures, approved BBModels and production equipment are unchanged. This slightly narrows the assembled overall envelope without changing any individual bit shape. Preview-only pending screenshot validation.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
@@ -12,13 +12,13 @@ Each of the 11 detached GUND-bit parts remains independently authored. Reference
 | 04 | 中央白ノーズ | 0, 5.18, 1 | 54 |
 | 05 | 左肩青＋黄ベント | -1.88, 7.2, 1.06 | 22 |
 | 06 | 右肩青＋黄ベント | 1.88, 7.2, 1.06 | 22 |
-| 07 | 左下白外装 | -2.67, -7.12, 0.13 | 97 |
-| 08 | 右下白外装 | 2.67, -7.12, 0.13 | 97 |
+| 07 | 左下白外装 | -2.59, -6.98, 0.13 | 97 |
+| 08 | 右下白外装 | 2.59, -6.98, 0.13 | 97 |
 | 09 | 中央白V字装甲 | 0, 1.02, 0.58 | 65 |
 | 10 | 左グレー内装 | -0.72, -6.12, -0.3 | 23 |
 | 11 | 右グレー内装 | 0.72, -6.12, -0.3 | 23 |
 
-Total 493 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
+Total 493 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.21462 vs height 23.07 (height/width ratio 3.19767).
 
 Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.
 

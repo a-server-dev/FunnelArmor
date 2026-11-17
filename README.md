@@ -702,3 +702,7 @@ Other nine bit models, overall width and height, approved BBModels, production e
 Based on the 0.8.31 Minecraft screenshot, **only the join positions** in `tools/generate_aerial_bit_first.mjs` have changed. Grey independent bits 10/11 shift from X=±0.52 to ±0.72, move 0.11 up and 0.06 rearward, changing their central seam from 0.04 to 0.44 model pixels. Blue shoulders 05/06 shift inward 0.08 and down 0.14. The central nose 04 moves up 0.08 and rearward 0.02; the white crest 09 moves down 0.10 and forward 0.02.
 
 The eleven standalone models (including all profiles, rotation angles and colors) are byte-for-byte unchanged, as are the 5 rear hand-grip cubes and the shield's outside bounds. No production models, BBModel source, game mechanics or equipped shield were changed. Preview only: `/funnel aerial preview shield`. Visual confirmation in Minecraft is pending.
+
+## v0.8.33 — Placement-only white outer armor adjustment
+
+In the 0.8.32 Minecraft screenshot, grey bits 10/11 are visibly separate as intended, but white side armor 07/08 leaves small daylight triangles beneath the slanted blue shoulders. The assembled positions of white armor 07/08 are moved 0.08 inward and 0.14 upward, keeping the standalone bits unchanged. This is exclusively an assembly **translation**: all 11 independently generated parts, their rotations, faces, colors, the five-piece rear grip and other nine placement transforms are preserved, as are production models and approved BBModels. The overall assembled width is slightly narrower. In-game visual approval still pending.

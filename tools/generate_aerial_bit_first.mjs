@@ -25,8 +25,8 @@ function buildBitFirst(){
   ["04","中央白ノーズ","nose",0,5.18,1.00,false],
   ["05","左肩青＋黄ベント","shoulder",-1.88,7.20,1.06,false],
   ["06","右肩青＋黄ベント","shoulder",1.88,7.20,1.06,true],
-  ["07","左下白外装","outer",-2.67,-7.12,.13,false],
-  ["08","右下白外装","outer",2.67,-7.12,.13,true],
+  ["07","左下白外装","outer",-2.59,-6.98,.13,false],
+  ["08","右下白外装","outer",2.59,-6.98,.13,true],
   ["09","中央白V字装甲","crest",0,1.02,.58,false],
   ["10","左グレー内装","inner",-.72,-6.12,-.30,false],
   ["11","右グレー内装","inner",.72,-6.12,-.30,true]
@@ -214,11 +214,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(points.some(p=>p.some(n=>!Number.isFinite(n)||n < -16||n > 32)))throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: placement-only alignment v0.8.32 (not yet approved)",
+ "# Bit-first Escutcheon preview: outer-armor alignment v0.8.33 (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.",
  "",
- "0.8.32 is strictly a position-only adjustment based on the user-approved 0.8.31 screenshot. Independent geometry, rotations, the 5-piece rear grip, outer dimensions and actual equipment are unchanged. In the assembly, bits 10/11 move outward, up and backward to form two visibly distinct grey blades; blue shoulders 05/06 move slightly inward and down; central white nose 04 moves slightly up/back, and white V crest 09 slightly down/forward. Every standalone bit JSON remains byte-identical to 0.8.31. Preview-only until the next Minecraft screenshot.",
+ "0.8.33 is strictly a placement-only follow-up to the in-game 0.8.32 screenshot. White outer bits 07/08 each move 0.08 pixels inward and 0.14 upward to meet the blue shoulder bits more naturally. Independent geometry and rotations, all other join positions, the five rear grip elements, textures, approved BBModels and production equipment are unchanged. This slightly narrows the assembled overall envelope without changing any individual bit shape. Preview-only pending screenshot validation.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

@@ -180,6 +180,23 @@ class AerialPreviewGeometryTest {
     }
 
     @Test
+    void raisedWhiteOuterArmorFitsUnderShouldersWithoutChangingItsShapes() throws Exception {
+        var models = models();
+        var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
+        int start = 0;
+        for (int i = 1; i < 7; i++) start += bits(models, i).size();
+        for (int id : new int[]{7, 8}) {
+            var part = bits(models, id);
+            double maxY = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < part.size(); i++)
+                maxY = Math.max(maxY, coordinate(shield.get(start + i).getAsJsonObject(), "to", 1));
+            assertEquals(15.90, maxY, .000021,
+                    "White shell upper tip should be tucked behind its blue shoulder");
+            start += part.size();
+        }
+    }
+
+    @Test
     void outerArmorTipsTaperAndInnerLapJointsBelongToTheirBits() throws Exception {
         var models = models();
         var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
