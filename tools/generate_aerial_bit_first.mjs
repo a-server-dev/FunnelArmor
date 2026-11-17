@@ -36,17 +36,23 @@ function buildBitFirst(){
   const recipe=recipes[type],stations=recipe.profile,thick=recipe.depth;
   const step=(type==="nose"||type==="crest")?.11:.44;
   let boxes=[];
-  function put(from,to,material){
-   if(mirror){const old=from[0];from=[-to[0],from[1],from[2]];to=[-old,to[1],to[2]];}
+  function put(from,to,material,outerSide=null){
+   if(mirror){
+    const old=from[0];from=[-to[0],from[1],from[2]];to=[-old,to[1],to[2]];
+    if(outerSide==="west")outerSide="east";
+   }
    if(!from.every((v,i)=>v<to[i]-1e-7))throw Error("Invalid box "+type+":"+material);
-   boxes.push({from,to,material,...(recipe.tilt?{rotation:{origin:[0,0,0],axis:"z",angle:mirror?-recipe.tilt:recipe.tilt,rescale:false}}:{})});
+   boxes.push({from,to,material,...(outerSide?{outerSide}:{}),
+     ...(recipe.tilt?{rotation:{origin:[0,0,0],axis:"z",angle:mirror?-recipe.tilt:recipe.tilt,rescale:false}}:{})});
   }
   function bounds(y){for(let i=0;i<stations.length-1;i++){let a=stations[i],b=stations[i+1];if(y<=b[0]+1e-8){let t=Math.max(0,Math.min(1,(y-a[0])/(b[0]-a[0])));return [a[1]+t*(b[1]-a[1]),a[2]+t*(b[2]-a[2])];}}return stations.at(-1).slice(1);}
   const end=stations.at(-1)[0];
   for(let y=0;y<end-1e-6;){
    const slice=type==="outer"&&y<1.32-1e-6?.11:step;
    let y2=Math.min(end,y+slice),aa=bounds(y),bb=bounds(y2),lo=Math.min(aa[0],bb[0]),hi=Math.max(aa[1],bb[1]);
-   put([lo,y,-thick/2],[hi,y2,thick/2],recipe.shade);
+   // Only the OUTWARD lateral side of each white lower fin is cobalt.
+   // Keep its front white and its geometry identical.
+   put([lo,y,-thick/2],[hi,y2,thick/2],recipe.shade,type==="outer"?"west":null);
    // Keep outer armor an angular white panel: remove striped white overlays.
    // No raised plate per horizontal row; use continuous surfaces instead.
    if(recipe.edge&&y2<end-.25)
@@ -171,7 +177,9 @@ function buildBitFirst(){
  const convert=(boxes,shift)=>boxes.map(box=>{
   const pixel=palette[box.material],u=pixel[0]/16,v=pixel[1]/16,d=.02;
   const face={uv:[round(u-d),round(v-d),round(u+d),round(v+d)],texture:"#0"};
-  return {from:box.from.map((n,i)=>round(n+8+shift[i])),to:box.to.map((n,i)=>round(n+8+shift[i])),...(box.rotation?{rotation:{...box.rotation,origin:box.rotation.origin.map((n,i)=>round(n+8+shift[i]))}}:{}),faces:Object.fromEntries(["north","south","east","west","up","down"].map(f=>[f,face]))};
+  const cobalt=palette.cobalt,sideFace={
+   uv:[round(cobalt[0]/16-d),round(cobalt[1]/16-d),round(cobalt[0]/16+d),round(cobalt[1]/16+d)],texture:"#0"};
+  return {from:box.from.map((n,i)=>round(n+8+shift[i])),to:box.to.map((n,i)=>round(n+8+shift[i])),...(box.rotation?{rotation:{...box.rotation,origin:box.rotation.origin.map((n,i)=>round(n+8+shift[i]))}}:{}),faces:Object.fromEntries(["north","south","east","west","up","down"].map(f=>[f,box.outerSide===f?sideFace:face]))};
  });
  // Evaluate rendered corners, not only the unrotated from/to coordinates.
  function corners(box){
@@ -186,7 +194,24 @@ function buildBitFirst(){
   return result;
  }
  const bitDisplay=(height)=>({gui:{rotation:[15,205,0],translation:[0,0,0],scale:Array(3).fill(round(Math.min(2.6,12/height)))},fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]}});
- const shieldDisplay={gui:{rotation:[15,-25,-5],translation:[0,1,0],scale:[.65,.65,.65]},fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]}};
+ // v2 is ~23px tall vs the former ~12.4px; scaled native hand poses
+ // keep comparable physical size while the preview's GUI/fixed poses stay put.
+ const shieldDisplay={
+  gui:{rotation:[15,-25,-5],translation:[0,1,0],scale:[.65,.65,.65]},
+  fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]},
+  ground:{rotation:[0,0,0],translation:[0,3,0],scale:[.27,.27,.27]},
+  firstperson_lefthand:{rotation:[75,180,0],translation:[4,3,-1],scale:[1.21,1.21,1.21]},
+  firstperson_righthand:{rotation:[75,180,0],translation:[-4,3,1],scale:[1.21,1.21,1.21]},
+  thirdperson_lefthand:{rotation:[75,180,0],translation:[6,7,-1],scale:[1.215,1.215,1.215]},
+  thirdperson_righthand:{rotation:[75,180,0],translation:[-6,7,1],scale:[1.215,1.215,1.215]}
+ };
+ const shieldBlockingDisplay={
+  ...shieldDisplay,
+  firstperson_lefthand:{rotation:[75,180,0],translation:[4,3,-1],scale:[1.335,1.335,1.335]},
+  firstperson_righthand:{rotation:[75,180,0],translation:[-4,3,1],scale:[1.335,1.335,1.335]},
+  thirdperson_lefthand:{rotation:[75,180,0],translation:[6,9,-1],scale:[1.35,1.35,1.35]},
+  thirdperson_righthand:{rotation:[75,180,0],translation:[-6,9,1],scale:[1.35,1.35,1.35]}
+ };
  const outputs={};
  for(const part of parts){
   const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
@@ -208,17 +233,20 @@ function buildBitFirst(){
  if(rearMount.some(x=>x.to[2]>.1))throw Error("Grip passes through front");
  whole.push(...convert(rearMount,[0,0,0]));
  outputs["resourcepack/assets/funnel/models/item/aerial_v2_escutcheon.json"]=JSON.stringify(model(whole,shieldDisplay))+"\n";
+ // Native shield blocking changes the hand pose, NOT the GUND-bit geometry.
+ outputs["resourcepack/assets/funnel/models/item/aerial_v2_escutcheon_blocking.json"]=
+  JSON.stringify(model(whole,shieldBlockingDisplay))+"\n";
  const points=whole.flatMap(corners);
  const maxX=Math.max(...points.map(p=>p[0])),minX=Math.min(...points.map(p=>p[0])),maxY=Math.max(...points.map(p=>p[1])),minY=Math.min(...points.map(p=>p[1]));
  if(whole.length!==parts.reduce((a,p)=>a+p.boxes.length,0)+rearMount.length)throw Error("Failed bit-first join and grip");
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(points.some(p=>p.some(n=>!Number.isFinite(n)||n < -16||n > 32)))throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: blue shoulder placement-only alignment v0.8.34 (not yet approved)",
+ "# Bit-first Escutcheon: production live GUND-bit models and blue side faces v0.8.35",
  "",
  "Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.",
  "",
- "0.8.34 is strictly a placement-only adjustment based on the 0.8.33 in-game screenshot. The blue shoulder bits 05/06 each move 0.06 model pixels inward and 0.08 down to close the visible space under the angled blue armor without altering its 22.5 degree rotation. The white outer bits 07/08, the separate gray inner bits 10/11, nose, crest, all independent model geometry, all five rear-grip pieces and live equipment stay exactly as in 0.8.33. Preview-only pending Minecraft screenshot confirmation.",
+ "0.8.35 promotes the established v0.8.34 bit-first GUND-bit geometry to the real Aerial ItemDisplays and held shield. Shapes, rotations, placements, five rear-grip elements and rifle are unchanged. The outward lateral face of white lower bits 07/08 is now cobalt, like their blue front rim. Live floating bits use aerial_v2_bit_01 through 11; the actual shield item uses v2 joined geometry in both idle and blocking poses. Legacy Aerial JSON and BBModel source files remain intact for rollback.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",
@@ -226,9 +254,9 @@ function buildBitFirst(){
  "",
  `Total ${whole.length} cuboids (11 standalone bits plus ${rearMount.length} rear-only handle parts); shield width ${round(maxX-minX)} vs height ${round(maxY-minY)} (height/width ratio ${round((maxY-minY)/(maxX-minX))}).`,
  "",
- "Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.",
+ "Single source of truth: `tools/generate_aerial_bit_first.mjs`; generates 11 individual models, the joined shield, and the same shield geometry with a blocking hand pose (13 JSON model files). Regenerate with `node tools/generate_aerial_bit_first.mjs` or check with `--check`.",
  "",
- "Previews only: `/funnel aerial preview <1..11|shield|clear>` (OP). Existing normal aerial bits, native equipped shield, rifle and original `.bbmodel` files remain unchanged. No BetterModel required. The dark non-bit rear frame in the picture is not counted among the 11 bits.",
+ "Live Aerial flying bits and native held shield now reference the generated bit-first models. OP previews remain available. The gunbit rifle and original `.bbmodel` sources are unchanged. The five-cuboid rear grip belongs to the shield only. No BetterModel needed.",
  ""
  ].join("\n");
  return {outputs,parts:parts.map(p=>({id:p.id,materialCount:p.boxes.length})),sum:whole.length,bounds:{x:[minX,maxX],y:[minY,maxY],ratio:(maxY-minY)/(maxX-minX)}};
@@ -247,4 +275,4 @@ for(const [name,contents] of Object.entries(outputs)){
  }
 }
 if(stale)process.exitCode=1;
-else console.log(check?'Bit-first generated models match.':'Regenerated 11 bits and their joined Escutcheon.');
+else console.log(check?'Bit-first generated models match.':'Regenerated 11 bits and joined/raised shield poses.');

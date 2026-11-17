@@ -710,3 +710,9 @@ In the 0.8.32 Minecraft screenshot, grey bits 10/11 are visibly separate as inte
 ## v0.8.34 — Placement-only blue shoulder adjustment
 
 After the 0.8.33 in-game screenshot, adjust only the **joined positions** of shoulder GUND bits 05 and 06: each is shifted 0.06 model pixels inward and 0.08 down, keeping the ±22.5° rotation. All eleven standalone bit models, the white outer plates, central nose and crest, the now-separated gray inner blades, and the shield-only rear grip remain identical to 0.8.33. The prototype remains separate from the production equipped Escutcheon; no approved BBModel is edited. Screenshot validation is pending.
+
+## v0.8.35 — Production Aerial now uses bit-first models
+
+The eleven live flying Aerial GUND bits use `aerial_v2_bit_01`–`11` with scales normalized to roughly 0.8 block in height. The Aerial controller and its legacy-inventory icon migration now use the bit-first model for bit 01. Aerial shields retain the existing `funnel:aerial_escutcheon` **item identifier** (preserving previously issued items) but its native `using_item` condition now points to the joined bit-first shield or an identical-geometry blocking model with a distinct raised-hand display transform. Gameplay mechanics and rifle are unchanged; legacy assets remain available for rollback.
+
+The white lower outer fins (bits 07/08) now expose cobalt on their outer side faces (west/east respectively), while front, back and other surfaces remain original colors. All geometry/placements (493 shield cuboids including 5 rear-grip cuboids) and approved original `.bbmodel` files remain unchanged. Test flying size, actual shield holding/guarding, side colors and reissued items in Minecraft.

@@ -176,7 +176,7 @@ final class AerialCombat implements Listener {
                 Component.text("§7盾を収納: しゃがみ＋オフハンド右クリック"),
                 Component.text("§7メインハンド＋しゃがみ右クリック: ライフル変形/解除"),
                 Component.text("§7ライフル中右クリック: チャージ後5発手動射撃")));
-        meta.setItemModel(new NamespacedKey("funnel", "aerial_bit_01"));
+        meta.setItemModel(new NamespacedKey("funnel", "aerial_v2_bit_01"));
         meta.getPersistentDataContainer().set(controllerKey, PersistentDataType.BYTE, (byte)1);
         item.setItemMeta(meta);
         return item;
@@ -471,9 +471,11 @@ final class AerialCombat implements Listener {
         });
     }
 
+    // New bit-first model heights vary; normalize each live ItemDisplay to
+    // approximately 12.8 model pixels (0.8 blocks), not the old meshes' scale.
     private static final float[] NORMALIZED_BIT_SCALES = {
-            3.89f, 2.93f, 2.93f, 3.57f, 5.0f, 5.0f,
-            3.52f, 1.30f, 1.30f, 1.74f, 1.74f
+            2.06452f, 1.94529f, 1.94529f, 2.65010f, 4.02516f, 4.02516f,
+            0.86022f, 0.86022f, 2.86996f, 1.53477f, 1.53477f
     };
 
     private float bitScale(int i) {
@@ -486,7 +488,7 @@ final class AerialCombat implements Listener {
             for (ItemDisplay display : st.bits) if (display.isValid()) display.remove();
             st.bits.clear();
             for (int i=0; i<BITS; i++) st.bits.add(spawn(p,
-                    "aerial_bit_" + String.format(java.util.Locale.ROOT, "%02d", i + 1),
+                    "aerial_v2_bit_" + String.format(java.util.Locale.ROOT, "%02d", i + 1),
                     bitScale(i)));
         }
         // Assembled items are now carried in the player's actual hands:

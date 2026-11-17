@@ -327,7 +327,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             };
         } else if (meta.getPersistentDataContainer().has(
                 new NamespacedKey(this, "aerial_controller"), PersistentDataType.BYTE)) {
-            desired = "aerial_bit_01";
+            desired = "aerial_v2_bit_01";
         }
         if (desired == null) return false;
         NamespacedKey expected = new NamespacedKey("funnel", desired);

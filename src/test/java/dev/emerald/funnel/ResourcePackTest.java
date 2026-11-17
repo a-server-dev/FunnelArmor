@@ -76,6 +76,7 @@ class ResourcePackTest {
             }
             assertTrue(entries.contains("assets/funnel/items/aerial_v2_escutcheon.json"));
             assertTrue(entries.contains("assets/funnel/models/item/aerial_v2_escutcheon.json"));
+            assertTrue(entries.contains("assets/funnel/models/item/aerial_v2_escutcheon_blocking.json"));
             assertFalse(entries.contains("assets/funnel/items/aerial_bettermodel_hidden.json"),
                     "Deprecated BetterModel overlay must not be in the vanilla resource pack");
             assertFalse(entries.contains("assets/funnel/models/item/aerial_bettermodel_hidden.json"),
@@ -154,7 +155,7 @@ class ResourcePackTest {
             assertEquals(10, checked,
                     "4 drones + folded fin + quad + controller + 3 barrier arm segments");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
-            assertEquals(26, aerialExports, "14 existing Aerial models + 11 new bit-first pieces + assembled preview");
+            assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }
     }
 
@@ -356,8 +357,8 @@ class ResourcePackTest {
                 while ((entry = zip.getNextEntry()) != null) {
                     String name = entry.getName();
                     if (name.equals("assets/funnel/items/aerial_escutcheon.json")
-                            || name.equals("assets/funnel/models/item/aerial_escutcheon.json")
-                            || name.equals("assets/funnel/models/item/aerial_escutcheon_blocking.json"))
+                            || name.equals("assets/funnel/models/item/aerial_v2_escutcheon.json")
+                            || name.equals("assets/funnel/models/item/aerial_v2_escutcheon_blocking.json"))
                         found.put(name, parse(zip.readAllBytes()));
                     assertNotEquals("assets/minecraft/items/shield.json", name,
                             "Do not replace the appearance of normal vanilla shields globally");
@@ -370,22 +371,22 @@ class ResourcePackTest {
                 .getAsJsonObject("model");
         assertEquals("minecraft:condition", custom.get("type").getAsString());
         assertEquals("minecraft:using_item", custom.get("property").getAsString());
-        assertEquals("funnel:item/aerial_escutcheon",
+        assertEquals("funnel:item/aerial_v2_escutcheon",
                 custom.getAsJsonObject("on_false").get("model").getAsString());
-        assertEquals("funnel:item/aerial_escutcheon_blocking",
+        assertEquals("funnel:item/aerial_v2_escutcheon_blocking",
                 custom.getAsJsonObject("on_true").get("model").getAsString());
-        JsonObject idle = found.get("assets/funnel/models/item/aerial_escutcheon.json");
-        JsonObject raised = found.get("assets/funnel/models/item/aerial_escutcheon_blocking.json");
-        assertEquals(681, idle.getAsJsonArray("elements").size());
+        JsonObject idle = found.get("assets/funnel/models/item/aerial_v2_escutcheon.json");
+        JsonObject raised = found.get("assets/funnel/models/item/aerial_v2_escutcheon_blocking.json");
+        assertEquals(493, idle.getAsJsonArray("elements").size());
         assertEquals(idle.get("elements"), raised.get("elements"),
                 "Blocking must only change pose, never remove GUND bits");
         assertEquals(idle.get("textures"), raised.get("textures"));
         var idleView = idle.getAsJsonObject("display");
         var raisedView = raised.getAsJsonObject("display");
         assertTrue(idleView.getAsJsonObject("thirdperson_lefthand")
-                .getAsJsonArray("scale").get(0).getAsDouble() >= 1.8);
+                .getAsJsonArray("scale").get(0).getAsDouble() >= 1.2);
         assertTrue(raisedView.getAsJsonObject("thirdperson_lefthand")
-                .getAsJsonArray("scale").get(0).getAsDouble() >= 2.0);
+                .getAsJsonArray("scale").get(0).getAsDouble() >= 1.3);
         assertNotEquals(idleView.getAsJsonObject("thirdperson_lefthand"),
                 raisedView.getAsJsonObject("thirdperson_lefthand"),
                 "A real Minecraft shield has separate holding and blocking positions");

@@ -32,7 +32,7 @@ class AerialPreviewGeometryTest {
                 }
             }
         }
-        assertEquals(12, result.size());
+        assertEquals(13, result.size(), "11 individual models + assembled and blocking shield");
         return result;
     }
 
@@ -213,6 +213,34 @@ class AerialPreviewGeometryTest {
                     "White shell upper tip should be tucked behind its blue shoulder");
             start += part.size();
         }
+    }
+
+    @Test
+    void outerFinSideColorAndProductionShieldBlockingShareExactBitGeometry() throws Exception {
+        var models = models();
+        for (int id : new int[]{7, 8}) {
+            var bit = bits(models, id);
+            String exterior = id == 7 ? "west" : "east";
+            String opposite = id == 7 ? "east" : "west";
+            int exteriorBlue = 0;
+            for (var item : bit) {
+                var faces = item.getAsJsonObject().getAsJsonObject("faces");
+                if (!faces.getAsJsonObject(exterior).get("uv")
+                        .equals(faces.getAsJsonObject(opposite).get("uv"))) {
+                    exteriorBlue++;
+                    assertEquals(faces.getAsJsonObject(opposite).get("uv"),
+                            faces.getAsJsonObject("north").get("uv"),
+                            "White front faces must stay unchanged");
+                }
+            }
+            assertTrue(exteriorBlue >= 20, "Both lower white bits need blue lateral trim");
+        }
+        var idle=models.get("aerial_v2_escutcheon.json");
+        var block=models.get("aerial_v2_escutcheon_blocking.json");
+        assertEquals(idle.get("elements"), block.get("elements"),
+                "Native blocking must preserve all eleven bits and the five-piece handle");
+        assertNotEquals(idle.getAsJsonObject("display").get("thirdperson_lefthand"),
+                block.getAsJsonObject("display").get("thirdperson_lefthand"));
     }
 
     @Test

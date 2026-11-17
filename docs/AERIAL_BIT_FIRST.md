@@ -1,8 +1,8 @@
-# Bit-first Escutcheon preview: blue shoulder placement-only alignment v0.8.34 (not yet approved)
+# Bit-first Escutcheon: production live GUND-bit models and blue side faces v0.8.35
 
 Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.
 
-0.8.34 is strictly a placement-only adjustment based on the 0.8.33 in-game screenshot. The blue shoulder bits 05/06 each move 0.06 model pixels inward and 0.08 down to close the visible space under the angled blue armor without altering its 22.5 degree rotation. The white outer bits 07/08, the separate gray inner bits 10/11, nose, crest, all independent model geometry, all five rear-grip pieces and live equipment stay exactly as in 0.8.33. Preview-only pending Minecraft screenshot confirmation.
+0.8.35 promotes the established v0.8.34 bit-first GUND-bit geometry to the real Aerial ItemDisplays and held shield. Shapes, rotations, placements, five rear-grip elements and rifle are unchanged. The outward lateral face of white lower bits 07/08 is now cobalt, like their blue front rim. Live floating bits use aerial_v2_bit_01 through 11; the actual shield item uses v2 joined geometry in both idle and blocking poses. Legacy Aerial JSON and BBModel source files remain intact for rollback.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
@@ -20,6 +20,6 @@ Each of the 11 detached GUND-bit parts remains independently authored. Reference
 
 Total 493 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.21462 vs height 23.07 (height/width ratio 3.19767).
 
-Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.
+Single source of truth: `tools/generate_aerial_bit_first.mjs`; generates 11 individual models, the joined shield, and the same shield geometry with a blocking hand pose (13 JSON model files). Regenerate with `node tools/generate_aerial_bit_first.mjs` or check with `--check`.
 
-Previews only: `/funnel aerial preview <1..11|shield|clear>` (OP). Existing normal aerial bits, native equipped shield, rifle and original `.bbmodel` files remain unchanged. No BetterModel required. The dark non-bit rear frame in the picture is not counted among the 11 bits.
+Live Aerial flying bits and native held shield now reference the generated bit-first models. OP previews remain available. The gunbit rifle and original `.bbmodel` sources are unchanged. The five-cuboid rear grip belongs to the shield only. No BetterModel needed.

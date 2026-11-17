@@ -4,11 +4,11 @@
     "property": "minecraft:using_item",
     "on_false": {
       "type": "minecraft:model",
-      "model": "funnel:item/aerial_escutcheon"
+      "model": "funnel:item/aerial_v2_escutcheon"
     },
     "on_true": {
       "type": "minecraft:model",
-      "model": "funnel:item/aerial_escutcheon_blocking"
+      "model": "funnel:item/aerial_v2_escutcheon_blocking"
     }
   }
 }
