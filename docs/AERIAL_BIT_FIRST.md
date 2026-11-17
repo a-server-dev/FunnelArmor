@@ -1,8 +1,8 @@
-# Bit-first Escutcheon preview: tapered shoulder join (not yet approved)
+# Bit-first Escutcheon preview: inboard under-shoulder fairing (not yet approved)
 
 Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.
 
-0.8.28 refines the seam between the blue shoulder bits 05/06 and the white outer armor bits 07/08. Blue shoulder contours are slightly narrower with a tapered lower end, positioned 0.12 model px inward and 0.11 px higher. Each white bit has a three-stage diagonal inset (plus a thin blue seam) that slips underneath the shoulder rather than a square connector. The shield rear grip and all other seven standalone bits are unchanged. This is still an unapproved preview; the installed shield, combat, and approved BBModel sources remain untouched.
+0.8.29 adds three low-profile inboard fairing blocks to EACH of the white outer bits 07/08. These sit behind the blue shoulder and bridge the remaining triangular daylight gap visible on the 0.8.28 screenshot. The full outer silhouette, blue shoulders 05/06, central nose, rear grip, remaining nine bit models, production gear, and approved BBModels do not change. Preview-only, pending screenshot validation.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
@@ -12,13 +12,13 @@ Each of the 11 detached GUND-bit parts is separately authored from the right-han
 | 04 | 中央白ノーズ | 0, 5.1, 1.02 | 21 |
 | 05 | 左肩青＋黄ベント | -1.96, 7.34, 1.06 | 23 |
 | 06 | 右肩青＋黄ベント | 1.96, 7.34, 1.06 | 23 |
-| 07 | 左下白外装 | -2.67, -7.12, 0.13 | 73 |
-| 08 | 右下白外装 | 2.67, -7.12, 0.13 | 73 |
+| 07 | 左下白外装 | -2.67, -7.12, 0.13 | 76 |
+| 08 | 右下白外装 | 2.67, -7.12, 0.13 | 76 |
 | 09 | 中央白V字装甲 | 0, 1.12, 0.56 | 16 |
 | 10 | 左グレー内装 | -0.91, -6.23, -0.24 | 23 |
 | 11 | 右グレー内装 | 0.91, -6.23, -0.24 | 23 |
 
-Total 365 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
+Total 371 cuboids (11 standalone bits plus 5 rear-only handle parts); shield width 7.37462 vs height 23.21 (height/width ratio 3.14728).
 
 Single source of truth: `tools/generate_aerial_bit_first.mjs` which regenerates all 12 vanilla JSON geometry files with `node tools/generate_aerial_bit_first.mjs` or checks with `--check`.
 

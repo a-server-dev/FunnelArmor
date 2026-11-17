@@ -678,3 +678,7 @@ The **0.8.24 assembled preview silhouette is preserved**. Only standalone GUND p
 ## v0.8.28 — Taper the blue-to-white shoulder join (preview only)
 
 The 0.8.27 reference screenshot showed an overly rectangular connection. Both blue shoulder bits 05/06 are now narrower and taper at their lower edge, moved 0.12 model pixels toward center and 0.11 up. The white shell connector on bits 07/08 is replaced with a three-stage diagonal tucked joint and a reduced cobalt seam. Only bits 05/06/07/08 and the assembled preview shield change; the rear grip, other seven bit models, the approved BBModel files, real equipped shield/rifle, and combat logic are unchanged. In-game visual approval remains necessary.
+
+## v0.8.29 — Blend the white shell into the blue shoulders (preview only)
+
+Following the 0.8.28 in-game screenshot, three narrow, diagonally stepped *inboard* fairings are added to white bits 07/08 just below and behind blue shoulders 05/06. This reduces the triangular see-through gap while preserving the shield's total width, length and rear grip. The other nine standalone bit geometries, central nose, accepted BBModels, equipped production shield/rifle and all combat mechanics stay untouched. Preview geometry still needs in-game acceptance.

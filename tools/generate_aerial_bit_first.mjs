@@ -119,6 +119,12 @@ function buildBitFirst(){
     p([-.12,13.74,-.24],[.38,14.24,.24],"white");
     p([.06,14.08,-.18],[.72,14.56,.25],"porcelain");
     p([.30,14.42,-.14],[.96,14.88,.20],"white");
+    // v0.8.29: narrow, stepped INBOARD fairing behind the blue shoulder.
+    // Reduce the triangular daylight gap while leaving the outer edge alone.
+    // Mirroring this independent bit also covers the right side (bit 08).
+    p([.50,13.52,-.26],[.86,14.10,.20],"white");
+    p([.70,13.84,-.25],[1.10,14.43,.21],"porcelain");
+    p([.87,14.19,-.24],[1.28,14.67,.20],"white");
     // Preserve the thin exterior cobalt seam without a square plug.
     p([-.22,13.86,.34],[-.11,14.24,.48],"cobalt");
     // Continuous white faces fill the inner armor without widening the outer edge.
@@ -180,11 +186,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: tapered shoulder join (not yet approved)",
+ "# Bit-first Escutcheon preview: inboard under-shoulder fairing (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
  "",
- "0.8.28 refines the seam between the blue shoulder bits 05/06 and the white outer armor bits 07/08. Blue shoulder contours are slightly narrower with a tapered lower end, positioned 0.12 model px inward and 0.11 px higher. Each white bit has a three-stage diagonal inset (plus a thin blue seam) that slips underneath the shoulder rather than a square connector. The shield rear grip and all other seven standalone bits are unchanged. This is still an unapproved preview; the installed shield, combat, and approved BBModel sources remain untouched.",
+ "0.8.29 adds three low-profile inboard fairing blocks to EACH of the white outer bits 07/08. These sit behind the blue shoulder and bridge the remaining triangular daylight gap visible on the 0.8.28 screenshot. The full outer silhouette, blue shoulders 05/06, central nose, rear grip, remaining nine bit models, production gear, and approved BBModels do not change. Preview-only, pending screenshot validation.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

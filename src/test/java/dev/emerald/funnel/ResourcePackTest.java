@@ -267,6 +267,8 @@ class ResourcePackTest {
             // Test the intended overlap without requiring the old square tip.
             assertTrue(bitMaxY-bitMinY > 14.85,
                     "Diagonal white outer bit "+i+" must overlap its blue shoulder");
+            assertTrue(part.getAsJsonArray("elements").size() >= 48,
+                    "White outer bit "+i+" must include the inboard fairing");
         }
 
     }
