@@ -262,8 +262,11 @@ class ResourcePackTest {
                 bitMinY = Math.min(bitMinY,cube.getAsJsonArray("from").get(1).getAsDouble());
                 bitMaxY = Math.max(bitMaxY,cube.getAsJsonArray("to").get(1).getAsDouble());
             }
-            assertTrue(bitMaxY-bitMinY > 15.09,
-                    "White outer bit "+i+" must reach behind its blue shoulder (close the gap)");
+            // The short diagonal collar in v0.8.28 ends at local Y=14.88;
+            // the shoulder begins at joined Y=7.34, i.e. shell-local Y=14.46.
+            // Test the intended overlap without requiring the old square tip.
+            assertTrue(bitMaxY-bitMinY > 14.85,
+                    "Diagonal white outer bit "+i+" must overlap its blue shoulder");
         }
 
     }
