@@ -239,7 +239,7 @@ class ResourcePackTest {
                     "assets/funnel/models/item/aerial_v2_bit_%02d.json",id);
             JsonObject part = models.get(partPath);
             assertNotNull(part);
-            assertTrue(part.getAsJsonArray("elements").size() >= (id==4 ? 20 : 23),
+            assertTrue(part.getAsJsonArray("elements").size() >= (id==4 ? 20 : 22),
                     "Nose/shoulder angular facets must survive generation: " + partPath);
         }
 

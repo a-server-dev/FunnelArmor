@@ -682,3 +682,10 @@ The 0.8.27 reference screenshot showed an overly rectangular connection. Both bl
 ## v0.8.29 — Blend the white shell into the blue shoulders (preview only)
 
 Following the 0.8.28 in-game screenshot, three narrow, diagonally stepped *inboard* fairings are added to white bits 07/08 just below and behind blue shoulders 05/06. This reduces the triangular see-through gap while preserving the shield's total width, length and rear grip. The other nine standalone bit geometries, central nose, accepted BBModels, equipped production shield/rifle and all combat mechanics stay untouched. Preview geometry still needs in-game acceptance.
+
+
+## v0.8.30 — Reference-guided angled shoulders and tighter inner armor (preview only)
+
+The user-authored model is the appearance reference; the Gunpla photo explains the eleven independent parts. The supplied in-game screenshot showed upright block-like shoulders, blunt central plates, and an open lower center. This pass angles shoulders 05/06 by mirrored vanilla 22.5-degree Z rotations, replaces their yellow stair strips with recessed rectangular vent frames, sharpens nose 04 and crest 09 with a blue V under the nose, and brings tapered inner bits 10/11 toward a narrow center seam.
+
+Core/upper bits 01–03, outer white bits 07/08, all five rear grip elements, approved BBModel sources and production equipment are unchanged. Rotated standalone bits use rendered bounds for centering; assembly translates both geometry and rotation pivots. Use `/funnel aerial preview <1..11|shield|clear>` and `/funnel pack` to inspect. Minecraft appearance still needs user validation; this does not replace the production shield.

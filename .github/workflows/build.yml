@@ -24,6 +24,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.2.1'
+      - name: Set up Node for preview model validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify generated preview models match their source
+        run: node tools/generate_aerial_bit_first.mjs --check
       - name: Compile, test and package
         run: gradle clean build --no-daemon --stacktrace
       - name: Verify generated resource pack

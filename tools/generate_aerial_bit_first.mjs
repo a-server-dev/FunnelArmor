@@ -11,12 +11,12 @@ function buildBitFirst(){
   core:{shade:"blue",depth:.90,profile:[[0,-.89,.89],[.6,-1.44,1.44],[1.48,-1.42,1.42],[2.10,-1.14,1.14],[3.25,-.91,.91],[4.58,-.72,.72],[5.08,-.44,.44]],front:"cobalt"},
   upper:{shade:"white",depth:.76,profile:[[0,-.49,.68],[.80,-.87,.84],[1.62,-.98,.88],[2.41,-.84,.79],[3.85,-.66,.65],[5.37,-.43,.44],[6.58,-.18,.20]],front:"porcelain"},
   // Pointed, angular six-sided main white nose, not a rounded capsule.
-  nose:{shade:"white",depth:1.04,profile:[[0,-.12,.12],[.50,-.54,.54],[1.40,-1.00,1.00],[2.00,-1.06,1.06],[3.20,-1.06,1.06],[4.10,-.74,.74],[4.83,-.39,.39]],front:"porcelain"},
+  nose:{shade:"white",depth:1.04,profile:[[0,-.025,.025],[1.05,-.88,.88],[4.10,-.88,.88],[4.83,-.39,.39]],front:"porcelain"},
   // Hard-edged sloped blue shoulder, with compact gold inset.
-  shoulder:{shade:"blue",depth:1.00,profile:[[0,-.37,.41],[.39,-.68,.72],[1.20,-.86,.89],[1.86,-.81,.85],[2.57,-.62,.65],[3.18,-.36,.40]],front:"cobalt"},
+  shoulder:{shade:"blue",depth:1.00,tilt:22.5,profile:[[0,-.37,.41],[.39,-.68,.72],[1.20,-.86,.89],[1.86,-.81,.85],[2.57,-.62,.65],[3.18,-.36,.40]],front:"cobalt"},
   outer:{shade:"white",depth:.96,profile:[[0,-.28,.53],[1.12,-.43,.73],[2.53,-.57,.96],[4.47,-.72,1.26],[6.55,-.91,1.47],[7.59,-1.03,1.50],[8.24,-.66,1.19],[8.82,-.69,1.24],[10.65,-.79,1.30],[12.12,-.63,1.06],[13.10,-.43,.81],[14.18,-.29,.49]],front:"porcelain",edge:"cobalt"},
-  crest:{shade:"white",depth:.91,profile:[[0,-.21,.21],[.60,-.74,.74],[1.18,-1.13,1.13],[2.31,-1.46,1.46],[3.44,-1.58,1.58],[4.46,-1.37,1.37]],front:"porcelain"},
-  inner:{shade:"charcoal",depth:.74,profile:[[0,-.28,.28],[1.20,-.40,.43],[2.93,-.51,.56],[4.24,-.63,.62],[5.71,-.77,.70],[6.65,-.72,.66],[7.60,-.57,.54],[8.34,-.38,.42]],front:"steel"}
+  crest:{shade:"white",depth:.91,profile:[[0,-.025,.025],[1.20,-.72,.72],[3.44,-1.45,1.45],[4.46,-1.25,1.25]],front:"porcelain"},
+  inner:{shade:"charcoal",depth:.74,profile:[[0,.36,.50],[1.20,-.15,.50],[2.93,-.90,.50],[4.24,-1.02,.50],[5.71,-1.16,.50],[6.65,-1.11,.50],[7.60,-.96,.50],[8.34,-.77,.50]],front:"steel"}
  };
  const placements=[
   ["01","上部青コア","core",0,9.30,.80,false],
@@ -28,17 +28,18 @@ function buildBitFirst(){
   ["07","左下白外装","outer",-2.67,-7.12,.13,false],
   ["08","右下白外装","outer",2.67,-7.12,.13,true],
   ["09","中央白V字装甲","crest",0,1.12,.56,false],
-  ["10","左グレー内装","inner",-.91,-6.23,-.24,false],
-  ["11","右グレー内装","inner",.91,-6.23,-.24,true]
+  ["10","左グレー内装","inner",-.52,-6.23,-.24,false],
+  ["11","右グレー内装","inner",.52,-6.23,-.24,true]
  ];
- const step=.44,round=n=>Math.round(n*1e5)/1e5;
+ const round=n=>Math.round(n*1e5)/1e5;
  function piece(type,mirror){
   const recipe=recipes[type],stations=recipe.profile,thick=recipe.depth;
+  const step=(type==="nose"||type==="crest")?.11:.44;
   let boxes=[];
   function put(from,to,material){
    if(mirror){const old=from[0];from=[-to[0],from[1],from[2]];to=[-old,to[1],to[2]];}
    if(!from.every((v,i)=>v<to[i]-1e-7))throw Error("Invalid box "+type+":"+material);
-   boxes.push({from,to,material});
+   boxes.push({from,to,material,...(recipe.tilt?{rotation:{origin:[0,0,0],axis:"z",angle:mirror?-recipe.tilt:recipe.tilt,rescale:false}}:{})});
   }
   function bounds(y){for(let i=0;i<stations.length-1;i++){let a=stations[i],b=stations[i+1];if(y<=b[0]+1e-8){let t=Math.max(0,Math.min(1,(y-a[0])/(b[0]-a[0])));return [a[1]+t*(b[1]-a[1]),a[2]+t*(b[2]-a[2])];}}return stations.at(-1).slice(1);}
   const end=stations.at(-1)[0];
@@ -92,15 +93,17 @@ function buildBitFirst(){
     p([.77,1.69,thick/2+.020],[.91,2.83,thick/2+.105],"porcelain");
     break;
    case "shoulder":
-    // Sharp blue shoulder faces, with five gold steps on a diagonal recess.
+    // Slanted blue shoulder with a framed gold vent, following reference 1.
     p([-.78,.54,thick/2+.012],[-.59,1.79,thick/2+.19],"cobalt");
     p([.55,.48,thick/2+.012],[.72,1.59,thick/2+.16],"cobalt");
     p([-.56,1.76,thick/2+.014],[.53,2.06,thick/2+.12],"blue");
-    p([-.70,2.19,thick/2+.024],[.43,2.85,thick/2+.09],"dark");
-    for(let i=0;i<5;i++){
-     let x=-.73+i*.20, y=2.17+i*.105;
-     p([x,y,thick/2+.12],[x+.23,y+.49,thick/2+.34],"gold");
-    }
+    // A recessed rectangular vent. The entire independent bit, including
+    // this rim and its dark opening, shares the same legal vanilla rotation.
+    p([-.54,2.10,thick/2+.024],[.40,2.96,thick/2+.09],"dark");
+    p([-.54,2.10,thick/2+.12],[-.37,2.96,thick/2+.26],"gold");
+    p([.23,2.10,thick/2+.12],[.40,2.96,thick/2+.26],"gold");
+    p([-.37,2.10,thick/2+.12],[.23,2.27,thick/2+.26],"gold");
+    p([-.37,2.79,thick/2+.12],[.23,2.96,thick/2+.26],"gold");
     p([-.74,.26,thick/2+.02],[-.53,1.37,thick/2+.13],"trim");
     p([.45,.26,thick/2+.02],[.60,1.38,thick/2+.14],"dark");
     p([-.45,.08,-thick/2-.10],[.45,.58,-thick/2-.015],"graphite");
@@ -135,14 +138,19 @@ function buildBitFirst(){
     p([-.15,1.10,thick/2+.025],[-.04,1.55,thick/2+.13],"white");
     break;
    case "crest":
+    // Thin nested blue V below the white nose; keep the white point exposed.
+    for(let y=2.40;y<4.46-1e-6;y+=.11){
+     const top=Math.min(4.46,y+.11),half=Math.min(1.02,.025+(top-2.40)*.66);
+     p([-half,y,.86],[half,top,.94],"cobalt");
+    }
     p([-1.54,3.06,.51],[-1.14,4.37,.63],"porcelain");
     p([1.14,3.06,.51],[1.54,4.37,.63],"porcelain");
-    p([-.37,.20,.55],[.37,.88,.77],"white");
-    p([-.23,.22,.78],[.23,.53,.83],"steel");
+    p([-.12,.30,.55],[.12,.88,.77],"white");
+    p([-.06,.22,.78],[.06,.53,.83],"steel");
     p([-.73,1.22,.52],[.73,2.68,.60],"porcelain");
     break;
    case "inner":
-    p([-.26,1.08,.40],[.24,6.17,.54],"steel");
+    p([-.26,2.93,.40],[.24,6.17,.54],"steel");
     p([-.24,6.51,.39],[.25,7.14,.52],"charcoal");
     p([-.12,3.24,.55],[.035,5.93,.64],"shine");
     p([.11,2.09,.54],[.23,3.14,.63],"dark");
@@ -156,14 +164,26 @@ function buildBitFirst(){
  const convert=(boxes,shift)=>boxes.map(box=>{
   const pixel=palette[box.material],u=pixel[0]/16,v=pixel[1]/16,d=.02;
   const face={uv:[round(u-d),round(v-d),round(u+d),round(v+d)],texture:"#0"};
-  return {from:box.from.map((n,i)=>round(n+8+shift[i])),to:box.to.map((n,i)=>round(n+8+shift[i])),faces:Object.fromEntries(["north","south","east","west","up","down"].map(f=>[f,face]))};
+  return {from:box.from.map((n,i)=>round(n+8+shift[i])),to:box.to.map((n,i)=>round(n+8+shift[i])),...(box.rotation?{rotation:{...box.rotation,origin:box.rotation.origin.map((n,i)=>round(n+8+shift[i]))}}:{}),faces:Object.fromEntries(["north","south","east","west","up","down"].map(f=>[f,face]))};
  });
+ // Evaluate rendered corners, not only the unrotated from/to coordinates.
+ function corners(box){
+  const result=[];
+  for(const x of [box.from[0],box.to[0]])for(const y of [box.from[1],box.to[1]])for(const z of [box.from[2],box.to[2]]){
+   if(!box.rotation){result.push([x,y,z]);continue;}
+   const {origin:o,axis,angle}=box.rotation;
+   if(axis!=="z"||![-45,-22.5,0,22.5,45].includes(angle))throw Error("Invalid vanilla rotation");
+   const a=angle*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+   result.push([o[0]+c*(x-o[0])-s*(y-o[1]),o[1]+s*(x-o[0])+c*(y-o[1]),z]);
+  }
+  return result;
+ }
  const bitDisplay=(height)=>({gui:{rotation:[15,205,0],translation:[0,0,0],scale:Array(3).fill(round(Math.min(2.6,12/height)))},fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]}});
  const shieldDisplay={gui:{rotation:[15,-25,-5],translation:[0,1,0],scale:[.65,.65,.65]},fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]}};
  const outputs={};
  for(const part of parts){
   const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
-  for(const box of part.boxes)for(let i=0;i<3;i++){min[i]=Math.min(min[i],box.from[i]);max[i]=Math.max(max[i],box.to[i]);}
+  for(const box of part.boxes)for(const point of corners(box))for(let i=0;i<3;i++){min[i]=Math.min(min[i],point[i]);max[i]=Math.max(max[i],point[i]);}
   const localOffset=min.map((n,i)=>-(n+max[i])/2),id="aerial_v2_bit_"+part.id;
   outputs["resourcepack/assets/funnel/models/item/"+id+".json"]=JSON.stringify(model(convert(part.boxes,localOffset),bitDisplay(max[1]-min[1])))+"\n";
   // Existing item-definition model references are unchanged.
@@ -181,16 +201,17 @@ function buildBitFirst(){
  if(rearMount.some(x=>x.to[2]>.1))throw Error("Grip passes through front");
  whole.push(...convert(rearMount,[0,0,0]));
  outputs["resourcepack/assets/funnel/models/item/aerial_v2_escutcheon.json"]=JSON.stringify(model(whole,shieldDisplay))+"\n";
- const maxX=Math.max(...whole.map(x=>x.to[0])),minX=Math.min(...whole.map(x=>x.from[0])),maxY=Math.max(...whole.map(x=>x.to[1])),minY=Math.min(...whole.map(x=>x.from[1]));
+ const points=whole.flatMap(corners);
+ const maxX=Math.max(...points.map(p=>p[0])),minX=Math.min(...points.map(p=>p[0])),maxY=Math.max(...points.map(p=>p[1])),minY=Math.min(...points.map(p=>p[1]));
  if(whole.length!==parts.reduce((a,p)=>a+p.boxes.length,0)+rearMount.length)throw Error("Failed bit-first join and grip");
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
- if(minY < -16 || maxY > 32)throw Error("Model out of bounds");
+ if(points.some(p=>p.some(n=>!Number.isFinite(n)||n < -16||n > 32)))throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: inboard under-shoulder fairing (not yet approved)",
+ "# Bit-first Escutcheon preview: angled shoulders and tighter inner armor (not yet approved)",
  "",
- "Each of the 11 detached GUND-bit parts is separately authored from the right-hand part layout in the user's photo. The assembled preview contains only those exact 11 geometries translated into the arrangement shown on the LEFT side of the photo.",
+ "Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.",
  "",
- "0.8.29 adds three low-profile inboard fairing blocks to EACH of the white outer bits 07/08. These sit behind the blue shoulder and bridge the remaining triangular daylight gap visible on the 0.8.28 screenshot. The full outer silhouette, blue shoulders 05/06, central nose, rear grip, remaining nine bit models, production gear, and approved BBModels do not change. Preview-only, pending screenshot validation.",
+ "0.8.30 addresses the supplied in-game screenshot: shoulders 05/06 lean outward by mirrored 22.5-degree vanilla Z rotations and carry framed yellow vents; nose 04 and crest 09 have finer, pointed profiles with a blue V beneath the nose; inner bits 10/11 converge toward a narrow center seam. Upper bits 01/02/03, white outer bits 07/08 (including their shoulder fairings), the five rear grip elements, production equipment, and approved BBModels remain unchanged. Preview-only, pending in-game screenshot validation.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",
