@@ -157,7 +157,7 @@ class AerialPreviewGeometryTest {
     }
 
     @Test
-    void lowerInnerArmorHasANarrowOpenSeamInsteadOfTwoSeparatedBars() throws Exception {
+    void lowerInnerArmorShowsTwoDistinctBladesWithBalancedMiddleGap() throws Exception {
         var models = models();
         var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
         int offset = 0;
@@ -174,7 +174,8 @@ class AerialPreviewGeometryTest {
                     rightEdge = Math.min(rightEdge, coordinate(b, "from", 0));
             }
             double gap = rightEdge - leftEdge;
-            assertTrue(gap > 0 && gap < .08, "Keep independent bits separated by a thin center seam at Y=" + y);
+            assertEquals(.44, gap, .000021, "Separate two grey blades without reshaping them at Y=" + y);
+            assertEquals(8, (leftEdge + rightEdge) / 2, .000021, "Grey blades should remain mirror-symmetric");
         }
     }
 

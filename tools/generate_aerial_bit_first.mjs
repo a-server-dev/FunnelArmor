@@ -22,14 +22,14 @@ function buildBitFirst(){
   ["01","上部青コア","core",0,9.30,.80,false],
   ["02","左上白ブレード","upper",-1.99,9.51,.12,false],
   ["03","右上白ブレード","upper",1.99,9.51,.12,true],
-  ["04","中央白ノーズ","nose",0,5.10,1.02,false],
-  ["05","左肩青＋黄ベント","shoulder",-1.96,7.34,1.06,false],
-  ["06","右肩青＋黄ベント","shoulder",1.96,7.34,1.06,true],
+  ["04","中央白ノーズ","nose",0,5.18,1.00,false],
+  ["05","左肩青＋黄ベント","shoulder",-1.88,7.20,1.06,false],
+  ["06","右肩青＋黄ベント","shoulder",1.88,7.20,1.06,true],
   ["07","左下白外装","outer",-2.67,-7.12,.13,false],
   ["08","右下白外装","outer",2.67,-7.12,.13,true],
-  ["09","中央白V字装甲","crest",0,1.12,.56,false],
-  ["10","左グレー内装","inner",-.52,-6.23,-.24,false],
-  ["11","右グレー内装","inner",.52,-6.23,-.24,true]
+  ["09","中央白V字装甲","crest",0,1.02,.58,false],
+  ["10","左グレー内装","inner",-.72,-6.12,-.30,false],
+  ["11","右グレー内装","inner",.72,-6.12,-.30,true]
  ];
  const round=n=>Math.round(n*1e5)/1e5;
  function piece(type,mirror){
@@ -214,11 +214,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(points.some(p=>p.some(n=>!Number.isFinite(n)||n < -16||n > 32)))throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: pointed outer tips and stable review lighting (not yet approved)",
+ "# Bit-first Escutcheon preview: placement-only alignment v0.8.32 (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.",
  "",
- "0.8.31 follows the 0.8.30 in-game screenshot: white outer bits 07/08 now taper to narrow lower tips with finer slices only at their ends, and gain three slim inner lap joints behind the nose/crest connection. Preview ItemDisplays use block/sky brightness 15/15 so palette review does not depend on local lighting. The overall width and height, other nine bits, angled shoulders and vents, five rear grip elements, production equipment, and approved BBModels remain unchanged. Preview-only, pending in-game screenshot validation.",
+ "0.8.32 is strictly a position-only adjustment based on the user-approved 0.8.31 screenshot. Independent geometry, rotations, the 5-piece rear grip, outer dimensions and actual equipment are unchanged. In the assembly, bits 10/11 move outward, up and backward to form two visibly distinct grey blades; blue shoulders 05/06 move slightly inward and down; central white nose 04 moves slightly up/back, and white V crest 09 slightly down/forward. Every standalone bit JSON remains byte-identical to 0.8.31. Preview-only until the next Minecraft screenshot.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",
