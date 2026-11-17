@@ -14,7 +14,7 @@ function buildBitFirst(){
   nose:{shade:"white",depth:1.04,profile:[[0,-.025,.025],[1.05,-.88,.88],[4.10,-.88,.88],[4.83,-.39,.39]],front:"porcelain"},
   // Hard-edged sloped blue shoulder, with compact gold inset.
   shoulder:{shade:"blue",depth:1.00,tilt:22.5,profile:[[0,-.37,.41],[.39,-.68,.72],[1.20,-.86,.89],[1.86,-.81,.85],[2.57,-.62,.65],[3.18,-.36,.40]],front:"cobalt"},
-  outer:{shade:"white",depth:.96,profile:[[0,-.28,.53],[1.12,-.43,.73],[2.53,-.57,.96],[4.47,-.72,1.26],[6.55,-.91,1.47],[7.59,-1.03,1.50],[8.24,-.66,1.19],[8.82,-.69,1.24],[10.65,-.79,1.30],[12.12,-.63,1.06],[13.10,-.43,.81],[14.18,-.29,.49]],front:"porcelain",edge:"cobalt"},
+  outer:{shade:"white",depth:.96,profile:[[0,.30,.34],[1.12,-.43,.73],[2.53,-.57,.96],[4.47,-.72,1.26],[6.55,-.91,1.47],[7.59,-1.03,1.50],[8.24,-.66,1.19],[8.82,-.69,1.24],[10.65,-.79,1.30],[12.12,-.63,1.06],[13.10,-.43,.81],[14.18,-.29,.49]],front:"porcelain",edge:"cobalt"},
   crest:{shade:"white",depth:.91,profile:[[0,-.025,.025],[1.20,-.72,.72],[3.44,-1.45,1.45],[4.46,-1.25,1.25]],front:"porcelain"},
   inner:{shade:"charcoal",depth:.74,profile:[[0,.36,.50],[1.20,-.15,.50],[2.93,-.90,.50],[4.24,-1.02,.50],[5.71,-1.16,.50],[6.65,-1.11,.50],[7.60,-.96,.50],[8.34,-.77,.50]],front:"steel"}
  };
@@ -43,13 +43,15 @@ function buildBitFirst(){
   }
   function bounds(y){for(let i=0;i<stations.length-1;i++){let a=stations[i],b=stations[i+1];if(y<=b[0]+1e-8){let t=Math.max(0,Math.min(1,(y-a[0])/(b[0]-a[0])));return [a[1]+t*(b[1]-a[1]),a[2]+t*(b[2]-a[2])];}}return stations.at(-1).slice(1);}
   const end=stations.at(-1)[0];
-  for(let y=0;y<end-1e-6;y+=step){
-   let y2=Math.min(end,y+step),aa=bounds(y),bb=bounds(y2),lo=Math.min(aa[0],bb[0]),hi=Math.max(aa[1],bb[1]);
+  for(let y=0;y<end-1e-6;){
+   const slice=type==="outer"&&y<1.32-1e-6?.11:step;
+   let y2=Math.min(end,y+slice),aa=bounds(y),bb=bounds(y2),lo=Math.min(aa[0],bb[0]),hi=Math.max(aa[1],bb[1]);
    put([lo,y,-thick/2],[hi,y2,thick/2],recipe.shade);
    // Keep outer armor an angular white panel: remove striped white overlays.
    // No raised plate per horizontal row; use continuous surfaces instead.
    if(recipe.edge&&y2<end-.25)
      put([lo,y,thick/2+.012],[Math.min(lo+.15,hi-.12),y2,thick/2+.14],recipe.edge);
+   y=y2;
   }
   const p=(from,to,mat)=>put(from,to,mat);
   function bore(x,y,r=.30){
@@ -128,6 +130,11 @@ function buildBitFirst(){
     p([.50,13.52,-.26],[.86,14.10,.20],"white");
     p([.70,13.84,-.25],[1.10,14.43,.21],"porcelain");
     p([.87,14.19,-.24],[1.28,14.67,.20],"white");
+    // v0.8.31: narrow inner lap joints behind the nose/crest transition.
+    // They stay on each independent white bit and do not widen the shield.
+    p([.88,11.90,.25],[1.36,12.64,.50],"white");
+    p([1.06,12.56,.25],[1.51,13.22,.50],"white");
+    p([1.12,13.14,.23],[1.57,13.72,.48],"white");
     // Preserve the thin exterior cobalt seam without a square plug.
     p([-.22,13.86,.34],[-.11,14.24,.48],"cobalt");
     // Continuous white faces fill the inner armor without widening the outer edge.
@@ -207,11 +214,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(points.some(p=>p.some(n=>!Number.isFinite(n)||n < -16||n > 32)))throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon preview: angled shoulders and tighter inner armor (not yet approved)",
+ "# Bit-first Escutcheon preview: pointed outer tips and stable review lighting (not yet approved)",
  "",
  "Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.",
  "",
- "0.8.30 addresses the supplied in-game screenshot: shoulders 05/06 lean outward by mirrored 22.5-degree vanilla Z rotations and carry framed yellow vents; nose 04 and crest 09 have finer, pointed profiles with a blue V beneath the nose; inner bits 10/11 converge toward a narrow center seam. Upper bits 01/02/03, white outer bits 07/08 (including their shoulder fairings), the five rear grip elements, production equipment, and approved BBModels remain unchanged. Preview-only, pending in-game screenshot validation.",
+ "0.8.31 follows the 0.8.30 in-game screenshot: white outer bits 07/08 now taper to narrow lower tips with finer slices only at their ends, and gain three slim inner lap joints behind the nose/crest connection. Preview ItemDisplays use block/sky brightness 15/15 so palette review does not depend on local lighting. The overall width and height, other nine bits, angled shoulders and vents, five rear grip elements, production equipment, and approved BBModels remain unchanged. Preview-only, pending in-game screenshot validation.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

@@ -689,3 +689,10 @@ Following the 0.8.28 in-game screenshot, three narrow, diagonally stepped *inboa
 The user-authored model is the appearance reference; the Gunpla photo explains the eleven independent parts. The supplied in-game screenshot showed upright block-like shoulders, blunt central plates, and an open lower center. This pass angles shoulders 05/06 by mirrored vanilla 22.5-degree Z rotations, replaces their yellow stair strips with recessed rectangular vent frames, sharpens nose 04 and crest 09 with a blue V under the nose, and brings tapered inner bits 10/11 toward a narrow center seam.
 
 Core/upper bits 01–03, outer white bits 07/08, all five rear grip elements, approved BBModel sources and production equipment are unchanged. Rotated standalone bits use rendered bounds for centering; assembly translates both geometry and rotation pivots. Use `/funnel aerial preview <1..11|shield|clear>` and `/funnel pack` to inspect. Minecraft appearance still needs user validation; this does not replace the production shield.
+
+
+## v0.8.31 — Stable preview lighting and pointed outer armor
+
+The 0.8.30 in-game screenshot showed dark white armor and blunt lower ends. OP-only `/funnel aerial preview` displays now override block and sky light to 15/15; combat displays continue to use world lighting. White outer bits 07/08 taper to narrow lower tips, with finer slices limited to their ends, and include three slim inner lap joints behind the nose/crest connection. The joints reduce open space while remaining part of each independent bit.
+
+Other nine bit models, overall width and height, approved BBModels, production equipment and the five rear grip elements are preserved. Recreate an existing preview after installing the JAR and requesting `/funnel pack`; lighting and appearance still need Minecraft validation.

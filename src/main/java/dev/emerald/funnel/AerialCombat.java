@@ -13,6 +13,7 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
@@ -236,6 +237,9 @@ final class AerialCombat implements Listener {
             at.setYaw(player.getLocation().getYaw() + 180f);
             at.setPitch(0);
             ItemDisplay display = spawn(player, model, scale);
+            // Model-review lighting is stable regardless of the spawn block's
+            // light level. Live combat displays retain ordinary world lighting.
+            display.setBrightness(new Display.Brightness(15, 15));
             display.setTeleportDuration(0);
             display.teleport(at);
             bitFirstPreviews.put(player.getUniqueId(), display);

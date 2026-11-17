@@ -177,4 +177,41 @@ class AerialPreviewGeometryTest {
             assertTrue(gap > 0 && gap < .08, "Keep independent bits separated by a thin center seam at Y=" + y);
         }
     }
+
+    @Test
+    void outerArmorTipsTaperAndInnerLapJointsBelongToTheirBits() throws Exception {
+        var models = models();
+        var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
+        int offset = 0;
+        for (int id = 1; id < 7; id++) offset += bits(models, id).size();
+        for (int id : new int[]{7, 8}) {
+            var part = bits(models, id);
+            double minY = Double.POSITIVE_INFINITY;
+            for (var e : part) minY = Math.min(minY, coordinate(e.getAsJsonObject(), "from", 1));
+            double loX = 32, hiX = -16;
+            for (var e : part) {
+                var cube = e.getAsJsonObject();
+                if (Math.abs(coordinate(cube, "from", 1) - minY) < .00001) {
+                    loX = Math.min(loX, coordinate(cube, "from", 0));
+                    hiX = Math.max(hiX, coordinate(cube, "to", 0));
+                }
+            }
+            assertTrue(hiX - loX > 0 && hiX - loX < .25,
+                    "White outer tip must taper instead of retaining the old broad flat end");
+            // Sample the new white lap behind the nose/crest connection in
+            // joined coordinates. It must be supplied by bit 07/08 itself.
+            double x = id == 7 ? 6.73 : 9.27;
+            boolean covered = false;
+            for (int i = 0; i < part.size(); i++) {
+                var cube = shield.get(offset + i).getAsJsonObject();
+                if (coordinate(cube, "from", 0) <= x && coordinate(cube, "to", 0) >= x
+                        && coordinate(cube, "from", 1) <= 13.83 && coordinate(cube, "to", 1) >= 13.83
+                        && coordinate(cube, "from", 2) <= 8.5 && coordinate(cube, "to", 2) >= 8.5)
+                    covered = true;
+            }
+            assertTrue(covered, "Inner lap joint must be part of independent bit " + id);
+            offset += part.size();
+        }
+    }
+
 }
