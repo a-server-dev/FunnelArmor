@@ -194,23 +194,26 @@ function buildBitFirst(){
   return result;
  }
  const bitDisplay=(height)=>({gui:{rotation:[15,205,0],translation:[0,0,0],scale:Array(3).fill(round(Math.min(2.6,12/height)))},fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]}});
- // v2 is ~23px tall vs the former ~12.4px; scaled native hand poses
- // keep comparable physical size while the preview's GUI/fixed poses stay put.
+ // v0.8.36: a more front-facing, larger native equipped shield.
+ // Hand-only display poses: never change model geometry, preview fixed/gui
+ // transforms, flying bit models, inventory model keys, or rear handle.
+ // 65 deg X reduces the previous 75 deg backward pitch; 165/-165 deg Y
+ // turns the outward plate slightly toward the viewer for left/right hands.
  const shieldDisplay={
   gui:{rotation:[15,-25,-5],translation:[0,1,0],scale:[.65,.65,.65]},
   fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]},
   ground:{rotation:[0,0,0],translation:[0,3,0],scale:[.27,.27,.27]},
-  firstperson_lefthand:{rotation:[75,180,0],translation:[4,3,-1],scale:[1.21,1.21,1.21]},
-  firstperson_righthand:{rotation:[75,180,0],translation:[-4,3,1],scale:[1.21,1.21,1.21]},
-  thirdperson_lefthand:{rotation:[75,180,0],translation:[6,7,-1],scale:[1.215,1.215,1.215]},
-  thirdperson_righthand:{rotation:[75,180,0],translation:[-6,7,1],scale:[1.215,1.215,1.215]}
+  firstperson_lefthand:{rotation:[65,165,0],translation:[4,3,-1],scale:[1.34,1.34,1.34]},
+  firstperson_righthand:{rotation:[65,-165,0],translation:[-4,3,1],scale:[1.34,1.34,1.34]},
+  thirdperson_lefthand:{rotation:[65,165,0],translation:[6,7,-1],scale:[1.40,1.40,1.40]},
+  thirdperson_righthand:{rotation:[65,-165,0],translation:[-6,7,1],scale:[1.40,1.40,1.40]}
  };
  const shieldBlockingDisplay={
   ...shieldDisplay,
-  firstperson_lefthand:{rotation:[75,180,0],translation:[4,3,-1],scale:[1.335,1.335,1.335]},
-  firstperson_righthand:{rotation:[75,180,0],translation:[-4,3,1],scale:[1.335,1.335,1.335]},
-  thirdperson_lefthand:{rotation:[75,180,0],translation:[6,9,-1],scale:[1.35,1.35,1.35]},
-  thirdperson_righthand:{rotation:[75,180,0],translation:[-6,9,1],scale:[1.35,1.35,1.35]}
+  firstperson_lefthand:{rotation:[65,165,0],translation:[4,3,-1],scale:[1.49,1.49,1.49]},
+  firstperson_righthand:{rotation:[65,-165,0],translation:[-4,3,1],scale:[1.49,1.49,1.49]},
+  thirdperson_lefthand:{rotation:[65,165,0],translation:[6,9,-1],scale:[1.56,1.56,1.56]},
+  thirdperson_righthand:{rotation:[65,-165,0],translation:[-6,9,1],scale:[1.56,1.56,1.56]}
  };
  const outputs={};
  for(const part of parts){
@@ -242,11 +245,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(points.some(p=>p.some(n=>!Number.isFinite(n)||n < -16||n > 32)))throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon: production live GUND-bit models and blue side faces v0.8.35",
+ "# Bit-first Escutcheon: larger front-facing native shield pose v0.8.36",
  "",
  "Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.",
  "",
- "0.8.35 promotes the established v0.8.34 bit-first GUND-bit geometry to the real Aerial ItemDisplays and held shield. Shapes, rotations, placements, five rear-grip elements and rifle are unchanged. The outward lateral face of white lower bits 07/08 is now cobalt, like their blue front rim. Live floating bits use aerial_v2_bit_01 through 11; the actual shield item uses v2 joined geometry in both idle and blocking poses. Legacy Aerial JSON and BBModel source files remain intact for rollback.",
+ "0.8.36 adjusts only the equipped Aerial shield hand display poses after the first 0.8.35 in-game screenshot: the plate now faces more forward (X 75 to 65 degrees; left/right Y 180 to plus/minus 165 degrees), with third-person normal size 1.215 to 1.40 and blocking 1.35 to 1.56. First-person scales also increase modestly. All 493 cuboids, eleven bit models, blue lateral faces, rear grip, fixed GUI and preview poses, rifle, and original BBModel sources remain identical. The item model identifier and shield blocking-state selector remain unchanged.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",

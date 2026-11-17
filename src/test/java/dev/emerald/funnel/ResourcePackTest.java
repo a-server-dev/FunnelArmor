@@ -392,9 +392,30 @@ class ResourcePackTest {
                 "A real Minecraft shield has separate holding and blocking positions");
         assertNotEquals(idleView.getAsJsonObject("firstperson_lefthand"),
                 raisedView.getAsJsonObject("firstperson_lefthand"));
-        assertEquals(180, idleView.getAsJsonObject("thirdperson_lefthand")
-                .getAsJsonArray("rotation").get(1).getAsInt(),
-                "Escutcheon plate should face outward, not be edge-on");
+        // The actual equipped shield (not the fixed preview) should expose
+        // more of its front face and be visibly larger, including while guarding.
+        for (String hand : java.util.List.of("lefthand", "righthand")) {
+            int yaw = hand.equals("lefthand") ? 165 : -165;
+            for (String perspective : java.util.List.of("firstperson_", "thirdperson_")) {
+                String slot = perspective + hand;
+                JsonObject idlePose = idleView.getAsJsonObject(slot);
+                JsonObject guardPose = raisedView.getAsJsonObject(slot);
+                assertEquals(65, idlePose.getAsJsonArray("rotation").get(0).getAsInt(), slot);
+                assertEquals(yaw, idlePose.getAsJsonArray("rotation").get(1).getAsInt(), slot);
+                assertEquals(idlePose.get("rotation"), guardPose.get("rotation"), slot);
+                double normalSize = perspective.equals("thirdperson_") ? 1.40 : 1.34;
+                double guardSize = perspective.equals("thirdperson_") ? 1.56 : 1.49;
+                for (int axis = 0; axis < 3; axis++) {
+                    assertEquals(normalSize, idlePose.getAsJsonArray("scale").get(axis).getAsDouble(), .000001, slot);
+                    assertEquals(guardSize, guardPose.getAsJsonArray("scale").get(axis).getAsDouble(), .000001, slot);
+                }
+            }
+        }
+        // Inventory/fixed previews must not be affected by native hand pose tuning.
+        assertEquals(idleView.get("gui"), raisedView.get("gui"));
+        assertEquals(idleView.get("fixed"), raisedView.get("fixed"));
+        assertEquals(180, idleView.getAsJsonObject("fixed")
+                .getAsJsonArray("rotation").get(1).getAsInt());
     }
 
     @Test
