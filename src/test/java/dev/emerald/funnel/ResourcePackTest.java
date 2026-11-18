@@ -403,6 +403,16 @@ class ResourcePackTest {
                 assertEquals(65, idlePose.getAsJsonArray("rotation").get(0).getAsInt(), slot);
                 assertEquals(yaw, idlePose.getAsJsonArray("rotation").get(1).getAsInt(), slot);
                 assertEquals(idlePose.get("rotation"), guardPose.get("rotation"), slot);
+                int expectedIdleY = perspective.equals("thirdperson_") ? 5 : 2;
+                int expectedGuardY = perspective.equals("thirdperson_") ? 7 : 2;
+                assertEquals(expectedIdleY,
+                        idlePose.getAsJsonArray("translation").get(1).getAsInt(), slot + " idle Y");
+                assertEquals(expectedGuardY,
+                        guardPose.getAsJsonArray("translation").get(1).getAsInt(), slot + " guarding Y");
+                assertEquals(idlePose.getAsJsonArray("translation").get(0),
+                        guardPose.getAsJsonArray("translation").get(0), slot + " X unchanged");
+                assertEquals(idlePose.getAsJsonArray("translation").get(2),
+                        guardPose.getAsJsonArray("translation").get(2), slot + " Z unchanged");
                 double normalSize = perspective.equals("thirdperson_") ? 1.40 : 1.34;
                 double guardSize = perspective.equals("thirdperson_") ? 1.56 : 1.49;
                 for (int axis = 0; axis < 3; axis++) {

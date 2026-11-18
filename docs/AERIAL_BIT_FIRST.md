@@ -1,8 +1,8 @@
-# Bit-first Escutcheon: larger front-facing native shield pose v0.8.36
+# Bit-first Escutcheon: lower the equipped shield hand pose v0.8.37
 
 Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.
 
-0.8.36 adjusts only the equipped Aerial shield hand display poses after the first 0.8.35 in-game screenshot: the plate now faces more forward (X 75 to 65 degrees; left/right Y 180 to plus/minus 165 degrees), with third-person normal size 1.215 to 1.40 and blocking 1.35 to 1.56. First-person scales also increase modestly. All 493 cuboids, eleven bit models, blue lateral faces, rear grip, fixed GUI and preview poses, rifle, and original BBModel sources remain identical. The item model identifier and shield blocking-state selector remain unchanged.
+0.8.37 lowers ONLY native equipped Aerial Escutcheon poses after the v0.8.36 in-game screenshot. Both third-person hands change translation Y from 7 to 5 (idle) and 9 to 7 (guard); first-person hands change Y from 3 to 2 in both states. X/Z, rotations, scales, all 493 geometry cuboids, eleven standalone bits, rear grip, fixed/GUI preview poses, colors, rifle and game behavior remain exactly as v0.8.36. Shield item identifiers and blocking-state selector stay unchanged.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |

@@ -722,3 +722,7 @@ The white lower outer fins (bits 07/08) now expose cobalt on their outer side fa
 Based on the real 0.8.35 third-person screenshot, only the held shield's normal and guarding `display` transforms were adjusted, both left/right hands and first/third-person. The plate is rotated less steeply backward (X 75° → 65°) and its yaw is turned slightly inward so the front is more visible (left Y 180° → 165°, mirrored right Y -165°). Third-person scale grows from 1.215 to 1.40 normally (~15%) and 1.35 to 1.56 when guarding (~16%). First-person scale grows from 1.21 to 1.34 normally and from 1.335 to 1.49 when guarding.
 
 **No bit geometry, face colors, joining placements, rear handle, flight displays, rifle, GUI/fixed preview pose, item identifiers, or production mechanics were changed.** The normal shield and blocking model still contain the same 493 elements; visual orientation and scale need a fresh in-game check.
+
+## v0.8.37 — Lower the held Escutcheon, pose-only
+
+The real v0.8.36 equipped shield screenshot showed the hand-held model a little too high. Keep all angles and scales exactly as v0.8.36, and adjust only the native item-model **translation Y** in both hands: third-person idle **7 → 5**, third-person guarding **9 → 7**, first-person idle and guarding **3 → 2**. The same positions apply to left/right hands. No geometry, texture, model ID, game behavior, 11 bit models, rear grip, inventory GUI, fixed preview or rifle changes. Test the real shield from the side and front after updating the resource pack.
