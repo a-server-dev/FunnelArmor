@@ -245,11 +245,11 @@ function buildBitFirst(){
  if((maxY-minY)/(maxX-minX)<2.77||(maxY-minY)/(maxX-minX)>3.25)throw Error("Shield too round or skinny");
  if(points.some(p=>p.some(n=>!Number.isFinite(n)||n < -16||n > 32)))throw Error("Model out of bounds");
  outputs["docs/AERIAL_BIT_FIRST.md"]=[
- "# Bit-first Escutcheon: lower the equipped shield hand pose v0.8.37",
+ "# Bit-first Escutcheon: lower hand pose again v0.8.38",
  "",
  "Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.",
  "",
- "0.8.37 lowers ONLY native equipped Aerial Escutcheon poses after the v0.8.36 in-game screenshot. Both third-person hands change translation Y from 7 to 5 (idle) and 9 to 7 (guard); first-person hands change Y from 3 to 2 in both states. X/Z, rotations, scales, all 493 geometry cuboids, eleven standalone bits, rear grip, fixed/GUI preview poses, colors, rifle and game behavior remain exactly as v0.8.36. Shield item identifiers and blocking-state selector stay unchanged.",
+ "0.8.38 lowers ONLY native equipped Aerial Escutcheon poses after the v0.8.37 in-game screenshot. Both third-person hands change translation Y from 5 to 3 (idle) and 7 to 5 (guard); first-person hands change Y from 2 to 1 in both states. X/Z, rotations, scales, all 493 geometry cuboids, eleven standalone bits, rear grip, fixed/GUI preview poses and rifle remain unchanged. Shield item identifiers and blocking-state selector stay unchanged.",
  "",
  "| Bit | Part | Joined offset x,y,z | Cuboids |",
  "| --- | --- | --- | --- |",
@@ -260,6 +260,8 @@ function buildBitFirst(){
  "Single source of truth: `tools/generate_aerial_bit_first.mjs`; generates 11 individual models, the joined shield, and the same shield geometry with a blocking hand pose (13 JSON model files). Regenerate with `node tools/generate_aerial_bit_first.mjs` or check with `--check`.",
  "",
  "Live Aerial flying bits and native held shield now reference the generated bit-first models. OP previews remain available. The gunbit rifle and original `.bbmodel` sources are unchanged. The five-cuboid rear grip belongs to the shield only. No BetterModel needed.",
+ "",
+ "0.8.38 moves the equipped shield only (third-person idle Y=3, guard Y=5, first-person Y=1). Existing geometry, scale and angle are preserved. Aerial palette tones are slightly muted. ν fin and Unicorn barrier break cooldowns and Qubeley timed pursuit are implemented independently of Aerial equipment.",
  ""
  ].join("\n");
  return {outputs,parts:parts.map(p=>({id:p.id,materialCount:p.boxes.length})),sum:whole.length,bounds:{x:[minX,maxX],y:[minY,maxY],ratio:(maxY-minY)/(maxX-minX)}};
