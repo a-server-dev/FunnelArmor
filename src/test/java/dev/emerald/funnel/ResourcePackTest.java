@@ -95,6 +95,37 @@ class ResourcePackTest {
     }
 
     @Test
+    void gnSwordDedicatedTexturesAreRealReadablePngImages() throws Exception {
+        java.util.Set<String> names = java.util.Set.of(
+                "gn_sword_v_sword", "gn_sword_v_rifle",
+                "gn_sword_v_buster_sword", "gn_sword_v_buster_rifle", "gn_sword_bit");
+        java.util.Set<String> found = new java.util.HashSet<>();
+        try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(stream);
+            try (ZipInputStream zip = new ZipInputStream(stream)) {
+                ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) {
+                    String prefix = "assets/funnel/textures/item/";
+                    if (entry.getName().startsWith(prefix) && entry.getName().endsWith(".png")) {
+                        String name = entry.getName().substring(prefix.length(),
+                                entry.getName().length() - 4);
+                        if (names.contains(name)) {
+                            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(
+                                    new java.io.ByteArrayInputStream(zip.readAllBytes()));
+                            assertNotNull(image, name + " failed PNG decoding");
+                            assertEquals(64, image.getWidth(), name + " width");
+                            assertEquals(64, image.getHeight(), name + " height");
+                            found.add(name);
+                        }
+                    }
+                    zip.closeEntry();
+                }
+            }
+        }
+        assertEquals(names, found, "GN Sword V must package five independent image atlases");
+    }
+
+    @Test
     void allModelsUseStringTextureReferences() throws Exception {
         try (InputStream stream = getClass().getResourceAsStream("/funnel-pack.zip")) {
             assertNotNull(stream);
