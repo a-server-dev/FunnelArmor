@@ -734,3 +734,14 @@ The held Escutcheon is lowered again, without changing item display rotation, sc
 ν fin and Unicorn shield-funnel barriers now acquire independent 200-tick (10-second) cooldowns **when broken** at 5 hits or 20 HP absorbed. Manual stowing is free. Cooldowns remain active across item swaps, death and reconnects in the same server session.
 
 Qubeley variant 3 offhand pursuit requires **sneak + right click** and targets hostile mobs within **8 blocks**. Pursuit runs at most 100 ticks (5 seconds), then 12 bits fly back toward the player for 10 ticks and cooldown lasts 200 ticks (10 seconds) after return. Early cancellation or target loss also triggers return and cooldown. The ordinary non-sneaking offhand click does not activate pursuit.
+
+## v0.9.0 — Twin Buster Rifle: first non-funnel armament
+
+Initial original-asset Wing Zero EW-inspired Twin Buster Rifle implementation. Use OP command `/funnel buster give [player]` to obtain the standalone weapon (a custom-modeled warped-fungus-on-a-stick item), and `/funnel buster status` to check modes and timers.
+
+- **Sneak + right click**: switch the weapon between **two separated rifles** and **joined Twin Buster Rifle**. Each form has its own manually authored resource-pack model; the models do not reuse or modify existing FunnelArmor assets.
+- **Separated**: normal right click fires two cyan beams with a short firing interval.
+- **Joined**: normal right click starts a 30-tick charge; at completion, one broad high-damage beam fires and the 200-tick cooldown begins. This beam only damages hostile monsters, stops at walls and is independent of other weapons.
+- The dedicated item is unbreakable and marked by its own PDC field, so other funnel/aerial interactions ignore it. Interrupting charging by unequipping, changing modes, leaving the world, logging out or dying cancels the shot. Each mode and display can be calibrated from in-game screenshots.
+
+This is the **first Twin Buster Rifle prototype**, not final screenshot-approved geometry. Next in the agreed sequence: GN Sword V, then beam saber (right-click blade extends progressively; damage only after extension completes), then Heat Hawk. Twin Satellite Cannon is on hold.

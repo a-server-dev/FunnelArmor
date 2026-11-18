@@ -131,3 +131,16 @@ aerial:
   rifle-muzzle-forward-offset: 1.1
   rifle-muzzle-up-offset: -0.28
   rifle-muzzle-right-offset: 0.33
+
+# Wing Zero EW twin buster rifle (independent weapon, no funnel behavior changes).
+twin-buster:
+  enabled: true
+  dual-range: 30.0
+  dual-damage: 1.25
+  dual-interval-ticks: 10
+  combined-range: 48.0
+  combined-damage: 8.0
+  combined-radius: 1.20
+  charge-ticks: 30
+  combined-cooldown-ticks: 200
+  mode-switch-ticks: 10

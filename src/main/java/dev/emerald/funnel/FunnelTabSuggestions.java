@@ -32,6 +32,7 @@ public final class FunnelTabSuggestions {
         String action = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 1) {
             candidates.add("aerial");
+            candidates.add("buster");
             candidates.add("pack");
             candidates.add("status");
             if (player) {
@@ -47,6 +48,14 @@ public final class FunnelTabSuggestions {
             }
         } else {
             switch (action) {
+                case "buster" -> {
+                    if (args.length == 2) {
+                        candidates.add("status");
+                        if (admin) candidates.add("give");
+                    } else if (args.length == 3 && args[1].equalsIgnoreCase("give") && admin)
+                        candidates.addAll(onlineNames);
+                    else return List.of();
+                }
                 case "aerial" -> {
                     if (args.length == 2) {
                         candidates.add("status");

@@ -114,6 +114,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private String sha1;
     private Path packPath;
     private AerialCombat aerialCombat;
+    private TwinBusterCombat twinBusterCombat;
     private final Map<UUID, String> lastObservedPackStatus = new ConcurrentHashMap<>();
 
     @Override public void onEnable() {
@@ -141,6 +142,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         cleanupOrphans();
         aerialCombat = new AerialCombat(this, displayKey);
         aerialCombat.start();
+        twinBusterCombat = new TwinBusterCombat(this);
+        twinBusterCombat.start();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         // Migrate the item-model COMPONENT of previously issued controllers.
@@ -157,6 +160,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
     @Override public void onDisable() {
         if (aerialCombat != null) aerialCombat.stop();
+        if (twinBusterCombat != null) twinBusterCombat.stop();
         lastObservedPackStatus.clear();
         if (httpServer != null) httpServer.stop(0);
         lastShots.clear();
@@ -1633,8 +1637,9 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel aerial give [player] §7| §b/funnel give <1|3|4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel buster give [player] §7| §b/funnel aerial give [player] §7| §b/funnel give <1|3|4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
         if (args[0].equalsIgnoreCase("aerial")) return aerialCombat.command(sender, args);
+        if (args[0].equalsIgnoreCase("buster")) return twinBusterCombat.command(sender, args);
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
