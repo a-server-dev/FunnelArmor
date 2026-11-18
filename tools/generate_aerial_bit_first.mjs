@@ -194,7 +194,7 @@ function buildBitFirst(){
   return result;
  }
  const bitDisplay=(height)=>({gui:{rotation:[15,205,0],translation:[0,0,0],scale:Array(3).fill(round(Math.min(2.6,12/height)))},fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]}});
- // v0.8.37: lower the v0.8.36 native equipped shield without altering angle or size.
+ // v0.8.38: lower held Escutcheon again, without changing angle, size or geometry.
  // Hand-only display poses: never change model geometry, preview fixed/gui
  // transforms, flying bit models, inventory model keys, or rear handle.
  // 65 deg X reduces the previous 75 deg backward pitch; 165/-165 deg Y
@@ -203,17 +203,17 @@ function buildBitFirst(){
   gui:{rotation:[15,-25,-5],translation:[0,1,0],scale:[.65,.65,.65]},
   fixed:{rotation:[0,180,0],translation:[0,0,0],scale:[1,1,1]},
   ground:{rotation:[0,0,0],translation:[0,3,0],scale:[.27,.27,.27]},
-  firstperson_lefthand:{rotation:[65,165,0],translation:[4,2,-1],scale:[1.34,1.34,1.34]},
-  firstperson_righthand:{rotation:[65,-165,0],translation:[-4,2,1],scale:[1.34,1.34,1.34]},
-  thirdperson_lefthand:{rotation:[65,165,0],translation:[6,5,-1],scale:[1.40,1.40,1.40]},
-  thirdperson_righthand:{rotation:[65,-165,0],translation:[-6,5,1],scale:[1.40,1.40,1.40]}
+  firstperson_lefthand:{rotation:[65,165,0],translation:[4,1,-1],scale:[1.34,1.34,1.34]},
+  firstperson_righthand:{rotation:[65,-165,0],translation:[-4,1,1],scale:[1.34,1.34,1.34]},
+  thirdperson_lefthand:{rotation:[65,165,0],translation:[6,3,-1],scale:[1.40,1.40,1.40]},
+  thirdperson_righthand:{rotation:[65,-165,0],translation:[-6,3,1],scale:[1.40,1.40,1.40]}
  };
  const shieldBlockingDisplay={
   ...shieldDisplay,
-  firstperson_lefthand:{rotation:[65,165,0],translation:[4,2,-1],scale:[1.49,1.49,1.49]},
-  firstperson_righthand:{rotation:[65,-165,0],translation:[-4,2,1],scale:[1.49,1.49,1.49]},
-  thirdperson_lefthand:{rotation:[65,165,0],translation:[6,7,-1],scale:[1.56,1.56,1.56]},
-  thirdperson_righthand:{rotation:[65,-165,0],translation:[-6,7,1],scale:[1.56,1.56,1.56]}
+  firstperson_lefthand:{rotation:[65,165,0],translation:[4,1,-1],scale:[1.49,1.49,1.49]},
+  firstperson_righthand:{rotation:[65,-165,0],translation:[-4,1,1],scale:[1.49,1.49,1.49]},
+  thirdperson_lefthand:{rotation:[65,165,0],translation:[6,5,-1],scale:[1.56,1.56,1.56]},
+  thirdperson_righthand:{rotation:[65,-165,0],translation:[-6,5,1],scale:[1.56,1.56,1.56]}
  };
  const outputs={};
  for(const part of parts){

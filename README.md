@@ -726,3 +726,11 @@ Based on the real 0.8.35 third-person screenshot, only the held shield's normal 
 ## v0.8.37 — Lower the held Escutcheon, pose-only
 
 The real v0.8.36 equipped shield screenshot showed the hand-held model a little too high. Keep all angles and scales exactly as v0.8.36, and adjust only the native item-model **translation Y** in both hands: third-person idle **7 → 5**, third-person guarding **9 → 7**, first-person idle and guarding **3 → 2**. The same positions apply to left/right hands. No geometry, texture, model ID, game behavior, 11 bit models, rear grip, inventory GUI, fixed preview or rifle changes. Test the real shield from the side and front after updating the resource pack.
+
+## v0.8.38 — Escutcheon pose/color, barrier cooldowns, Qubeley timed pursuit
+
+The held Escutcheon is lowered again, without changing item display rotation, scale, bit geometry or rear grip: third-person idle Y 5→3, guarding 7→5; first-person both 2→1. Escutcheon texture colors are gently muted without remapping UVs.
+
+ν fin and Unicorn shield-funnel barriers now acquire independent 200-tick (10-second) cooldowns **when broken** at 5 hits or 20 HP absorbed. Manual stowing is free. Cooldowns remain active across item swaps, death and reconnects in the same server session.
+
+Qubeley variant 3 offhand pursuit requires **sneak + right click** and targets hostile mobs within **8 blocks**. Pursuit runs at most 100 ticks (5 seconds), then 12 bits fly back toward the player for 10 ticks and cooldown lasts 200 ticks (10 seconds) after return. Early cancellation or target loss also triggers return and cooldown. The ordinary non-sneaking offhand click does not activate pursuit.

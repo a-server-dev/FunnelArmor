@@ -1,4 +1,4 @@
-# Bit-first Escutcheon: lower the equipped shield hand pose v0.8.37
+# Bit-first Escutcheon: lower hand pose again v0.8.38
 
 Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.
 
@@ -23,3 +23,5 @@ Total 493 cuboids (11 standalone bits plus 5 rear-only handle parts); shield wid
 Single source of truth: `tools/generate_aerial_bit_first.mjs`; generates 11 individual models, the joined shield, and the same shield geometry with a blocking hand pose (13 JSON model files). Regenerate with `node tools/generate_aerial_bit_first.mjs` or check with `--check`.
 
 Live Aerial flying bits and native held shield now reference the generated bit-first models. OP previews remain available. The gunbit rifle and original `.bbmodel` sources are unchanged. The five-cuboid rear grip belongs to the shield only. No BetterModel needed.
+
+0.8.38 moves the equipped shield only (third-person idle Y=3, guard Y=5, first-person Y=1). Existing geometry, scale and angle are preserved. Aerial palette tones are slightly muted. ν fin and Unicorn barrier break cooldowns and Qubeley timed pursuit are implemented independently of Aerial equipment.
