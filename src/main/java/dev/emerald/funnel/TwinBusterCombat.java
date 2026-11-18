@@ -416,17 +416,6 @@ final class TwinBusterCombat implements Listener {
         player.sendActionBar(Component.text("§bツインバスターライフル：発射！"));
     }
 
-    /**
-     * FLASH requires Bukkit Color particle data on Paper 26.3.
-     * Keep all FLASH effects here so future call sites cannot accidentally
-     * use the no-data overload (which throws IllegalArgumentException).
-     */
-    private static void coloredFlash(World world, Location at, int count,
-                                     double spread, Color color) {
-        world.spawnParticle(Particle.FLASH, at, count,
-                spread, spread, spread, 0, color);
-    }
-
     /** Multi-layer luminous beam; visuals do not change the monster hit radius. */
     private void powerBeam(World world, Location start, Vector direction,
                            double length, double hitRadius, boolean impacted) {
