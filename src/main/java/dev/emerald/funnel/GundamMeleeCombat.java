@@ -251,7 +251,7 @@ final class GundamMeleeCombat implements Listener {
                 } else {
                     long elapsed = Math.max(0, time - transition.started());
                     int progress = Math.min(4, (int)(elapsed / step));
-                    int target = transition.extending() ? progress : 4 - progress;
+                    int target = MeleeStageTiming.stageAt(elapsed, step, transition.extending());
                     Phase state = progress == 4
                             ? transition.extending() ? Phase.ACTIVE : Phase.OFF
                             : transition.extending() ? Phase.EXTENDING : Phase.RETRACTING;
@@ -284,7 +284,8 @@ final class GundamMeleeCombat implements Listener {
         ItemStack item = player.getInventory().getItemInMainHand();
         if (saber(item)) {
             // A handle, partially growing blade, or retracting blade cannot hurt anything.
-            if (!enabled("beam-saber") || phase(item) != Phase.ACTIVE || stage(item) != 4
+            if (!enabled("beam-saber")
+                    || !MeleeStageTiming.canHit(phase(item) == Phase.ACTIVE, stage(item))
                     || !(event.getEntity() instanceof Mob mob)) {
                 event.setCancelled(true);
                 return;
