@@ -375,7 +375,7 @@ final class TwinBusterCombat implements Listener {
         Location muzzle = eye.clone().add(right.multiply(sign * .72))
                 .add(dir.clone().multiply(1.15)).add(0, -.43, 0);
         World world = player.getWorld();
-        world.spawnParticle(Particle.FLASH, muzzle, 1, 0, 0, 0, 0);
+        coloredFlash(world, muzzle, 1, 0.0, Color.fromRGB(195, 240, 255));
         world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 12,
                 .18, .18, .18, .09);
         fireBeam(player, muzzle, dir, cfg("dual-range", 30.0), .24,
@@ -390,7 +390,7 @@ final class TwinBusterCombat implements Listener {
         Vector dir = eye.getDirection().normalize();
         Location muzzle = eye.clone().add(dir.clone().multiply(1.3)).add(0, -.32, 0);
         World world = player.getWorld();
-        world.spawnParticle(Particle.FLASH, muzzle, 3, .13, .13, .13, 0);
+        coloredFlash(world, muzzle, 3, .13, Color.fromRGB(235, 250, 255));
         world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 64, .50, .50, .50, .16);
         fireBeam(player, muzzle, dir, cfg("combined-range", 48),
                 cfg("combined-radius", 1.20),
@@ -399,6 +399,17 @@ final class TwinBusterCombat implements Listener {
         world.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.5f, .68f);
         world.playSound(muzzle, Sound.ENTITY_GUARDIAN_ATTACK, 1.3f, .58f);
         player.sendActionBar(Component.text("§bツインバスターライフル：発射！"));
+    }
+
+    /**
+     * FLASH requires Bukkit Color particle data on Paper 26.3.
+     * Keep all FLASH effects here so future call sites cannot accidentally
+     * use the no-data overload (which throws IllegalArgumentException).
+     */
+    private static void coloredFlash(World world, Location at, int count,
+                                     double spread, Color color) {
+        world.spawnParticle(Particle.FLASH, at, count,
+                spread, spread, spread, 0, color);
     }
 
     /** Multi-layer luminous beam; visuals do not change the monster hit radius. */
@@ -445,7 +456,7 @@ final class TwinBusterCombat implements Listener {
             }
         }
         Location impact = start.clone().add(direction.clone().multiply(length));
-        world.spawnParticle(Particle.FLASH, impact, 1, 0, 0, 0, 0);
+        coloredFlash(world, impact, 1, 0.0, Color.fromRGB(170, 235, 255));
         world.spawnParticle(Particle.END_ROD, impact, 25, 1.0, 1.0, 1.0, .08);
         world.spawnParticle(Particle.ELECTRIC_SPARK, impact, 50, .9, .9, .9, .12);
         if (impacted) {
