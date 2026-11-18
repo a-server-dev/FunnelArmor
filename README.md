@@ -745,3 +745,11 @@ Initial original-asset Wing Zero EW-inspired Twin Buster Rifle implementation. U
 - The dedicated item is unbreakable and marked by its own PDC field, so other funnel/aerial interactions ignore it. Interrupting charging by unequipping, changing modes, leaving the world, logging out or dying cancels the shot. Each mode and display can be calibrated from in-game screenshots.
 
 This is the **first Twin Buster Rifle prototype**, not final screenshot-approved geometry. Next in the agreed sequence: GN Sword V, then beam saber (right-click blade extends progressively; damage only after extension completes), then Heat Hawk. Twin Satellite Cannon is on hold.
+
+## v0.9.1 — Rifle size, true independent clicks and richer beam
+
+Updated the two original editable twin-buster BBModels and vanilla item geometry; **100** cuboids in dual and **103** in combined, longer thickened barrels, layered receiver armor, cooling fins, colored power rails, enhanced muzzle, and larger first/third-person scale. The inventory icon and first-person hands use the full dual model, but third-person right hand now uses an isolated right-rifle model, with a virtual left-hand model on observers via Paper's `sendEquipmentChange`. This never changes the player's inventory; an actually occupied offhand is preserved and prevents virtual left-hand spoofing. No client mod or protocol plugin is required.
+
+Separated controls: **left click fires LEFT gun**, **right click fires RIGHT gun**, each with its own 10-tick cooldown; the ordinary melee damage from these clicks is blocked. Right click with Shift still joins/separates the rifles. Third-person left-shot offhand swing and each muzzle's flash provide recoil cues. Combined right click starts a 1.5-second charge; multi-layered white/cyan/blue luminous rings and electric arcs build a bright thick beam, with muzzle charge and impact effects. Actual damage, wall stops, charge and cooldown remain otherwise unchanged. The white/middle/outer particle budget is configurable to avoid excessively dense multiplayer effects.
+
+See `models/twin_buster_rifle_*.bbmodel` for the updated editable models. These are original assets, not community downloads. In-game screenshot validation is still needed for exact first-person alignment.

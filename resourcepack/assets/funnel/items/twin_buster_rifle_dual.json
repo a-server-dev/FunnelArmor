@@ -1,6 +1,32 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "funnel:item/twin_buster_rifle_dual"
+    "type": "minecraft:select",
+    "property": "minecraft:display_context",
+    "cases": [
+      {
+        "when": [
+          "firstperson_righthand",
+          "firstperson_lefthand"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "funnel:item/twin_buster_rifle_dual"
+        }
+      },
+      {
+        "when": [
+          "thirdperson_righthand",
+          "thirdperson_lefthand"
+        ],
+        "model": {
+          "type": "minecraft:model",
+          "model": "funnel:item/twin_buster_rifle_dual_right"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "funnel:item/twin_buster_rifle_dual"
+    }
   }
 }

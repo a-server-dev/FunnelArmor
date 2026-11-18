@@ -137,10 +137,12 @@ twin-buster:
   enabled: true
   dual-range: 30.0
   dual-damage: 1.25
-  dual-interval-ticks: 10
+  dual-interval-ticks: 10 # independent left and right cooldowns
   combined-range: 48.0
   combined-damage: 8.0
   combined-radius: 1.20
+  # Max particle density of the white core, inner cyan ring, blue outer shell.
+  particle-budget: 1800
   charge-ticks: 30
   combined-cooldown-ticks: 200
   mode-switch-ticks: 10

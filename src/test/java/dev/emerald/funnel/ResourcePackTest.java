@@ -129,11 +129,14 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
-                        if (entry.getName().matches("assets/funnel/models/item/twin_buster_rifle_(dual|combined)\\.json")) {
+                        if (entry.getName().matches("assets/funnel/models/item/twin_buster_rifle_(dual|combined|dual_left|dual_right)\\.json")) {
                             String texture = model.getAsJsonObject("textures").get("0").getAsString();
                             assertEquals("funnel:item/twin_buster_rifle", texture);
                             boolean combined = entry.getName().contains("_combined");
-                            assertEquals(combined ? 53 : 50, model.getAsJsonArray("elements").size());
+                            boolean oneHand = entry.getName().contains("dual_left")
+                                    || entry.getName().contains("dual_right");
+                            assertEquals(oneHand ? 50 : combined ? 103 : 100,
+                                    model.getAsJsonArray("elements").size());
                             for (var element : model.getAsJsonArray("elements"))
                                 for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet())
                                     assertEquals("#0", face.getValue().getAsJsonObject().get("texture").getAsString());
@@ -164,11 +167,45 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(12, checked,
-                    "10 existing assets + 2 Twin Buster Rifle models");
+            assertEquals(14, checked,
+                    "10 existing assets + 4 Twin Buster Rifle models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }
+    }
+
+
+    @Test
+    void twinBusterUsesSeparateThirdPersonRiflesAndCombinedFirstPerson() throws Exception {
+        java.util.Map<String, JsonObject> models = new java.util.HashMap<>();
+        try (InputStream in = getClass().getResourceAsStream("/funnel-pack.zip");
+             ZipInputStream zip = new ZipInputStream(in)) {
+            ZipEntry entry;
+            while ((entry = zip.getNextEntry()) != null) {
+                if (entry.getName().startsWith("assets/funnel/items/twin_buster_rifle")
+                        && entry.getName().endsWith(".json"))
+                    models.put(entry.getName(), parse(zip.readAllBytes()));
+                zip.closeEntry();
+            }
+        }
+        JsonObject dual = models.get("assets/funnel/items/twin_buster_rifle_dual.json");
+        assertNotNull(dual);
+        var select = dual.getAsJsonObject("model");
+        assertEquals("minecraft:select", select.get("type").getAsString());
+        assertEquals("minecraft:display_context", select.get("property").getAsString());
+        assertEquals(2, select.getAsJsonArray("cases").size());
+        assertEquals("funnel:item/twin_buster_rifle_dual",
+                select.getAsJsonArray("cases").get(0).getAsJsonObject()
+                        .getAsJsonObject("model").get("model").getAsString());
+        assertEquals("funnel:item/twin_buster_rifle_dual_right",
+                select.getAsJsonArray("cases").get(1).getAsJsonObject()
+                        .getAsJsonObject("model").get("model").getAsString());
+        assertTrue(select.getAsJsonArray("cases").get(0).getAsJsonObject()
+                .getAsJsonArray("when").toString().contains("firstperson_righthand"));
+        assertTrue(select.getAsJsonArray("cases").get(1).getAsJsonObject()
+                .getAsJsonArray("when").toString().contains("thirdperson_righthand"));
+        assertNotNull(models.get("assets/funnel/items/twin_buster_rifle_dual_left.json"));
+        assertNotNull(models.get("assets/funnel/items/twin_buster_rifle_dual_right.json"));
     }
 
     @Test

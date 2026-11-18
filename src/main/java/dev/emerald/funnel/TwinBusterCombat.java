@@ -15,6 +15,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -31,6 +34,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +45,7 @@ import java.util.UUID;
 /** Original, no-client-mod Twin Buster Rifle prototype. No overlap with funnel controllers. */
 final class TwinBusterCombat implements Listener {
     private enum Mode { DUAL, COMBINED }
+    private enum Side { LEFT, RIGHT }
     private record Charge(String weaponId, UUID worldId, long started) {}
 
     private final JavaPlugin plugin;
@@ -49,7 +54,11 @@ final class TwinBusterCombat implements Listener {
     private final NamespacedKey identityKey;
     private final Map<UUID, Charge> charging = new HashMap<>();
     private final Map<UUID, Long> combinedCooldowns = new HashMap<>();
-    private final Map<UUID, Long> dualCooldowns = new HashMap<>();
+    private final Map<UUID, Long> leftCooldowns = new HashMap<>();
+    private final Map<UUID, Long> rightCooldowns = new HashMap<>();
+    /** Viewers receiving a virtual OFF_HAND rifle; never changes inventories. */
+    private final Map<UUID, Set<UUID>> leftHandViewers = new HashMap<>();
+    private ItemStack virtualLeftRifle;
     private final Map<UUID, Long> modeCooldowns = new HashMap<>();
 
     TwinBusterCombat(JavaPlugin plugin) {
@@ -61,13 +70,20 @@ final class TwinBusterCombat implements Listener {
 
     void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
+        virtualLeftRifle = new ItemStack(Material.WARPED_FUNGUS_ON_A_STICK);
+        ItemMeta visual = virtualLeftRifle.getItemMeta();
+        visual.setUnbreakable(true);
+        visual.setItemModel(new NamespacedKey("funnel", "twin_buster_rifle_dual_left"));
+        virtualLeftRifle.setItemMeta(visual);
         Bukkit.getScheduler().runTaskTimer(plugin, this::update, 1L, 1L);
     }
 
     void stop() {
+        clearAllLeftVisuals();
         charging.clear();
         combinedCooldowns.clear();
-        dualCooldowns.clear();
+        leftCooldowns.clear();
+        rightCooldowns.clear();
         modeCooldowns.clear();
     }
 
@@ -121,8 +137,9 @@ final class TwinBusterCombat implements Listener {
         meta.displayName(Component.text("§bツインバスターライフル " +
                 (mode == Mode.DUAL ? "§7【分離】" : "§e【連結】")));
         meta.lore(List.of(
-                Component.text("§7右クリック: " + (mode == Mode.DUAL
-                        ? "2丁から同時射撃" : "チャージして極太ビーム")),
+                Component.text(mode == Mode.DUAL
+                        ? "§7左クリック: 左ライフル / 右クリック: 右ライフル"
+                        : "§7右クリック: チャージして極太ビーム"),
                 Component.text("§7しゃがみ＋右クリック: 分離／連結切替"),
                 Component.text("§8ウイングゼロ風・独立兵装")));
     }
@@ -200,9 +217,7 @@ final class TwinBusterCombat implements Listener {
         }
         if (!TwinBusterTiming.ready(now, modeCooldowns.getOrDefault(id, 0L))) return;
         if (mode(item) == Mode.DUAL) {
-            if (!TwinBusterTiming.ready(now, dualCooldowns.getOrDefault(id, 0L))) return;
-            dualCooldowns.put(id, TwinBusterTiming.until(now, cfg("dual-interval-ticks", 10)));
-            fireDual(player);
+            shootSide(player, Side.RIGHT);
         } else {
             if (charging.containsKey(id)) return;
             long until = combinedCooldowns.getOrDefault(id, 0L);
@@ -217,8 +232,42 @@ final class TwinBusterCombat implements Listener {
         }
     }
 
+    /** All swing actions including entity hits trigger this. Melee damage is suppressed. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onSwing(PlayerAnimationEvent event) {
+        Player player = event.getPlayer();
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (!weapon(item) || mode(item) != Mode.DUAL
+                || !plugin.getConfig().getBoolean("twin-buster.enabled", true)) return;
+        if (!TwinBusterTiming.ready(tick(),
+                modeCooldowns.getOrDefault(player.getUniqueId(), 0L))) return;
+        // Cancel vanilla right-arm swing and animate the left hand instead.
+        event.setCancelled(true);
+        if (shootSide(player, Side.LEFT)) player.swingOffHand();
+    }
+
+    /** Prevent ordinary sword-like hit damage on top of left-click beam damage. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onMelee(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player player
+                && weapon(player.getInventory().getItemInMainHand())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean shootSide(Player player, Side side) {
+        UUID id = player.getUniqueId();
+        Map<UUID, Long> cooldowns = side == Side.LEFT ? leftCooldowns : rightCooldowns;
+        long now = tick();
+        if (!TwinBusterTiming.ready(now, cooldowns.getOrDefault(id, 0L))) return false;
+        cooldowns.put(id, TwinBusterTiming.until(now, cfg("dual-interval-ticks", 10)));
+        fireDualSide(player, side);
+        return true;
+    }
+
     private void update() {
         long now = tick();
+        if (now % 8 == 0) synchronizeLeftRifles();
         for (UUID id : Set.copyOf(charging.keySet())) {
             Charge charge = charging.get(id);
             if (charge == null) continue;
@@ -239,61 +288,134 @@ final class TwinBusterCombat implements Listener {
                         cfg("combined-cooldown-ticks", 200)));
             } else if (now % 2 == 0) {
                 Location muzzle = player.getEyeLocation().add(
-                        player.getEyeLocation().getDirection().multiply(.95)).add(0, -.25, 0);
+                        player.getEyeLocation().getDirection().multiply(1.2)).add(0, -.28, 0);
+                double progress = (double)(now - charge.started()) / ticks;
                 player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, muzzle,
-                        4, .35, .25, .35, .02);
+                        5 + (int) (progress * 15), .27 + progress * .19,
+                        .27 + progress * .19, .27 + progress * .19, .05);
+                player.getWorld().spawnParticle(Particle.DUST, muzzle, 9,
+                        .18, .18, .18, 0,
+                        new Particle.DustOptions(Color.fromRGB(168, 246, 255),
+                                (float)(1.5 + progress * .9)));
+                if (now % 12 == 0) player.getWorld().playSound(muzzle,
+                        Sound.BLOCK_BEACON_AMBIENT, .24f, (float)(.7 + progress * .5));
             }
         }
         combinedCooldowns.entrySet().removeIf(e -> e.getValue() <= now);
-        dualCooldowns.entrySet().removeIf(e -> e.getValue() <= now);
+        leftCooldowns.entrySet().removeIf(e -> e.getValue() <= now);
+        rightCooldowns.entrySet().removeIf(e -> e.getValue() <= now);
         modeCooldowns.entrySet().removeIf(e -> e.getValue() <= now);
     }
 
-    private void fireDual(Player player) {
+    private void fireDualSide(Player player, Side side) {
         Location eye = player.getEyeLocation();
         Vector dir = eye.getDirection().normalize();
         Vector right = horizontalRight(dir);
-        Set<UUID> hit = new HashSet<>();
-        for (double sign : new double[]{-1, 1}) {
-            Location muzzle = eye.clone().add(right.clone().multiply(sign * .4))
-                    .add(dir.clone().multiply(.6)).add(0, -.30, 0);
-            fireBeam(player, muzzle, dir, cfg("dual-range", 30), .28,
-                    cfg("dual-damage", 1.25), Color.fromRGB(95, 219, 255), hit);
-        }
-        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_GUARDIAN_ATTACK, .65f, 1.5f);
+        double sign = side == Side.LEFT ? -1 : 1;
+        Location muzzle = eye.clone().add(right.multiply(sign * .72))
+                .add(dir.clone().multiply(1.15)).add(0, -.43, 0);
+        World world = player.getWorld();
+        world.spawnParticle(Particle.FLASH, muzzle, 1, 0, 0, 0, 0);
+        world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 12,
+                .18, .18, .18, .09);
+        fireBeam(player, muzzle, dir, cfg("dual-range", 30.0), .24,
+                cfg("dual-damage", 1.25), Color.fromRGB(95, 219, 255),
+                new HashSet<>(), false);
+        world.playSound(muzzle, Sound.ENTITY_GUARDIAN_ATTACK, .62f,
+                side == Side.LEFT ? 1.40f : 1.65f);
     }
 
     private void fireCombined(Player player) {
         Location eye = player.getEyeLocation();
         Vector dir = eye.getDirection().normalize();
-        Location muzzle = eye.clone().add(dir.clone().multiply(.65)).add(0, -.3, 0);
+        Location muzzle = eye.clone().add(dir.clone().multiply(1.3)).add(0, -.32, 0);
+        World world = player.getWorld();
+        world.spawnParticle(Particle.FLASH, muzzle, 3, .13, .13, .13, 0);
+        world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 64, .50, .50, .50, .16);
         fireBeam(player, muzzle, dir, cfg("combined-range", 48),
                 cfg("combined-radius", 1.20),
-                cfg("combined-damage", 8.0), Color.fromRGB(140, 235, 255), new HashSet<>());
-        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.0f, .72f);
+                cfg("combined-damage", 8.0), Color.fromRGB(140, 235, 255),
+                new HashSet<>(), true);
+        world.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.5f, .68f);
+        world.playSound(muzzle, Sound.ENTITY_GUARDIAN_ATTACK, 1.3f, .58f);
         player.sendActionBar(Component.text("§bツインバスターライフル：発射！"));
     }
 
-    /** Block-clamped cylindrical hitscan; only hostile monsters are damaged. */
+    /** Multi-layer luminous beam; visuals do not change the monster hit radius. */
+    private void powerBeam(World world, Location start, Vector direction,
+                           double length, double hitRadius, boolean impacted) {
+        Vector right = horizontalRight(direction);
+        Vector up = direction.clone().crossProduct(right);
+        if (up.lengthSquared() < .00001) up = new Vector(0, 1, 0);
+        up.normalize();
+        double visualRadius = Math.max(1.05, hitRadius * 1.35);
+        Particle.DustOptions white = new Particle.DustOptions(Color.fromRGB(246, 252, 255), 2.2f);
+        Particle.DustOptions blue = new Particle.DustOptions(Color.fromRGB(50, 185, 255), 2.0f);
+        Particle.DustOptions cyan = new Particle.DustOptions(Color.fromRGB(119, 235, 255), 2.5f);
+        int budget = Math.max(200, Math.min(4000, cfg("particle-budget", 1800)));
+        int used = 0;
+        // Multiple concentric rings create volume; the white center is bright.
+        for (double dist = 0; dist <= length && used < budget; dist += .75) {
+            Location at = start.clone().add(direction.clone().multiply(dist));
+            world.spawnParticle(Particle.DUST, at, 2, .09, .09, .09, 0, white);
+            used += 2;
+            for (int k = 0; k < 12 && used < budget; k++) {
+                double angle = k * Math.PI / 6 + dist * .28;
+                double radius = visualRadius * .66;
+                Location halo = at.clone().add(
+                        right.clone().multiply(Math.cos(angle) * radius)).add(
+                        up.clone().multiply(Math.sin(angle) * radius));
+                world.spawnParticle(Particle.DUST, halo, 1, 0, 0, 0, 0, cyan);
+                used++;
+            }
+            if (((int)(dist * 4)) % 6 == 0) {
+                for (int k = 0; k < 8 && used < budget; k++) {
+                    double angle = k * Math.PI / 4 + dist * -.25;
+                    Location edge = at.clone().add(
+                            right.clone().multiply(Math.cos(angle) * visualRadius)).add(
+                            up.clone().multiply(Math.sin(angle) * visualRadius));
+                    world.spawnParticle(Particle.DUST, edge, 1, 0, 0, 0, 0, blue);
+                    used++;
+                }
+                if (used < budget) {
+                    world.spawnParticle(Particle.ELECTRIC_SPARK, at, 1,
+                            .45, .45, .45, .025);
+                    used++;
+                }
+            }
+        }
+        Location impact = start.clone().add(direction.clone().multiply(length));
+        world.spawnParticle(Particle.FLASH, impact, 1, 0, 0, 0, 0);
+        world.spawnParticle(Particle.END_ROD, impact, 25, 1.0, 1.0, 1.0, .08);
+        world.spawnParticle(Particle.ELECTRIC_SPARK, impact, 50, .9, .9, .9, .12);
+        if (impacted) {
+            world.spawnParticle(Particle.EXPLOSION, impact, 4, .5, .5, .5, 0);
+            world.playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, .92f);
+        }
+    }
+
+    /** Block-clamped cylindrical hitscan; monster damage is independent of particles. */
     private void fireBeam(Player shooter, Location muzzle, Vector direction,
                           double range, double radius, double damage,
-                          Color color, Set<UUID> hit) {
+                          Color color, Set<UUID> hit, boolean heavy) {
         World world = shooter.getWorld();
         RayTraceResult obstacle = world.rayTraceBlocks(
                 muzzle, direction, range, FluidCollisionMode.NEVER, true);
         double length = obstacle == null ? range
                 : Math.min(range, muzzle.toVector().distance(obstacle.getHitPosition()));
-        Vector start = muzzle.toVector();
-        Particle.DustOptions dust = new Particle.DustOptions(color,
-                (float) Math.max(.8, Math.min(2.5, radius * 1.6)));
-        for (double dist = 0; dist <= length; dist += .65) {
-            Location at = muzzle.clone().add(direction.clone().multiply(dist));
-            world.spawnParticle(Particle.DUST, at, radius > .5 ? 4 : 1,
-                    radius * .30, radius * .30, radius * .30, 0, dust);
+        if (heavy) {
+            powerBeam(world, muzzle, direction, length, radius, obstacle != null);
+        } else {
+            Particle.DustOptions dust = new Particle.DustOptions(color, 1.6f);
+            for (double d = 0; d <= length; d += .35) {
+                Location at = muzzle.clone().add(direction.clone().multiply(d));
+                world.spawnParticle(Particle.DUST, at, 2, .06, .06, .06, 0, dust);
+            }
+            Location tip = muzzle.clone().add(direction.clone().multiply(length));
+            world.spawnParticle(Particle.END_ROD, tip, 8, .23, .23, .23, .03);
         }
-        Location tip = muzzle.clone().add(direction.clone().multiply(length));
-        world.spawnParticle(Particle.END_ROD, tip, 8, .23, .23, .23, .03);
-        Vector middle = start.clone().add(direction.clone().multiply(length / 2));
+        Vector middle = muzzle.toVector().add(direction.clone().multiply(length / 2));
+        Vector start = muzzle.toVector();
         for (Entity entity : world.getNearbyEntities(middle.toLocation(world),
                 length / 2 + 2, length / 2 + 2, length / 2 + 2)) {
             if (!(entity instanceof Monster monster) || !monster.isValid()
@@ -310,6 +432,63 @@ final class TwinBusterCombat implements Listener {
         }
     }
 
+    /** Spoof a left-hand model to nearby observers; never overwrite real offhand inventory. */
+    private void synchronizeLeftRifles() {
+        Set<UUID> tracked = new HashSet<>(leftHandViewers.keySet());
+        for (Player owner : Bukkit.getOnlinePlayers()) {
+            UUID id = owner.getUniqueId();
+            ItemStack mainHand = owner.getInventory().getItemInMainHand();
+            boolean enabled = plugin.getConfig().getBoolean("twin-buster.enabled", true)
+                    && !owner.isDead() && weapon(mainHand) && mode(mainHand) == Mode.DUAL
+                    && owner.getInventory().getItemInOffHand().getType().isAir();
+            if (!enabled) continue;
+            tracked.remove(id);
+            Set<UUID> viewers = leftHandViewers.computeIfAbsent(id, k -> new HashSet<>());
+            Set<UUID> currentlyVisible = new HashSet<>();
+            for (Player observer : Bukkit.getOnlinePlayers()) {
+                // Mainhand first-person model already renders both rifles;
+                // avoid duplicating the left rifle for the local owner.
+                if (observer == owner || !observer.getWorld().equals(owner.getWorld())
+                        || !observer.canSee(owner) ||
+                        observer.getLocation().distanceSquared(owner.getLocation()) > 4096)
+                    continue;
+                observer.sendEquipmentChange(owner, EquipmentSlot.OFF_HAND, virtualLeftRifle);
+                currentlyVisible.add(observer.getUniqueId());
+            }
+            for (UUID past : new HashSet<>(viewers)) {
+                if (currentlyVisible.contains(past)) continue;
+                Player observer = Bukkit.getPlayer(past);
+                if (observer != null && observer.isOnline()) {
+                    observer.sendEquipmentChange(owner, EquipmentSlot.OFF_HAND,
+                            owner.getInventory().getItemInOffHand());
+                }
+            }
+            viewers.clear();
+            viewers.addAll(currentlyVisible);
+        }
+        for (UUID id : tracked) restoreLeftVisual(id);
+    }
+
+    private void restoreLeftVisual(UUID ownerId) {
+        Set<UUID> viewers = leftHandViewers.remove(ownerId);
+        if (viewers == null) return;
+        Player owner = Bukkit.getPlayer(ownerId);
+        if (owner == null || !owner.isOnline()) return;
+        ItemStack actual = owner.getInventory().getItemInOffHand();
+        for (UUID viewerId : viewers) {
+            Player viewer = Bukkit.getPlayer(viewerId);
+            if (viewer != null && viewer.isOnline()
+                    && viewer.getWorld().equals(owner.getWorld()))
+                viewer.sendEquipmentChange(owner, EquipmentSlot.OFF_HAND, actual);
+        }
+    }
+
+    private void clearAllLeftVisuals() {
+        for (UUID owner : new ArrayList<>(leftHandViewers.keySet()))
+            restoreLeftVisual(owner);
+        leftHandViewers.clear();
+    }
+
     private Vector horizontalRight(Vector dir) {
         Vector right = new Vector(-dir.getZ(), 0, dir.getX());
         if (right.lengthSquared() < 1.0e-7) return new Vector(1, 0, 0);
@@ -318,14 +497,18 @@ final class TwinBusterCombat implements Listener {
 
     @EventHandler public void onQuit(PlayerQuitEvent e) {
         charging.remove(e.getPlayer().getUniqueId());
+        restoreLeftVisual(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onWorld(PlayerChangedWorldEvent e) {
         charging.remove(e.getPlayer().getUniqueId());
+        restoreLeftVisual(e.getPlayer().getUniqueId());
     }
     @EventHandler public void onDeath(PlayerDeathEvent e) {
         charging.remove(e.getEntity().getUniqueId());
+        restoreLeftVisual(e.getEntity().getUniqueId());
     }
     @EventHandler public void onItemSwap(PlayerItemHeldEvent e) {
         charging.remove(e.getPlayer().getUniqueId());
+        restoreLeftVisual(e.getPlayer().getUniqueId());
     }
 }
