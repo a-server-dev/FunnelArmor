@@ -12,7 +12,7 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Monster;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -454,7 +454,7 @@ final class TwinBusterCombat implements Listener {
         }
     }
 
-    /** Block-clamped cylindrical hitscan; monster damage is independent of particles. */
+    /** Block-clamped cylindrical hitscan; damage living mobs (including iron golems). */
     private void fireBeam(Player shooter, Location muzzle, Vector direction,
                           double range, double radius, double damage,
                           Color color, Set<UUID> hit, boolean heavy) {
@@ -478,17 +478,18 @@ final class TwinBusterCombat implements Listener {
         Vector start = muzzle.toVector();
         for (Entity entity : world.getNearbyEntities(middle.toLocation(world),
                 length / 2 + 2, length / 2 + 2, length / 2 + 2)) {
-            if (!(entity instanceof Monster monster) || !monster.isValid()
-                    || monster.isDead() || hit.contains(monster.getUniqueId())) continue;
-            Vector center = monster.getLocation().add(0, monster.getHeight() * .52, 0).toVector();
+            if (!(entity instanceof LivingEntity living) || living instanceof Player
+                    || !living.isValid() || living.isDead()
+                    || hit.contains(living.getUniqueId())) continue;
+            Vector center = living.getLocation().add(0, living.getHeight() * .52, 0).toVector();
             Vector fromStart = center.subtract(start);
             double projected = fromStart.dot(direction);
             if (projected < 0 || projected > length) continue;
             Vector closest = direction.clone().multiply(projected);
             if (fromStart.subtract(closest).lengthSquared()
-                    > Math.pow(radius + monster.getWidth() * .5, 2)) continue;
-            hit.add(monster.getUniqueId());
-            monster.damage(damage, shooter);
+                    > Math.pow(radius + living.getWidth() * .5, 2)) continue;
+            hit.add(living.getUniqueId());
+            living.damage(damage, shooter);
         }
     }
 
