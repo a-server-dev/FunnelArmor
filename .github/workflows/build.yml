@@ -205,3 +205,48 @@ jobs:
           fi
           echo "### Direct Minecraft pack URL (HTTP 200; no redirect; hash verified)" >> "$GITHUB_STEP_SUMMARY"
           echo "${url}" >> "$GITHUB_STEP_SUMMARY"
+
+  publish-plugin:
+    needs: build
+    # Make the plugin JAR publicly downloadable without GitHub login.
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tested JAR from this build
+        uses: actions/download-artifact@v4
+        with:
+          name: FunnelArmor-jar
+          path: plugin
+      - name: Publish plugin JAR as a normal latest GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          jar="$(find plugin -maxdepth 1 -name '*.jar' -type f -print -quit)"
+          test -n "$jar" && test -s "$jar"
+          tag="plugin-${GITHUB_SHA}"
+          filename="FunnelArmor-${GITHUB_SHA:0:12}.jar"
+          cp "$jar" "$filename"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "$filename" --clobber
+          else
+            gh release create "$tag" "$filename" \
+              --target "$GITHUB_SHA" \
+              --title "FunnelArmor plugin ${GITHUB_SHA:0:12}" \
+              --notes "Plugin JAR built and tested from commit $GITHUB_SHA. Includes the matching embedded resource pack." \
+              --latest
+          fi
+          url="https://github.com/${GH_REPO}/releases/download/${tag}/${filename}"
+          echo "### Public plugin JAR download" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+          curl --fail --location --retry 5 --retry-delay 2 \
+            --silent --show-error --output downloaded.jar "$url"
+          test "$(sha256sum downloaded.jar | cut -d' ' -f1)" = "$(sha256sum "$filename" | cut -d' ' -f1)" || {
+            echo "::error::Public JAR checksum mismatch"
+            exit 1
+          }
+          echo "Public JAR download verified with matching SHA-256." >> "$GITHUB_STEP_SUMMARY"
