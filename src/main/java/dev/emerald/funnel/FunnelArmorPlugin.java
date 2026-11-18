@@ -1503,6 +1503,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         event.setCancelled(true);
         Player player = event.getPlayer();
         if (player.isSneaking()) {
+            // Prioritize the explicit offhand Qubeley pursuit gesture when both
+            // hands hold controllers. The offhand event may also fire in this
+            // tick, but qubeleyToggleTicks deduplicates it.
+            if (hasQubeleyOffhand(player)) {
+                toggleQubeleyAttack(player);
+                return;
+            }
             if (selectedVariant(player) == 1)
                 changeFinFormation(player, selectedFinFormation(player).next());
             else changeFormation(player, selectedFormation(player)
