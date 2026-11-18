@@ -770,3 +770,11 @@ Fix Twin Buster Rifle left/right muzzle flashes, combined muzzle flash and impac
 - `/funnel gn give [player]` (OP) grants a self-contained GN Sword V. Main hand: **Shift + right click cycles** Sword → Rifle → Buster Sword → Buster Rifle. Right click executes a sword sweep or GN beam. Sword hits support ordinary left-click melee, with separate buster damage and range. All effects are scoped to non-player mobs.
 - Twin Buster Rifle: migrate previously issued warped fungus on a stick controllers into **FEATHER** to avoid vanilla right-hand use animations; the attack swing may still be client-predicted. Keep item PDC and mode. Reduced camera-adjacent FLASH/bright dust/electric sparks. Combined beam retains layered blue/cyan/white particles but now adds spaced `SONIC_BOOM` particles along the beam and at impact. No extra damage from the sonic particle; projectile and cooldown mechanics unchanged.
 - All new resources are packed automatically, and all existing funnel and Aerial models stay untouched. Client resource pack is required; no client mod or downloaded community model.
+
+## v0.10.1 — GN Sword V: complete original model redesign and purple/black missing-model fix
+
+The former GN Buster Rifle used a cube ending at Z=32.1, exceeding Minecraft model coordinate maximum 32. Its item-model reference (`#0`) and source PNG were valid; the **out-of-bounds mesh** was the root cause of the black/magenta model. The redesigned model constrains all cuboids inside the supported [-16,32] limits, and unit tests check these bounds automatically.
+
+All five original GN Sword V shapes were rebuilt with multi-layered titanium blade surfaces, cobalt/indigo mechanical panels, ribbed handles, GN emerald emitters, panel rivets, vents, layered railgun receivers, machining, silver cutting bevels, and physically interlocking six-bit buster arrangements. Source `.bbmodel` files and compiled item models are synchronized and each model has a **dedicated 64×64 hand-authored procedural mechanical material atlas**, instead of the previously flat shared 128×16 swatch strip.
+
+The models preserve their existing item identifiers, Java mechanics, six orbital bits and four attack forms. No community assets or client mods are used. Test the new item forms in Minecraft and request positional tweaks with first/third-person screenshots.

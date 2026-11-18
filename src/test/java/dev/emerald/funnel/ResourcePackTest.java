@@ -88,6 +88,8 @@ class ResourcePackTest {
                     "gn_sword_v_buster_sword","gn_sword_v_buster_rifle","gn_sword_bit")) {
                 assertTrue(entries.contains("assets/funnel/items/" + id + ".json"));
                 assertTrue(entries.contains("assets/funnel/models/item/" + id + ".json"));
+                assertTrue(entries.contains("assets/funnel/textures/item/" + id + ".png"),
+                        id + " must have a separate texture");
             }
         }
     }
@@ -152,12 +154,29 @@ class ResourcePackTest {
                         }
                         if (entry.getName().matches("assets/funnel/models/item/gn_(sword_v_(sword|rifle|buster_sword|buster_rifle)|sword_bit)\\.json")) {
                             String texture = model.getAsJsonObject("textures").get("0").getAsString();
-                            assertEquals("funnel:item/gn_sword_v", texture);
-                            assertTrue(model.getAsJsonArray("elements").size() >= 7);
-                            for (var element : model.getAsJsonArray("elements"))
-                                for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet())
+                            String modelName = entry.getName().substring(
+                                    entry.getName().lastIndexOf('/') + 1,
+                                    entry.getName().length() - 5);
+                            assertEquals("funnel:item/" + modelName, texture);
+                            int minDetail = modelName.contains("buster_") ? 160
+                                    : modelName.equals("gn_sword_bit") ? 50 : 100;
+                            assertTrue(model.getAsJsonArray("elements").size() >= minDetail,
+                                    "GN Sword V models must retain redesigned mechanical detail: " + modelName);
+                            for (var element : model.getAsJsonArray("elements")) {
+                                var cube = element.getAsJsonObject();
+                                var from = cube.getAsJsonArray("from");
+                                var to = cube.getAsJsonArray("to");
+                                for (int axis = 0; axis < 3; axis++) {
+                                    double minimum = from.get(axis).getAsDouble();
+                                    double maximum = to.get(axis).getAsDouble();
+                                    assertTrue(minimum >= -16 && minimum < maximum && maximum <= 32,
+                                            modelName + " invalid cube bound on axis " + axis + ": "
+                                                    + minimum + ".." + maximum);
+                                }
+                                for (var face : cube.getAsJsonObject("faces").entrySet())
                                     assertEquals("#0", face.getValue().getAsJsonObject()
                                             .get("texture").getAsString());
+                            }
                             checked++;
                             zip.closeEntry();
                             continue;
