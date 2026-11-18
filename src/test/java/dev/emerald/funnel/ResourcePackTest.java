@@ -699,6 +699,22 @@ class ResourcePackTest {
                                 referencedModels.add("assets/funnel/models/item/" +
                                         id.substring("funnel:item/".length()) + ".json");
                             }
+                        } else if ("minecraft:select".equals(definition.get("type").getAsString())) {
+                            assertEquals("minecraft:display_context", definition.get("property").getAsString());
+                            for (var pair : definition.getAsJsonArray("cases")) {
+                                var child = pair.getAsJsonObject().getAsJsonObject("model");
+                                assertEquals("minecraft:model", child.get("type").getAsString());
+                                String id = child.get("model").getAsString();
+                                assertTrue(id.startsWith("funnel:item/"), id);
+                                referencedModels.add("assets/funnel/models/item/" +
+                                        id.substring("funnel:item/".length()) + ".json");
+                            }
+                            var fallback = definition.getAsJsonObject("fallback");
+                            assertEquals("minecraft:model", fallback.get("type").getAsString());
+                            String id = fallback.get("model").getAsString();
+                            assertTrue(id.startsWith("funnel:item/"), id);
+                            referencedModels.add("assets/funnel/models/item/" +
+                                    id.substring("funnel:item/".length()) + ".json");
                         } else {
                             assertEquals("minecraft:model", definition.get("type").getAsString());
                             String modelId = definition.get("model").getAsString();
