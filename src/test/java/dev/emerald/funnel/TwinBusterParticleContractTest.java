@@ -19,7 +19,11 @@ class TwinBusterParticleContractTest {
         assertTrue(code.contains("spread, spread, spread, 0, color);"));
         assertEquals(1, code.split("spawnParticle\\(Particle\\.FLASH", -1).length - 1,
                 "Only the color-aware helper may directly spawn FLASH particles");
-        assertEquals(3, code.split("coloredFlash\\(world,", -1).length - 1,
-                "Dual muzzle, combined muzzle and combined impact should all use helper");
+        assertEquals(1, code.split("coloredFlash\\(world,", -1).length - 1,
+                "Muzzle FLASH was deliberately removed; only distant impact may flash");
+        assertTrue(code.contains("world.spawnParticle(Particle.SONIC_BOOM, ring, 1"),
+                "Combined beam should include spaced Warden shockwave rings");
+        assertTrue(code.contains("world.spawnParticle(Particle.SONIC_BOOM, impact, 1"),
+                "Impact should include a Warden shockwave");
     }
 }
