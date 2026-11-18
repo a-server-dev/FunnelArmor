@@ -164,8 +164,8 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(10, checked,
-                    "4 drones + folded fin + quad + controller + 3 barrier arm segments");
+            assertEquals(12, checked,
+                    "10 existing assets + 2 Twin Buster Rifle models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }
