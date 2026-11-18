@@ -194,7 +194,7 @@ class ResourcePackTest {
         assertEquals("minecraft:select", select.get("type").getAsString());
         assertEquals("minecraft:display_context", select.get("property").getAsString());
         assertEquals(2, select.getAsJsonArray("cases").size());
-        assertEquals("funnel:item/twin_buster_rifle_dual",
+        assertEquals("funnel:item/twin_buster_rifle_dual_right",
                 select.getAsJsonArray("cases").get(0).getAsJsonObject()
                         .getAsJsonObject("model").get("model").getAsString());
         assertEquals("funnel:item/twin_buster_rifle_dual_right",

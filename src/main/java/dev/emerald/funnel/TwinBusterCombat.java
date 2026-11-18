@@ -17,7 +17,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.player.PlayerAnimationEvent;
+import io.papermc.paper.event.player.PlayerArmSwingEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -56,8 +61,8 @@ final class TwinBusterCombat implements Listener {
     private final Map<UUID, Long> combinedCooldowns = new HashMap<>();
     private final Map<UUID, Long> leftCooldowns = new HashMap<>();
     private final Map<UUID, Long> rightCooldowns = new HashMap<>();
-    /** Viewers receiving a virtual OFF_HAND rifle; never changes inventories. */
-    private final Map<UUID, Set<UUID>> leftHandViewers = new HashMap<>();
+    /** Client-visible left gun is a temporary server-owned item in the empty offhand. */
+    private final NamespacedKey visualKey;
     private ItemStack virtualLeftRifle;
     private final Map<UUID, Long> modeCooldowns = new HashMap<>();
 
@@ -66,6 +71,7 @@ final class TwinBusterCombat implements Listener {
         weaponKey = new NamespacedKey(plugin, "twin_buster_weapon");
         modeKey = new NamespacedKey(plugin, "twin_buster_mode");
         identityKey = new NamespacedKey(plugin, "twin_buster_identity");
+        visualKey = new NamespacedKey(plugin, "twin_buster_display_only");
     }
 
     void start() {
@@ -74,12 +80,18 @@ final class TwinBusterCombat implements Listener {
         ItemMeta visual = virtualLeftRifle.getItemMeta();
         visual.setUnbreakable(true);
         visual.setItemModel(new NamespacedKey("funnel", "twin_buster_rifle_dual_left"));
+        visual.displayName(Component.text("§7左手ライフル（表示専用）"));
+        visual.getPersistentDataContainer().set(visualKey, PersistentDataType.BYTE, (byte) 1);
         virtualLeftRifle.setItemMeta(visual);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (isVisual(player.getInventory().getItemInOffHand())) removeLeftVisual(player);
+            syncLeftHand(player);
+        }
         Bukkit.getScheduler().runTaskTimer(plugin, this::update, 1L, 1L);
     }
 
     void stop() {
-        clearAllLeftVisuals();
+        for (Player player : Bukkit.getOnlinePlayers()) removeLeftVisual(player);
         charging.clear();
         combinedCooldowns.clear();
         leftCooldowns.clear();
@@ -96,6 +108,26 @@ final class TwinBusterCombat implements Listener {
     private double cfg(String name, double fallback) {
         double value = plugin.getConfig().getDouble("twin-buster." + name, fallback);
         return Double.isFinite(value) && value > 0 ? value : fallback;
+    }
+
+    private boolean isVisual(ItemStack item) {
+        return item != null && item.hasItemMeta() && item.getItemMeta()
+                .getPersistentDataContainer().has(visualKey, PersistentDataType.BYTE);
+    }
+
+    private void removeLeftVisual(Player player) {
+        if (isVisual(player.getInventory().getItemInOffHand()))
+            player.getInventory().setItemInOffHand(null);
+    }
+
+    private void syncLeftHand(Player player) {
+        ItemStack main = player.getInventory().getItemInMainHand();
+        boolean dual = plugin.getConfig().getBoolean("twin-buster.enabled", true)
+                && !player.isDead() && weapon(main) && mode(main) == Mode.DUAL;
+        ItemStack offhand = player.getInventory().getItemInOffHand();
+        if (dual && offhand.getType().isAir())
+            player.getInventory().setItemInOffHand(virtualLeftRifle.clone());
+        else if (!dual) removeLeftVisual(player);
     }
 
     private boolean weapon(ItemStack item) {
@@ -190,25 +222,35 @@ final class TwinBusterCombat implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND ||
-                (event.getAction() != Action.RIGHT_CLICK_AIR
-                 && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        boolean leftClick = event.getAction() == Action.LEFT_CLICK_AIR
+                || event.getAction() == Action.LEFT_CLICK_BLOCK;
+        boolean rightClick = event.getAction() == Action.RIGHT_CLICK_AIR
+                || event.getAction() == Action.RIGHT_CLICK_BLOCK;
+        if (!leftClick && !rightClick) return;
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
         if (!weapon(item)) return;
         event.setCancelled(true);
         if (!plugin.getConfig().getBoolean("twin-buster.enabled", true)) return;
-
         UUID id = player.getUniqueId();
         long now = tick();
+        if (leftClick) {
+            if (mode(item) == Mode.DUAL && !player.isSneaking()
+                    && TwinBusterTiming.ready(now, modeCooldowns.getOrDefault(id, 0L)))
+                shootSide(player, Side.LEFT);
+            return;
+        }
         if (player.isSneaking()) {
             if (!TwinBusterTiming.ready(now, modeCooldowns.getOrDefault(id, 0L))) return;
             charging.remove(id);
+            removeLeftVisual(player);
             Mode next = mode(item) == Mode.DUAL ? Mode.COMBINED : Mode.DUAL;
             ItemMeta meta = item.getItemMeta();
             applyMode(meta, next);
             item.setItemMeta(meta);
             player.getInventory().setItemInMainHand(item);
+            syncLeftHand(player);
             modeCooldowns.put(id, TwinBusterTiming.until(now, cfg("mode-switch-ticks", 10)));
             player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_EXTEND, .6f, 1.25f);
             player.sendActionBar(Component.text(next == Mode.DUAL
@@ -232,9 +274,10 @@ final class TwinBusterCombat implements Listener {
         }
     }
 
-    /** All swing actions including entity hits trigger this. Melee damage is suppressed. */
+    /** Paper reports which arm swung; never re-trigger from the generated left-arm swing. */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
-    public void onSwing(PlayerAnimationEvent event) {
+    public void onSwing(PlayerArmSwingEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) return;
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
         if (!weapon(item) || mode(item) != Mode.DUAL
@@ -261,13 +304,22 @@ final class TwinBusterCombat implements Listener {
         long now = tick();
         if (!TwinBusterTiming.ready(now, cooldowns.getOrDefault(id, 0L))) return false;
         cooldowns.put(id, TwinBusterTiming.until(now, cfg("dual-interval-ticks", 10)));
-        fireDualSide(player, side);
-        return true;
+        try {
+            fireDualSide(player, side);
+            player.sendActionBar(Component.text(side == Side.LEFT
+                    ? "§b左ライフル 発射" : "§b右ライフル 発射"));
+            return true;
+        } catch (RuntimeException ex) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                    "Twin Buster " + side + " firing failed for " + player.getName(), ex);
+            player.sendActionBar(Component.text("§c射撃処理エラー（ログを確認）"));
+            return false;
+        }
     }
 
     private void update() {
         long now = tick();
-        if (now % 8 == 0) synchronizeLeftRifles();
+        if (now % 2 == 0) for (Player player : Bukkit.getOnlinePlayers()) syncLeftHand(player);
         for (UUID id : Set.copyOf(charging.keySet())) {
             Charge charge = charging.get(id);
             if (charge == null) continue;
@@ -278,14 +330,22 @@ final class TwinBusterCombat implements Listener {
                     || mode(player.getInventory().getItemInMainHand()) != Mode.COMBINED
                     || !charge.weaponId().equals(weaponId(player.getInventory().getItemInMainHand()))) {
                 charging.remove(id);
+                if (player != null && player.isOnline())
+                    player.sendActionBar(Component.text("§cチャージ中断：武器が変更されました"));
                 continue;
             }
             int ticks = cfg("charge-ticks", 30);
             if (TwinBusterTiming.charged(now, charge.started(), ticks)) {
                 charging.remove(id);
-                fireCombined(player);
-                combinedCooldowns.put(id, TwinBusterTiming.until(now,
-                        cfg("combined-cooldown-ticks", 200)));
+                try {
+                    fireCombined(player);
+                    combinedCooldowns.put(id, TwinBusterTiming.until(now,
+                            cfg("combined-cooldown-ticks", 200)));
+                } catch (RuntimeException ex) {
+                    plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                            "Twin Buster combined firing failed for " + player.getName(), ex);
+                    player.sendActionBar(Component.text("§c連結射撃エラー（ログを確認）"));
+                }
             } else if (now % 2 == 0) {
                 Location muzzle = player.getEyeLocation().add(
                         player.getEyeLocation().getDirection().multiply(1.2)).add(0, -.28, 0);
@@ -432,61 +492,39 @@ final class TwinBusterCombat implements Listener {
         }
     }
 
-    /** Spoof a left-hand model to nearby observers; never overwrite real offhand inventory. */
-    private void synchronizeLeftRifles() {
-        Set<UUID> tracked = new HashSet<>(leftHandViewers.keySet());
-        for (Player owner : Bukkit.getOnlinePlayers()) {
-            UUID id = owner.getUniqueId();
-            ItemStack mainHand = owner.getInventory().getItemInMainHand();
-            boolean enabled = plugin.getConfig().getBoolean("twin-buster.enabled", true)
-                    && !owner.isDead() && weapon(mainHand) && mode(mainHand) == Mode.DUAL
-                    && owner.getInventory().getItemInOffHand().getType().isAir();
-            if (!enabled) continue;
-            tracked.remove(id);
-            Set<UUID> viewers = leftHandViewers.computeIfAbsent(id, k -> new HashSet<>());
-            Set<UUID> currentlyVisible = new HashSet<>();
-            for (Player observer : Bukkit.getOnlinePlayers()) {
-                // Mainhand first-person model already renders both rifles;
-                // avoid duplicating the left rifle for the local owner.
-                if (observer == owner || !observer.getWorld().equals(owner.getWorld())
-                        || !observer.canSee(owner) ||
-                        observer.getLocation().distanceSquared(owner.getLocation()) > 4096)
-                    continue;
-                observer.sendEquipmentChange(owner, EquipmentSlot.OFF_HAND, virtualLeftRifle);
-                currentlyVisible.add(observer.getUniqueId());
-            }
-            for (UUID past : new HashSet<>(viewers)) {
-                if (currentlyVisible.contains(past)) continue;
-                Player observer = Bukkit.getPlayer(past);
-                if (observer != null && observer.isOnline()) {
-                    observer.sendEquipmentChange(owner, EquipmentSlot.OFF_HAND,
-                            owner.getInventory().getItemInOffHand());
-                }
-            }
-            viewers.clear();
-            viewers.addAll(currentlyVisible);
-        }
-        for (UUID id : tracked) restoreLeftVisual(id);
+    /** Never allow the auto-generated visual item to be moved to other slots. */
+    @EventHandler(ignoreCancelled = false)
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (isVisual(event.getCurrentItem()) || isVisual(event.getCursor())
+                || (event.getClickedInventory() == player.getInventory()
+                    && event.getSlot() == 40
+                    && isVisual(player.getInventory().getItemInOffHand())))
+            event.setCancelled(true);
     }
 
-    private void restoreLeftVisual(UUID ownerId) {
-        Set<UUID> viewers = leftHandViewers.remove(ownerId);
-        if (viewers == null) return;
-        Player owner = Bukkit.getPlayer(ownerId);
-        if (owner == null || !owner.isOnline()) return;
-        ItemStack actual = owner.getInventory().getItemInOffHand();
-        for (UUID viewerId : viewers) {
-            Player viewer = Bukkit.getPlayer(viewerId);
-            if (viewer != null && viewer.isOnline()
-                    && viewer.getWorld().equals(owner.getWorld()))
-                viewer.sendEquipmentChange(owner, EquipmentSlot.OFF_HAND, actual);
-        }
+    @EventHandler(ignoreCancelled = false)
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (isVisual(event.getOldCursor())) event.setCancelled(true);
     }
 
-    private void clearAllLeftVisuals() {
-        for (UUID owner : new ArrayList<>(leftHandViewers.keySet()))
-            restoreLeftVisual(owner);
-        leftHandViewers.clear();
+    @EventHandler(ignoreCancelled = false)
+    public void onSwap(PlayerSwapHandItemsEvent event) {
+        if (isVisual(event.getOffHandItem()) || isVisual(event.getMainHandItem())
+                || isVisual(event.getPlayer().getInventory().getItemInOffHand()))
+            event.setCancelled(true);
+    }
+
+    @EventHandler(ignoreCancelled = false)
+    public void onDrop(PlayerDropItemEvent event) {
+        if (isVisual(event.getItemDrop().getItemStack()))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        removeLeftVisual(event.getPlayer());
+        Bukkit.getScheduler().runTask(plugin, () -> syncLeftHand(event.getPlayer()));
     }
 
     private Vector horizontalRight(Vector dir) {
@@ -497,18 +535,19 @@ final class TwinBusterCombat implements Listener {
 
     @EventHandler public void onQuit(PlayerQuitEvent e) {
         charging.remove(e.getPlayer().getUniqueId());
-        restoreLeftVisual(e.getPlayer().getUniqueId());
+        removeLeftVisual(e.getPlayer());
     }
     @EventHandler public void onWorld(PlayerChangedWorldEvent e) {
         charging.remove(e.getPlayer().getUniqueId());
-        restoreLeftVisual(e.getPlayer().getUniqueId());
+        removeLeftVisual(e.getPlayer());
     }
     @EventHandler public void onDeath(PlayerDeathEvent e) {
         charging.remove(e.getEntity().getUniqueId());
-        restoreLeftVisual(e.getEntity().getUniqueId());
+        e.getDrops().removeIf(this::isVisual);
+        removeLeftVisual(e.getEntity());
     }
     @EventHandler public void onItemSwap(PlayerItemHeldEvent e) {
         charging.remove(e.getPlayer().getUniqueId());
-        restoreLeftVisual(e.getPlayer().getUniqueId());
+        Bukkit.getScheduler().runTask(plugin, () -> syncLeftHand(e.getPlayer()));
     }
 }
