@@ -129,6 +129,18 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
+                        if (entry.getName().matches("assets/funnel/models/item/twin_buster_rifle_(dual|combined)\\.json")) {
+                            String texture = model.getAsJsonObject("textures").get("0").getAsString();
+                            assertEquals("funnel:item/twin_buster_rifle", texture);
+                            boolean combined = entry.getName().contains("_combined");
+                            assertEquals(combined ? 53 : 50, model.getAsJsonArray("elements").size());
+                            for (var element : model.getAsJsonArray("elements"))
+                                for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet())
+                                    assertEquals("#0", face.getValue().getAsJsonObject().get("texture").getAsString());
+                            checked++;
+                            zip.closeEntry();
+                            continue;
+                        }
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
