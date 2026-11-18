@@ -2,7 +2,7 @@
 
 Each of the 11 detached GUND-bit parts remains independently authored. Reference 1 (the user-authored model) guides appearance; reference 3 (Gunpla assembly and loose parts) guides structure. The assembled preview translates those exact 11 geometries, including their rotation pivots.
 
-0.8.37 lowers ONLY native equipped Aerial Escutcheon poses after the v0.8.36 in-game screenshot. Both third-person hands change translation Y from 7 to 5 (idle) and 9 to 7 (guard); first-person hands change Y from 3 to 2 in both states. X/Z, rotations, scales, all 493 geometry cuboids, eleven standalone bits, rear grip, fixed/GUI preview poses, colors, rifle and game behavior remain exactly as v0.8.36. Shield item identifiers and blocking-state selector stay unchanged.
+0.8.38 lowers ONLY native equipped Aerial Escutcheon poses after the v0.8.37 in-game screenshot. Both third-person hands change translation Y from 5 to 3 (idle) and 7 to 5 (guard); first-person hands change Y from 2 to 1 in both states. X/Z, rotations, scales, all 493 geometry cuboids, eleven standalone bits, rear grip, fixed/GUI preview poses and rifle remain unchanged. Shield item identifiers and blocking-state selector stay unchanged.
 
 | Bit | Part | Joined offset x,y,z | Cuboids |
 | --- | --- | --- | --- |
