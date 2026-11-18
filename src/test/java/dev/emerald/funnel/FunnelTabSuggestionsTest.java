@@ -11,7 +11,7 @@ class FunnelTabSuggestionsTest {
 
     @Test void playerGetsRelevantCommandsButNoAdminActions() {
         var result = FunnelTabSuggestions.complete(new String[] {""}, false, true, ONLINE);
-        assertEquals(List.of("aerial", "barrier", "buster", "formation", "gn", "pack", "shield", "status"), result);
+        assertEquals(List.of("aerial", "barrier", "buster", "formation", "gn", "hawk", "pack", "saber", "shield", "status"), result);
         assertEquals(List.of("pack"), FunnelTabSuggestions.complete(new String[]{"Pa"}, false, true, ONLINE));
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"give",""}, false, true, ONLINE));
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"angle","-"}, false, true, ONLINE));
@@ -19,7 +19,7 @@ class FunnelTabSuggestionsTest {
 
     @Test void adminGetsAllSubcommandsAndGiveArguments() {
         var commands = FunnelTabSuggestions.complete(new String[]{""}, true, true, ONLINE);
-        assertTrue(commands.containsAll(List.of("aerial", "buster", "gn", "diagnose", "give", "angle", "pack", "reload", "status", "shield", "formation")));
+        assertTrue(commands.containsAll(List.of("aerial", "buster", "gn", "hawk", "saber", "diagnose", "give", "angle", "pack", "reload", "status", "shield", "formation")));
         assertEquals(List.of("diagnose"),
                 FunnelTabSuggestions.complete(new String[]{"diag"}, true, true, ONLINE));
         assertEquals(List.of(),
@@ -113,8 +113,21 @@ class FunnelTabSuggestionsTest {
                 new String[]{"gn","give","Ea"}, true, true, ONLINE));
     }
 
+    @Test void meleeWeaponCompletionsRestrictGiveToAdmin() {
+        for (String weapon : List.of("saber", "hawk")) {
+            assertEquals(List.of("status"), FunnelTabSuggestions.complete(
+                    new String[]{weapon, ""}, false, true, ONLINE));
+            assertEquals(List.of("give", "status"), FunnelTabSuggestions.complete(
+                    new String[]{weapon, ""}, true, true, ONLINE));
+            assertEquals(List.of("East"), FunnelTabSuggestions.complete(
+                    new String[]{weapon, "give", "ea"}, true, true, ONLINE));
+            assertEquals(List.of(), FunnelTabSuggestions.complete(
+                    new String[]{weapon, "give", ""}, false, true, ONLINE));
+        }
+    }
+
     @Test void consoleOnlyGetsSafeRelevantCompletions() {
-        assertEquals(List.of("aerial","angle","buster","diagnose","give","gn","pack","reload","status"),
+        assertEquals(List.of("aerial","angle","buster","diagnose","give","gn","hawk","pack","reload","saber","status"),
                 FunnelTabSuggestions.complete(new String[]{""}, true, false, ONLINE));
         assertEquals(List.of("Pen4"),
                 FunnelTabSuggestions.complete(new String[]{"pack","pen"}, true, false, ONLINE));

@@ -84,6 +84,17 @@ class ResourcePackTest {
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_escutcheon.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_gunbit_rifle.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/gn_sword_v.png"));
+            for (int i = 0; i <= 4; i++) {
+                String id = "beam_saber_" + i;
+                assertTrue(entries.contains("assets/funnel/items/" + id + ".json"));
+                assertTrue(entries.contains("assets/funnel/models/item/" + id + ".json"));
+            }
+            for (String id : java.util.List.of("heat_hawk_off", "heat_hawk_on")) {
+                assertTrue(entries.contains("assets/funnel/items/" + id + ".json"));
+                assertTrue(entries.contains("assets/funnel/models/item/" + id + ".json"));
+                assertTrue(entries.contains("assets/funnel/textures/item/" + id + ".png"));
+            }
+            assertTrue(entries.contains("assets/funnel/textures/item/beam_saber.png"));
             for (String id : java.util.List.of("gn_sword_v_sword","gn_sword_v_rifle",
                     "gn_sword_v_buster_sword","gn_sword_v_buster_rifle","gn_sword_bit")) {
                 assertTrue(entries.contains("assets/funnel/items/" + id + ".json"));
@@ -212,6 +223,27 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
+                        if (entry.getName().matches("assets/funnel/models/item/(beam_saber_[0-4]|heat_hawk_(off|on))\\.json")) {
+                            String id = entry.getName().substring(entry.getName().lastIndexOf('/') + 1,
+                                    entry.getName().length() - 5);
+                            String expected = id.startsWith("beam_saber_") ? "beam_saber" : id;
+                            assertEquals("funnel:item/" + expected, model.getAsJsonObject("textures").get("0").getAsString());
+                            assertTrue(model.getAsJsonArray("elements").size() >= 25);
+                            for (var element : model.getAsJsonArray("elements")) {
+                                var cube = element.getAsJsonObject();
+                                for (int i = 0; i < 3; i++) {
+                                    double lo = cube.getAsJsonArray("from").get(i).getAsDouble();
+                                    double hi = cube.getAsJsonArray("to").get(i).getAsDouble();
+                                    assertTrue(lo >= -16 && lo < hi && hi <= 32, id + " out of bounds");
+                                }
+                                for (var face : cube.getAsJsonObject("faces").entrySet())
+                                    assertEquals("#0", face.getValue().getAsJsonObject()
+                                            .get("texture").getAsString());
+                            }
+                            checked++;
+                            zip.closeEntry();
+                            continue;
+                        }
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
@@ -235,8 +267,8 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(19, checked,
-                    "10 existing assets + 4 Twin Buster Rifle models + 5 GN Sword V models");
+            assertEquals(26, checked,
+                    "10 existing + 4 Twin Buster + 5 GN Sword V + 5 Saber + 2 Heat Hawk models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }
