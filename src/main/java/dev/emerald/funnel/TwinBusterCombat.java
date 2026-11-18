@@ -16,6 +16,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -122,6 +123,14 @@ final class TwinBusterCombat implements Listener {
 
     private void syncLeftHand(Player player) {
         ItemStack main = player.getInventory().getItemInMainHand();
+        // Warped fungus on a stick triggers vanilla right-hand use animations.
+        // Migrate older plugin-only controllers to an inert FEATHER, preserving metadata.
+        if (weapon(main) && main.getType() == Material.WARPED_FUNGUS_ON_A_STICK) {
+            ItemStack migrated = new ItemStack(Material.FEATHER);
+            migrated.setItemMeta(main.getItemMeta());
+            player.getInventory().setItemInMainHand(migrated);
+            main = migrated;
+        }
         boolean dual = plugin.getConfig().getBoolean("twin-buster.enabled", true)
                 && !player.isDead() && weapon(main) && mode(main) == Mode.DUAL;
         ItemStack offhand = player.getInventory().getItemInOffHand();
@@ -131,7 +140,8 @@ final class TwinBusterCombat implements Listener {
     }
 
     private boolean weapon(ItemStack item) {
-        return item != null && item.getType() == Material.WARPED_FUNGUS_ON_A_STICK
+        return item != null && (item.getType() == Material.FEATHER
+                || item.getType() == Material.WARPED_FUNGUS_ON_A_STICK)
                 && item.hasItemMeta()
                 && item.getItemMeta().getPersistentDataContainer()
                 .has(weaponKey, PersistentDataType.BYTE);
@@ -151,7 +161,7 @@ final class TwinBusterCombat implements Listener {
     }
 
     private ItemStack newWeapon() {
-        ItemStack item = new ItemStack(Material.WARPED_FUNGUS_ON_A_STICK);
+        ItemStack item = new ItemStack(Material.FEATHER);
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(true);
         meta.getPersistentDataContainer().set(weaponKey, PersistentDataType.BYTE, (byte) 1);
@@ -231,6 +241,8 @@ final class TwinBusterCombat implements Listener {
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
         if (!weapon(item)) return;
+        event.setUseItemInHand(Event.Result.DENY);
+        event.setUseInteractedBlock(Event.Result.DENY);
         event.setCancelled(true);
         if (!plugin.getConfig().getBoolean("twin-buster.enabled", true)) return;
         UUID id = player.getUniqueId();
@@ -350,13 +362,12 @@ final class TwinBusterCombat implements Listener {
                 Location muzzle = player.getEyeLocation().add(
                         player.getEyeLocation().getDirection().multiply(1.2)).add(0, -.28, 0);
                 double progress = (double)(now - charge.started()) / ticks;
+                // Reduced light near the player's camera to avoid overbright flicker.
                 player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, muzzle,
-                        5 + (int) (progress * 15), .27 + progress * .19,
-                        .27 + progress * .19, .27 + progress * .19, .05);
-                player.getWorld().spawnParticle(Particle.DUST, muzzle, 9,
-                        .18, .18, .18, 0,
-                        new Particle.DustOptions(Color.fromRGB(168, 246, 255),
-                                (float)(1.5 + progress * .9)));
+                        2 + (int) (progress * 3), .10, .10, .10, .015);
+                player.getWorld().spawnParticle(Particle.DUST, muzzle, 2,
+                        .08, .08, .08, 0,
+                        new Particle.DustOptions(Color.fromRGB(85, 175, 190), 1.15f));
                 if (now % 12 == 0) player.getWorld().playSound(muzzle,
                         Sound.BLOCK_BEACON_AMBIENT, .24f, (float)(.7 + progress * .5));
             }
@@ -375,9 +386,11 @@ final class TwinBusterCombat implements Listener {
         Location muzzle = eye.clone().add(right.multiply(sign * .72))
                 .add(dir.clone().multiply(1.15)).add(0, -.43, 0);
         World world = player.getWorld();
-        coloredFlash(world, muzzle, 1, 0.0, Color.fromRGB(195, 240, 255));
-        world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 12,
-                .18, .18, .18, .09);
+        // Only a small light pulse at the muzzle, not a full-screen white flash.
+        world.spawnParticle(Particle.DUST, muzzle, 2, .06, .06, .06, 0,
+                new Particle.DustOptions(Color.fromRGB(85, 175, 190), 1.15f));
+        world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 3,
+                .10, .10, .10, .015);
         fireBeam(player, muzzle, dir, cfg("dual-range", 30.0), .24,
                 cfg("dual-damage", 1.25), Color.fromRGB(95, 219, 255),
                 new HashSet<>(), false);
@@ -388,10 +401,12 @@ final class TwinBusterCombat implements Listener {
     private void fireCombined(Player player) {
         Location eye = player.getEyeLocation();
         Vector dir = eye.getDirection().normalize();
-        Location muzzle = eye.clone().add(dir.clone().multiply(1.3)).add(0, -.32, 0);
+        // Begin the multi-layer beam ahead of the face so rings do not obscure vision.
+        Location muzzle = eye.clone().add(dir.clone().multiply(2.25)).add(0, -.32, 0);
         World world = player.getWorld();
-        coloredFlash(world, muzzle, 3, .13, Color.fromRGB(235, 250, 255));
-        world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 64, .50, .50, .50, .16);
+        world.spawnParticle(Particle.DUST, muzzle, 4, .12, .12, .12, 0,
+                new Particle.DustOptions(Color.fromRGB(100, 185, 210), 1.15f));
+        world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 8, .20, .20, .20, .025);
         fireBeam(player, muzzle, dir, cfg("combined-range", 48),
                 cfg("combined-radius", 1.20),
                 cfg("combined-damage", 8.0), Color.fromRGB(140, 235, 255),
@@ -420,9 +435,9 @@ final class TwinBusterCombat implements Listener {
         if (up.lengthSquared() < .00001) up = new Vector(0, 1, 0);
         up.normalize();
         double visualRadius = Math.max(1.05, hitRadius * 1.35);
-        Particle.DustOptions white = new Particle.DustOptions(Color.fromRGB(246, 252, 255), 2.2f);
-        Particle.DustOptions blue = new Particle.DustOptions(Color.fromRGB(50, 185, 255), 2.0f);
-        Particle.DustOptions cyan = new Particle.DustOptions(Color.fromRGB(119, 235, 255), 2.5f);
+        Particle.DustOptions white = new Particle.DustOptions(Color.fromRGB(205, 230, 236), 1.35f);
+        Particle.DustOptions blue = new Particle.DustOptions(Color.fromRGB(45, 142, 205), 1.5f);
+        Particle.DustOptions cyan = new Particle.DustOptions(Color.fromRGB(86, 188, 215), 1.65f);
         int budget = Math.max(200, Math.min(4000, cfg("particle-budget", 1800)));
         int used = 0;
         // Multiple concentric rings create volume; the white center is bright.
@@ -455,8 +470,13 @@ final class TwinBusterCombat implements Listener {
                 }
             }
         }
+        // Warden shockwave rings are confined to the distant beam, never the user's eyes.
+        for (double d = 3.0; d <= length; d += 3.2) {
+            Location ring = start.clone().add(direction.clone().multiply(d));
+            world.spawnParticle(Particle.SONIC_BOOM, ring, 1, 0, 0, 0, 0);
+        }
         Location impact = start.clone().add(direction.clone().multiply(length));
-        coloredFlash(world, impact, 1, 0.0, Color.fromRGB(170, 235, 255));
+        world.spawnParticle(Particle.SONIC_BOOM, impact, 1, 0, 0, 0, 0);
         world.spawnParticle(Particle.END_ROD, impact, 25, 1.0, 1.0, 1.0, .08);
         world.spawnParticle(Particle.ELECTRIC_SPARK, impact, 50, .9, .9, .9, .12);
         if (impacted) {

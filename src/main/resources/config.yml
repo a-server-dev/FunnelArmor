@@ -146,3 +146,20 @@ twin-buster:
   charge-ticks: 30
   combined-cooldown-ticks: 200
   mode-switch-ticks: 10
+
+# Original GN Sword V: 6 detachable GN Sword Bits, 4 interchangeable forms.
+gn-sword-v:
+  enabled: true
+  switch-ticks: 12
+  attack-cooldown-ticks: 16
+  buster-cooldown-ticks: 45
+  melee-damage: 5.0
+  buster-melee-damage: 9.0
+  slash-range: 3.5
+  buster-slash-range: 6.0
+  slash-damage: 5.0
+  buster-slash-damage: 10.0
+  rifle-range: 28.0
+  buster-rifle-range: 44.0
+  rifle-damage: 3.5
+  buster-rifle-damage: 9.0

@@ -763,3 +763,10 @@ Use Paper PlayerArmSwingEvent, checking getHand()==HAND, to ignore the left-arm 
 ## v0.9.3 — Paper 26.3 FLASH particle compatibility
 
 Fix Twin Buster Rifle left/right muzzle flashes, combined muzzle flash and impact flash. `Particle.FLASH` requires a Bukkit `Color` data parameter on Paper 26.3, so a shared `coloredFlash` helper now explicitly supplies it. Previously the missing color threw an `IllegalArgumentException` before the beam/damage logic could run. Left/right firing, combined charge, cooldowns, damage, shape and resource-pack models remain otherwise unchanged.
+
+## v0.10.0 — GN Sword V and restrained Twin Buster Rifle effects
+
+- New original GN Sword V with **four item models and editable .bbmodel files**: sword, rifle, Buster Sword and Buster Rifle. Six individually modeled GN Sword Bits orbit while separated; they are folded into the buster weapon geometry in both buster modes.
+- `/funnel gn give [player]` (OP) grants a self-contained GN Sword V. Main hand: **Shift + right click cycles** Sword → Rifle → Buster Sword → Buster Rifle. Right click executes a sword sweep or GN beam. Sword hits support ordinary left-click melee, with separate buster damage and range. All effects are scoped to non-player mobs.
+- Twin Buster Rifle: migrate previously issued warped fungus on a stick controllers into **FEATHER** to avoid vanilla right-hand use animations; the attack swing may still be client-predicted. Keep item PDC and mode. Reduced camera-adjacent FLASH/bright dust/electric sparks. Combined beam retains layered blue/cyan/white particles but now adds spaced `SONIC_BOOM` particles along the beam and at impact. No extra damage from the sonic particle; projectile and cooldown mechanics unchanged.
+- All new resources are packed automatically, and all existing funnel and Aerial models stay untouched. Client resource pack is required; no client mod or downloaded community model.

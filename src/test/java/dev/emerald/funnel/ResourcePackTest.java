@@ -83,6 +83,12 @@ class ResourcePackTest {
                     "Deprecated BetterModel overlay must not be in the vanilla resource pack");
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_escutcheon.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_gunbit_rifle.png"));
+            assertTrue(entries.contains("assets/funnel/textures/item/gn_sword_v.png"));
+            for (String id : java.util.List.of("gn_sword_v_sword","gn_sword_v_rifle",
+                    "gn_sword_v_buster_sword","gn_sword_v_buster_rifle","gn_sword_bit")) {
+                assertTrue(entries.contains("assets/funnel/items/" + id + ".json"));
+                assertTrue(entries.contains("assets/funnel/models/item/" + id + ".json"));
+            }
         }
     }
 
@@ -144,6 +150,18 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
+                        if (entry.getName().matches("assets/funnel/models/item/gn_(sword_v_(sword|rifle|buster_sword|buster_rifle)|sword_bit)\\.json")) {
+                            String texture = model.getAsJsonObject("textures").get("0").getAsString();
+                            assertEquals("funnel:item/gn_sword_v", texture);
+                            assertTrue(model.getAsJsonArray("elements").size() >= 7);
+                            for (var element : model.getAsJsonArray("elements"))
+                                for (var face : element.getAsJsonObject().getAsJsonObject("faces").entrySet())
+                                    assertEquals("#0", face.getValue().getAsJsonObject()
+                                            .get("texture").getAsString());
+                            checked++;
+                            zip.closeEntry();
+                            continue;
+                        }
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
@@ -167,8 +185,8 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(14, checked,
-                    "10 existing assets + 4 Twin Buster Rifle models");
+            assertEquals(19, checked,
+                    "10 existing assets + 4 Twin Buster Rifle models + 5 GN Sword V models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }

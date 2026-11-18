@@ -1,0 +1,394 @@
+package dev.emerald.funnel;
+
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.logging.Level;
+
+/**
+ * Separate Paper-only GN Sword V weapon. Six orbiting GN Sword Bits fold into
+ * the Buster Sword / Buster Rifle form. Requires only the bundled resource pack.
+ */
+final class GnSwordCombat implements Listener {
+    enum Mode {
+        SWORD("sword", "GNソードV"),
+        RIFLE("rifle", "GNソードV・ライフル"),
+        BUSTER_SWORD("buster_sword", "GNバスターソード"),
+        BUSTER_RIFLE("buster_rifle", "GNバスターライフル");
+
+        final String key;
+        final String name;
+        Mode(String key, String name) { this.key = key; this.name = name; }
+        Mode next() { return values()[(ordinal() + 1) % values().length]; }
+        boolean combined() { return this == BUSTER_SWORD || this == BUSTER_RIFLE; }
+        boolean sword() { return this == SWORD || this == BUSTER_SWORD; }
+        static Mode parse(String key) {
+            for (Mode mode : values()) if (mode.key.equals(key)) return mode;
+            return SWORD;
+        }
+    }
+
+    private final JavaPlugin plugin;
+    private final NamespacedKey weaponKey;
+    private final NamespacedKey modeKey;
+    private final NamespacedKey bitMarker;
+    private final Map<UUID, Long> actionCooldown = new HashMap<>();
+    private final Map<UUID, Long> modeCooldown = new HashMap<>();
+    private final Map<UUID, List<ItemDisplay>> bits = new HashMap<>();
+    private final Set<UUID> internalDamage = new HashSet<>();
+    private ItemStack bitItem;
+
+    GnSwordCombat(JavaPlugin plugin) {
+        this.plugin = plugin;
+        weaponKey = new NamespacedKey(plugin, "gn_sword_v_weapon");
+        modeKey = new NamespacedKey(plugin, "gn_sword_v_mode");
+        bitMarker = new NamespacedKey(plugin, "gn_sword_v_display");
+    }
+
+    void start() {
+        bitItem = new ItemStack(Material.FEATHER);
+        ItemMeta meta = bitItem.getItemMeta();
+        meta.setUnbreakable(true);
+        meta.setItemModel(new NamespacedKey("funnel", "gn_sword_bit"));
+        bitItem.setItemMeta(meta);
+        for (World world : Bukkit.getWorlds()) {
+            for (ItemDisplay display : world.getEntitiesByClass(ItemDisplay.class)) {
+                if (display.getPersistentDataContainer().has(bitMarker, PersistentDataType.BYTE))
+                    display.remove();
+            }
+        }
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 2L, 2L);
+    }
+
+    void stop() {
+        for (UUID owner : new ArrayList<>(bits.keySet())) clearBits(owner);
+        actionCooldown.clear();
+        modeCooldown.clear();
+        internalDamage.clear();
+    }
+
+    private long now() { return Bukkit.getCurrentTick(); }
+
+    private double value(String key, double fallback) {
+        double v = plugin.getConfig().getDouble("gn-sword-v." + key, fallback);
+        return Double.isFinite(v) && v > 0 ? v : fallback;
+    }
+    private int interval(String key, int fallback) {
+        return Math.max(1, plugin.getConfig().getInt("gn-sword-v." + key, fallback));
+    }
+    private boolean enabled() { return plugin.getConfig().getBoolean("gn-sword-v.enabled", true); }
+
+    private boolean owns(ItemStack item) {
+        return item != null && item.getType() == Material.FEATHER && item.hasItemMeta()
+                && item.getItemMeta().getPersistentDataContainer()
+                .has(weaponKey, PersistentDataType.BYTE);
+    }
+    private Mode mode(ItemStack item) {
+        if (!owns(item)) return Mode.SWORD;
+        return Mode.parse(item.getItemMeta().getPersistentDataContainer()
+                .get(modeKey, PersistentDataType.STRING));
+    }
+
+    private void apply(ItemMeta meta, Mode mode) {
+        meta.setItemModel(new NamespacedKey("funnel", "gn_sword_v_" + mode.key));
+        meta.getPersistentDataContainer().set(modeKey, PersistentDataType.STRING, mode.key);
+        meta.displayName(Component.text("§b" + mode.name));
+        meta.setUnbreakable(true);
+        meta.lore(List.of(
+                Component.text("§7右クリック: " + (mode.sword() ? "前方斬撃" : "GNビーム射撃")),
+                Component.text("§7しゃがみ＋右クリック: 次の形態"),
+                Component.text("§7通常形態: GNソードビット6基を背後に展開"),
+                Component.text("§7バスター形態: 6基合体・威力強化")));
+    }
+
+    private ItemStack swordItem() {
+        ItemStack sword = new ItemStack(Material.FEATHER);
+        ItemMeta meta = sword.getItemMeta();
+        meta.getPersistentDataContainer().set(weaponKey, PersistentDataType.BYTE, (byte) 1);
+        apply(meta, Mode.SWORD);
+        sword.setItemMeta(meta);
+        return sword;
+    }
+
+    boolean command(CommandSender sender, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("give")) {
+            if (!sender.hasPermission("funnel.admin")) {
+                sender.sendMessage("§c権限がありません。");
+                return true;
+            }
+            Player target = args.length >= 3
+                    ? Bukkit.getPlayerExact(args[2])
+                    : sender instanceof Player player ? player : null;
+            if (target == null) {
+                sender.sendMessage("§c対象プレイヤーが見つかりません。");
+                return true;
+            }
+            target.getInventory().addItem(swordItem()).values().forEach(item ->
+                    target.getWorld().dropItemNaturally(target.getLocation(), item));
+            sender.sendMessage("§a" + target.getName() + " にGNソードVを配布しました。");
+            return true;
+        }
+        if (args.length >= 2 && args[1].equalsIgnoreCase("status")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§cプレイヤー専用です。");
+            } else {
+                ItemStack held = player.getInventory().getItemInMainHand();
+                sender.sendMessage(owns(held) ? "§bGNソードV: §f" + mode(held).name
+                        + " §7/ ビット " + (mode(held).combined() ? "合体" : "分離")
+                        + " §7/ 残り冷却 " + Math.max(0,
+                        (actionCooldown.getOrDefault(player.getUniqueId(), 0L) - now() + 19) / 20) + "秒"
+                        : "§7GNソードVをメインハンドに持ってください。");
+            }
+            return true;
+        }
+        sender.sendMessage("§b/funnel gn give [player] §7| §b/funnel gn status");
+        return true;
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onUse(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND
+                || (event.getAction() != Action.RIGHT_CLICK_AIR
+                && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
+        Player player = event.getPlayer();
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (!owns(held)) return;
+        event.setUseItemInHand(Event.Result.DENY);
+        event.setUseInteractedBlock(Event.Result.DENY);
+        event.setCancelled(true);
+        if (!enabled()) return;
+        UUID id = player.getUniqueId();
+        long time = now();
+        if (player.isSneaking()) {
+            if (time < modeCooldown.getOrDefault(id, 0L)) return;
+            Mode next = mode(held).next();
+            ItemMeta meta = held.getItemMeta();
+            apply(meta, next);
+            held.setItemMeta(meta);
+            player.getInventory().setItemInMainHand(held);
+            modeCooldown.put(id, time + interval("switch-ticks", 12));
+            // Old attached bits are discarded; next tick spawns the required formation.
+            clearBits(id);
+            if (next.combined()) {
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_EXTEND, .65f, .75f);
+                player.getWorld().spawnParticle(Particle.END_ROD,
+                        player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(1.0)),
+                        12, .25, .28, .25, .03);
+            } else {
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_CONTRACT, .5f, 1.3f);
+            }
+            player.sendActionBar(Component.text("§bGNソードV: " + next.name));
+            return;
+        }
+        if (time < actionCooldown.getOrDefault(id, 0L)
+                || time < modeCooldown.getOrDefault(id, 0L)) return;
+        Mode current = mode(held);
+        long end = time + interval(current.combined() ? "buster-cooldown-ticks" : "attack-cooldown-ticks",
+                current.combined() ? 45 : 16);
+        try {
+            if (current.sword()) slash(player, current);
+            else fire(player, current);
+            actionCooldown.put(id, end);
+        } catch (RuntimeException ex) {
+            plugin.getLogger().log(Level.SEVERE, "GN Sword V attack failed for " + player.getName(), ex);
+            player.sendActionBar(Component.text("§cGNソードV攻撃エラー（コンソールを確認）"));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
+    public void onMelee(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player player)
+                || !owns(player.getInventory().getItemInMainHand())) return;
+        if (internalDamage.contains(player.getUniqueId())) return;
+        if (!(event.getEntity() instanceof Mob)) {
+            event.setCancelled(true); // The custom sword cannot be used for PVP.
+            return;
+        }
+        Mode mode = mode(player.getInventory().getItemInMainHand());
+        if (mode.sword()) event.setDamage(value(mode.combined() ? "buster-melee-damage" : "melee-damage",
+                mode.combined() ? 9.0 : 5.0));
+        else event.setCancelled(true);
+    }
+
+    private void slash(Player player, Mode mode) {
+        World world = player.getWorld();
+        Location eye = player.getEyeLocation();
+        Vector direction = eye.getDirection().normalize();
+        double range = value(mode.combined() ? "buster-slash-range" : "slash-range",
+                mode.combined() ? 6.0 : 3.5);
+        double damage = value(mode.combined() ? "buster-slash-damage" : "slash-damage",
+                mode.combined() ? 10.0 : 5.0);
+        Particle.DustOptions green = new Particle.DustOptions(
+                Color.fromRGB(93, 225, 200), mode.combined() ? 1.8f : 1.1f);
+        Vector right = new Vector(-direction.getZ(), 0, direction.getX());
+        if (right.lengthSquared() < 1.0e-4) right = new Vector(1, 0, 0);
+        right.normalize();
+        for (int i = 0; i <= 16; i++) {
+            double a = -1.15 + i * (2.3 / 16);
+            Vector slashDirection = direction.clone().multiply(Math.cos(a))
+                    .add(right.clone().multiply(Math.sin(a)));
+            for (double length = 1.0; length <= range; length += .65) {
+                Location point = eye.clone().add(slashDirection.clone().multiply(length));
+                world.spawnParticle(Particle.DUST, point, 1, 0, 0, 0, 0, green);
+            }
+        }
+        for (Entity entity : world.getNearbyEntities(eye, range + 1, range + 1, range + 1)) {
+            if (!(entity instanceof Mob mob) || !mob.isValid() || mob.isDead()) continue;
+            Vector delta = mob.getLocation().add(0, mob.getHeight() * .5, 0)
+                    .toVector().subtract(eye.toVector());
+            double distance = delta.length();
+            if (distance > range + mob.getWidth() / 2.0 || distance < .01) continue;
+            if (direction.dot(delta.normalize()) < .4) continue;
+            RayTraceResult barrier = world.rayTraceBlocks(eye, delta, distance,
+                    FluidCollisionMode.NEVER, true);
+            if (barrier != null) continue;
+            internalDamage.add(player.getUniqueId());
+            try { mob.damage(damage, player); }
+            finally { internalDamage.remove(player.getUniqueId()); }
+        }
+        player.swingMainHand();
+        world.playSound(player.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP,
+                .8f, mode.combined() ? .75f : 1.2f);
+    }
+
+    private void fire(Player player, Mode mode) {
+        World world = player.getWorld();
+        Location start = player.getEyeLocation().add(
+                player.getEyeLocation().getDirection().multiply(1.15)).add(0, -.24, 0);
+        Vector direction = player.getEyeLocation().getDirection().normalize();
+        double max = value(mode.combined() ? "buster-rifle-range" : "rifle-range",
+                mode.combined() ? 44.0 : 28.0);
+        RayTraceResult wall = world.rayTraceBlocks(start, direction, max,
+                FluidCollisionMode.NEVER, true);
+        double length = wall == null ? max
+                : Math.min(max, wall.getHitPosition().distance(start.toVector()));
+        double damage = value(mode.combined() ? "buster-rifle-damage" : "rifle-damage",
+                mode.combined() ? 9.0 : 3.5);
+        RayTraceResult entity = world.rayTraceEntities(start, direction, length,
+                mode.combined() ? .8 : .3, candidate -> candidate instanceof Mob
+                        && candidate.isValid() && !candidate.isDead());
+        if (entity != null && entity.getHitEntity() instanceof Mob mob) {
+            internalDamage.add(player.getUniqueId());
+            try { mob.damage(damage, player); }
+            finally { internalDamage.remove(player.getUniqueId()); }
+        }
+        var particle = new Particle.DustOptions(Color.fromRGB(65, 213, 182),
+                mode.combined() ? 1.9f : 1.2f);
+        for (double distance = 0; distance < length; distance += mode.combined() ? .6 : .40) {
+            Location at = start.clone().add(direction.clone().multiply(distance));
+            world.spawnParticle(Particle.DUST, at, mode.combined() ? 3 : 1,
+                    mode.combined() ? .27 : .03,
+                    mode.combined() ? .27 : .03,
+                    mode.combined() ? .27 : .03, 0, particle);
+            if (mode.combined() && distance >= 3 && ((int)(distance * 10)) % 40 < 6)
+                world.spawnParticle(Particle.END_ROD, at, 1, .09, .09, .09, .01);
+        }
+        Location impact = start.clone().add(direction.clone().multiply(length));
+        world.spawnParticle(Particle.ELECTRIC_SPARK, impact, 8, .2, .2, .2, .04);
+        world.playSound(player.getLocation(), Sound.ENTITY_GUARDIAN_ATTACK, .8f,
+                mode.combined() ? .63f : 1.35f);
+    }
+
+    private void tick() {
+        if (!enabled()) {
+            for (UUID owner : new ArrayList<>(bits.keySet())) clearBits(owner);
+            return;
+        }
+        for (UUID owner : new ArrayList<>(bits.keySet())) {
+            Player player = Bukkit.getPlayer(owner);
+            if (player == null || !player.isOnline() || player.isDead()
+                    || !owns(player.getInventory().getItemInMainHand())
+                    || mode(player.getInventory().getItemInMainHand()).combined()) {
+                clearBits(owner);
+            }
+        }
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.isDead() || !owns(player.getInventory().getItemInMainHand())
+                    || mode(player.getInventory().getItemInMainHand()).combined()) continue;
+            UUID owner = player.getUniqueId();
+            List<ItemDisplay> active = bits.get(owner);
+            if (active == null || active.size() != 6 || active.stream().anyMatch(d -> !d.isValid())) {
+                clearBits(owner);
+                active = new ArrayList<>();
+                for (int index = 0; index < 6; index++) {
+                    ItemDisplay display = player.getWorld().spawn(player.getLocation(),
+                            ItemDisplay.class, d -> {
+                                d.setItemStack(bitItem);
+                                d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                                d.setTeleportDuration(2);
+                                d.setPersistent(false);
+                                d.getPersistentDataContainer().set(bitMarker, PersistentDataType.BYTE,
+                                        (byte) 1);
+                            });
+                    active.add(display);
+                }
+                bits.put(owner, active);
+            }
+            double yaw = Math.toRadians(player.getLocation().getYaw());
+            double t = now() * .045;
+            for (int i = 0; i < active.size(); i++) {
+                double angle = t + (i * Math.PI * 2 / 6);
+                double x = Math.cos(angle) * .85;
+                double z = Math.sin(angle) * .85;
+                double backX = -Math.sin(yaw) * -.75;
+                double backZ = Math.cos(yaw) * -.75;
+                Location pos = player.getLocation().clone().add(x + backX,
+                        1.48 + .17 * Math.sin(t * 1.6 + i), z + backZ);
+                pos.setYaw(player.getLocation().getYaw() + (float)Math.toDegrees(angle));
+                pos.setPitch(0);
+                active.get(i).teleport(pos);
+            }
+        }
+    }
+
+    private void clearBits(UUID owner) {
+        List<ItemDisplay> displays = bits.remove(owner);
+        if (displays != null) for (ItemDisplay display : displays)
+            if (display.isValid()) display.remove();
+    }
+
+    @EventHandler public void onQuit(PlayerQuitEvent event) { clearBits(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onWorldChange(PlayerChangedWorldEvent event) { clearBits(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onHeld(PlayerItemHeldEvent event) { clearBits(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onDeath(PlayerDeathEvent event) { clearBits(event.getEntity().getUniqueId()); }
+}
