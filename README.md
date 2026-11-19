@@ -814,3 +814,21 @@ This release changes **only the GN Buster Sword model**, both Heat Hawk models a
 - The secondary GN Sword is rendered as an ephemeral `ItemDisplay` with its existing PDC cleanup marker, never as a physical inventory/offhand item. Its previous vector offset placed it on the **player's right** side, where it could overlap the actual main-hand sword. The corrected offset is on the **left** side, relative to the player's body yaw.
 - The helper now uses the resource-pack model's `thirdperson_lefthand` transform (which already incorporates the approved -90° X rotation) instead of `fixed`; remove the duplicate -90° pitch applied to its world entity. The pair is intended to point along the same blade orientation.
 - No GN sword cuboids, BBModels, texture files, item IDs, attack modes, cooldowns, actual offhand inventory contents, or other weapon systems change. Automated regression checks lock the left-side placement and prevent double rotation. Check the third-person F5 pose in Minecraft after updating JAR and resource pack; client-side rendering cannot be verified by unit tests.
+
+## v0.12.2 — GN dual-wield world pose / sleek twin-prong Buster Rifle
+
+- The second GN Sword is an ephemeral world-space `FIXED` ItemDisplay, not a native
+  third-person hand transform applied to a free entity. It follows the player's
+  **left** side with a forward grip anchor and a level pitch; its fixed preview
+  scale is reduced. The physical offhand inventory is never touched.
+- GN Buster Rifle is reshaped in **both** the original editable BBModel and packed
+  item JSON: the receiver is compressed across X/Y, the rear stock shortened,
+  and the two separated emerald prongs lengthened in proportion, with matching
+  stepped tapered green tips. Decorative fittings and UVs remain synchronized.
+- GN Buster Rifle first-/third-person hand transformations use an 85-degree
+  forward-carry X rotation and a reduced scale instead of the previous massive
+  vertical stance. Inventory appearance stays independent.
+- No GN Buster Sword shape, other approved model, shooting damage/cooldown, or
+  combat behavior is changed. Regression tests check left-hand display and
+  source/pack cuboid parity. Real F5 and first-person screenshots are still
+  required before visually approving the new pose.

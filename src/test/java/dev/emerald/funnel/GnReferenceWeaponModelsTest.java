@@ -100,17 +100,59 @@ class GnReferenceWeaponModelsTest {
     @Test void leftSwordDisplayNeverWritesToActualOffhandSlot() throws Exception {
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GnSwordCombat.java"));
         assertTrue(code.contains("updateLeftSword(player)"),"Dual GN Sword must render in-game");
-        assertTrue(code.contains("setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND)"),
-                "Left sword must use the native left-hand model orientation, not the fixed preview pose");
+        assertTrue(code.contains("setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED)"),
+                "Left world display must use FIXED to avoid duplicate native hand transforms");
         assertTrue(code.contains("new Vector(facing.getZ(), 0, -facing.getX())"),
                 "Left sword must be placed on the player's left, not their right");
-        assertTrue(code.contains("add(left.multiply(0.54))"),
-                "Left-handed offset must be applied to the helper display");
-        assertFalse(code.contains("setPitch(-90.0f +"),
-                "Do not double-rotate the sword on top of its -90 degree item transform");
+        assertTrue(code.contains("add(left.multiply(0.43))"),
+                "Secondary GN Sword must align beside the player's left arm");
+        assertTrue(code.contains("add(facing.multiply(0.67))"),
+                "World display must align the rear grip beside the hand");
+        assertTrue(code.contains("leftHand.setPitch(0.0f)"),
+                "World display must not tip a long sword into a vertical pose");
+        assertFalse(code.contains("ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND"),
+                "Never apply hand-attached item transforms to free floating sword");
+        assertFalse(code.contains("setItemInOffHand("),
+                "Do not overwrite user's real offhand inventory");
         assertTrue(code.contains("dualVisualMarker"),"Left-hand display needs cleanup marker");
         assertTrue(code.contains("clearLeftSword(owner)"),"Visual displays must be removed on transitions");
         assertTrue(code.contains("setPersistent(false)"),"Visual helper must not persist as an entity");
         assertFalse(code.contains("setItemInOffHand("),"Do not overwrite user's offhand inventory");
     }
+    @Test void gnBusterRifleIsSlenderHorizontalWithRealTaperedTwinBlades() throws Exception {
+        Map<String,byte[]> zip=pack();
+        JsonObject model=model(zip,"gn_sword_v_buster_rifle");
+        JsonArray elems=model.getAsJsonArray("elements");
+        assertTrue(elems.size()>=181,"Eight articulated emerald tips must be included");
+        double minX=Double.POSITIVE_INFINITY,maxX=Double.NEGATIVE_INFINITY;
+        double minY=Double.POSITIVE_INFINITY,maxY=Double.NEGATIVE_INFINITY;
+        int longLeft=0,longRight=0;
+        for(var item:elems){
+            JsonObject e=item.getAsJsonObject();
+            minX=Math.min(minX,get(e,"from",0));
+            maxX=Math.max(maxX,get(e,"to",0));
+            minY=Math.min(minY,get(e,"from",1));
+            maxY=Math.max(maxY,get(e,"to",1));
+            if(get(e,"from",2)>=27.9 && get(e,"to",2)>31.65) {
+                if(get(e,"to",0)<7)longLeft++;
+                if(get(e,"from",0)>9)longRight++;
+            }
+        }
+        assertTrue(maxX-minX<9,"Receiver should not look like a wide shield");
+        assertTrue(maxY-minY<9,"Receiver should be vertically slim");
+        assertTrue(longLeft>=1&&longRight>=1,"Both emerald prongs must reach the far tip");
+        JsonObject display=model.getAsJsonObject("display");
+        for(String hand:new String[]{"firstperson_righthand","firstperson_lefthand",
+                "thirdperson_righthand","thirdperson_lefthand"}){
+            JsonObject pose=display.getAsJsonObject(hand);
+            assertEquals(85,pose.getAsJsonArray("rotation").get(0).getAsInt(),
+                    "Barrel must be posed as a forward gun instead of dangling vertically");
+            assertTrue(pose.getAsJsonArray("scale").get(0).getAsDouble()<1.0,
+                    "Large gun must not engulf the character");
+        }
+        JsonObject source=JsonParser.parseString(Files.readString(
+                Path.of("models/gn_sword_v_buster_rifle.bbmodel"))).getAsJsonObject();
+        assertEquals(elems.size(),source.getAsJsonArray("elements").size());
+    }
+
 }

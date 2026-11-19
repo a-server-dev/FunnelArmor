@@ -418,7 +418,9 @@ final class GnSwordCombat implements Listener {
             clearLeftSword(owner);
             display = player.getWorld().spawn(player.getLocation(), ItemDisplay.class, d -> {
                 d.setItemStack(leftSwordItem);
-                d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
+                // Render the same weapon in its world-forward orientation, instead of
+                // reapplying an in-hand pose to a free-floating ItemDisplay.
+                d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
                 d.setTeleportDuration(2);
                 d.setPersistent(false);
                 d.getPersistentDataContainer().set(dualVisualMarker, PersistentDataType.BYTE, (byte) 1);
@@ -432,13 +434,16 @@ final class GnSwordCombat implements Listener {
         // Facing-right is (-z, 0, x); negate it to anchor on the *left* arm.
         // The previous positive-right offset put both swords on the same side.
         Vector left = new Vector(facing.getZ(), 0, -facing.getX());
+        // Grip lies behind the model pivot; move the fixed display forward
+        // to put the handle, not the midpoint of the blade, beside the hand.
         Location leftHand = base.clone()
-                .add(left.multiply(0.54)).add(facing.multiply(0.33))
-                .add(0, 1.11, 0);
+                .add(left.multiply(0.43)).add(facing.multiply(0.67))
+                .add(0, 1.12, 0);
+        // Model FIXED is already flipped 180° around Y, so the player yaw
+        // plus 180° points the long GN blade forwards in world space.
+        // Do not copy the player's look pitch into a world-space display.
         leftHand.setYaw(base.getYaw() + 180.0f);
-        // The left-hand item transform already supplies the sword's -90° X
-        // rotation. Applying another -90° to the entity doubled the rotation.
-        leftHand.setPitch(Math.max(-22.0f, Math.min(22.0f, base.getPitch() * 0.4f)));
+        leftHand.setPitch(0.0f);
         display.teleport(leftHand);
     }
 
