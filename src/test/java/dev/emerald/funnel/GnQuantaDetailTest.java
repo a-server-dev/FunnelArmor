@@ -30,9 +30,9 @@ class GnQuantaDetailTest {
                 case "sword" -> 170;
                 case "rifle" -> 240;
                 case "buster_sword" -> 580;
-                default -> 525;
+                default -> 320;
             };
-            assertTrue(elements.size()>=min,mode+" should have layered editable armour details");
+            assertTrue(elements.size()>=min,mode+" must retain substantive layers without meaningless duplicate cubes");
             assertEquals(elements.size(),packed.getAsJsonArray("elements").size());
             for(int i=0;i<elements.size();i++) {
                 JsonObject cube=elements.get(i).getAsJsonObject();

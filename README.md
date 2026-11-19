@@ -967,3 +967,30 @@ This iteration prioritizes coherent silhouette over raw cube count:
 Autotests verify geometry, proportions, asset identity and mirroring. They
 cannot verify visual fidelity in Minecraft: inspect each weapon in F5
 view and assess its actual grip against the hand.
+
+## v0.13.4 — silhouette-centered GN Sword V and Buster Rifle rebuild
+
+In response to the Nov. 19 Minecraft screenshots, this update changes
+the **actual editable .bbmodel geometries and item JSON**, not screenshots.
+
+- GN Sword V: one sword with a dark hand grip near the back, a distinct
+  dark internal frame, sculpted WHITE armor and prominent BLUE asymmetric
+  top/side carapace. A broad GREEN blade leaves the housing as a real,
+  independently tapered edge from z=19.22 to z=31.99 (not an iron slab).
+  The source now has 232 purposeful mesh cuboids.
+- GN Buster Rifle: rebuild from 778 layered cuboids to 356 separate
+  receiver/armour/energy components. The two emerald tips each have a
+  20-section sharply tapered outer cutting edge, with a distinct blue
+  Sword Bit hood over their proximal regions, white mechanical rim,
+  dark inner mounting chassis and genuinely separated prongs.
+  The blue armour stops before the long, narrow green tips.
+- Grip origins and third-person hand poses were kept attached to the
+  weapon, not the green cutting edges. The equipped weapon, PDC tags,
+  transformations, all Sword Bits and combat logic remain intact.
+- GN Sword II / GN Sword V Rifle / GN Buster Sword untouched. The
+  previous symmetric Buster Sword design is preserved.
+- The built-in texture atlas is unchanged. Colors still use the existing
+  custom PNG palettes, without modifying community assets.
+- The target illustrations use smooth light and translucent materials
+  that a simple Minecraft item model cannot reproduce perfectly; live
+  gameplay F5 inspection is still necessary for a final visual check.
