@@ -938,3 +938,32 @@ Automated checks cover geometry parity, bounds and preserved
 symmetry, but **cannot certify pixel-for-pixel likeness to an image**.
 After installing the new JAR, refresh the resource pack and capture
 front/side/first-person poses for physical grip alignment checks.
+
+## v0.13.3 — silhouette-first GN Sword V revision
+
+Feedback on the prior F5 screenshots showed that hundreds of small
+cuboids still made the GN Sword V resemble an iron or a rectangular slab.
+This iteration prioritizes coherent silhouette over raw cube count:
+
+- The **single GN Sword V** has been rebuilt rather than decorated.
+  Its 348 previously overlapping cuboids are replaced by 206 carefully
+  grouped details: a compact rear blue/dark grip, recessed mechanical
+  chassis, stepped asymmetric white/cobalt panels, a visible green
+  condenser, and one broad green crystal edge narrowing into a point.
+- The **GN Sword V Rifle** now has a shorter physical handle, shorter
+  box-like front barrel pieces, reduced white shell width and stronger
+  exposed cobalt rails. The hilt moves closer to the held hand.
+- The **GN Buster Rifle** green cutting planes are narrower/thinner,
+  with wide blue sword-bit shells above them and two separated emerald
+  tips. The handle has also been shortened and its in-hand translation
+  raised; the blue shells are intended to dominate the upper silhouette,
+  rather than appearing as a thin rim on solid green slabs.
+- The previously approved **GN Buster Sword** remains completely unchanged
+  in this pass, including its symmetric front/back colors and six bits.
+- GN Sword II and all combat logic, player inventory, and drone behaviors
+  are unchanged. Both BBModel source and generated item-model JSON are
+  updated together. Resource pack requires refreshing after server restart.
+
+Autotests verify geometry, proportions, asset identity and mirroring. They
+cannot verify visual fidelity in Minecraft: inspect each weapon in F5
+view and assess its actual grip against the hand.
