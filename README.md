@@ -1027,3 +1027,28 @@ The two previous Qan[T] models were discarded, not incrementally modified.
   Buster Sword mirror symmetry, not obsolete cuboid counts.
   This is a geometrical reconstruction, **not a verified 1:1
   photogrammetric reproduction**. Final F5 comparison is required.
+
+## v0.14.1 — GN Sword V / Buster Rifle in-hand orientation fix
+
+After reviewing live Minecraft front and side screenshots, the v0.14.0
+models were found to point almost straight down in third person: their local
++Z blade axis had been pitched by 90 degrees around X. The broad green Y/Z
+blade profile was also foreshortened behind the blue covers.
+
+- GN Sword V held first-person transforms: X 90 to 17 degrees, Y 155 to
+  125 degrees; third-person transforms: X 90 to 12 degrees, Y 155 to
+  120 degrees.
+- GN Buster Rifle first-person: X 90 to 12 degrees, Y 145 to
+  125 degrees; third-person: X 90 to 7 degrees, Y 145 to
+  120 degrees. The existing -7 degree roll is retained.
+- These oblique forward-carry poses reveal the Y/Z face of the green
+  blades rather than tilting the tips into the floor. Both hands get
+  matching corrections; no client mod is required.
+- All 142 GN Sword V and 252 GN Buster Rifle geometric elements,
+  textures, item IDs, PDC data, gameplay, and the approved GN Buster
+  Sword geometry/pose are preserved exactly.
+- New regression checks cover all four hand displays in both modes,
+  including forward projection and floor-pointing prevention.
+- This is a held-pose correction, **not final screenshot-approved likeness**.
+  Rebuild/restart, use `/funnel pack`, check the updated SHA-1 with
+  `/funnel status`, then evaluate front/side/F5 and first-person views.

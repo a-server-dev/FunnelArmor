@@ -58,15 +58,29 @@ class GnQuantaGripSilhouetteTest {
         JsonObject trigger=named("buster_rifle","Buster Rifle trigger block");
         assertTrue(axis(trigger,"to",2)<11,"Player grips the handle at the rear, not a GN edge");
     }
-    @Test void thirdPersonHoldsWeaponsAtObliqueAnglesSoBladesRemainVisible() throws Exception{
-        for(String mode:List.of("sword","buster_rifle")){
-            JsonObject model=JsonParser.parseString(Files.readString(
-                Path.of("resourcepack","assets","funnel","models","item","gn_sword_v_"+mode+".json")))
-                .getAsJsonObject();
-            JsonArray angles=model.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand")
-                .getAsJsonArray("rotation");
-            assertTrue(angles.get(1).getAsDouble()>=135&&angles.get(1).getAsDouble()<=160,
-                "Rotating 180 degrees hides the two separate blade surfaces in F5");
+    @Test void heldSwordAndBusterRifleExtendForwardInsteadOfPointingAtTheGround() throws Exception {
+        for (String mode : List.of("sword", "buster_rifle")) {
+            JsonObject model = JsonParser.parseString(Files.readString(
+                Path.of("resourcepack", "assets", "funnel", "models", "item",
+                    "gn_sword_v_" + mode + ".json"))).getAsJsonObject();
+            JsonObject display = model.getAsJsonObject("display");
+            for (String hand : List.of("firstperson_righthand", "firstperson_lefthand",
+                    "thirdperson_righthand", "thirdperson_lefthand")) {
+                JsonArray rotation = display.getAsJsonObject(hand).getAsJsonArray("rotation");
+                double x = Math.toRadians(rotation.get(0).getAsDouble());
+                double y = Math.toRadians(rotation.get(1).getAsDouble());
+                // The remodeled GN blades grow in local +Z, with their broad green
+                // silhouette in the Y/Z plane. X=90 pitched the entire weapon down.
+                double forwardSideProjection = Math.abs(Math.cos(x) * Math.sin(y));
+                double downProjection = Math.abs(Math.sin(x));
+                double visibleBladeFace = Math.abs(Math.cos(x));
+                assertTrue(forwardSideProjection > 0.72,
+                    mode + " " + hand + " should show the forward-extending blade");
+                assertTrue(downProjection < 0.35,
+                    mode + " " + hand + " must not point its muzzle into the ground");
+                assertTrue(visibleBladeFace > 0.93,
+                    mode + " " + hand + " must expose the broad green blade profile");
+            }
         }
     }
 }
