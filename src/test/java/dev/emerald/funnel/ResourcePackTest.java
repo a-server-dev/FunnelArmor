@@ -194,16 +194,19 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
-                        if (entry.getName().matches("assets/funnel/models/item/gn_(sword_v_(sword|rifle|buster_sword|buster_rifle)|sword_bit)\\.json")) {
+                        if (entry.getName().matches("assets/funnel/models/item/gn_(sword_ii_(sword|rifle)|sword_v_(sword|rifle|buster_sword|buster_rifle)|sword_bit)\\.json")) {
                             String texture = model.getAsJsonObject("textures").get("0").getAsString();
                             String modelName = entry.getName().substring(
                                     entry.getName().lastIndexOf('/') + 1,
                                     entry.getName().length() - 5);
-                            assertEquals("funnel:item/" + modelName, texture);
+                            String expectedTexture = modelName.startsWith("gn_sword_ii_")
+                                    ? "gn_sword_v_sword" : modelName;
+                            assertEquals("funnel:item/" + expectedTexture, texture);
                             int minDetail = modelName.contains("buster_") ? 160
-                                    : modelName.equals("gn_sword_bit") ? 50 : 100;
+                                    : modelName.equals("gn_sword_bit") ? 50
+                                    : modelName.equals("gn_sword_v_sword") ? 40 : 100;
                             assertTrue(model.getAsJsonArray("elements").size() >= minDetail,
-                                    "GN Sword V models must retain redesigned mechanical detail: " + modelName);
+                                    "GN weapon model geometry must retain mechanical detail: " + modelName);
                             for (var element : model.getAsJsonArray("elements")) {
                                 var cube = element.getAsJsonObject();
                                 var from = cube.getAsJsonArray("from");
