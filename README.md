@@ -906,3 +906,35 @@ one-to-one editable Blockbench (.bbmodel) and resource-pack cuboids.
 - Display rotations/translations are initial grip-oriented settings
   informed by provided in-game screenshots. Full visual sign-off
   still requires live first-person and F5 checks.
+
+## v0.13.2 — Qan[T] reference-image silhouette rework
+
+The four user-selected concept screenshots are **visual targets**, not
+literal converted meshes. The editable Blockbench and Minecraft item JSON
+models were each sculpted together rather than only changing screenshots.
+
+- **GN Sword V:** reduced the original massive white rectangular receiver
+  and green slab to inset structural spines, and built a white/cobalt
+  stepped asymmetric chassis around an illuminated GN condenser.
+  Added a thick-to-thin stepped emerald blade with side beveling.
+  The dark ribbed hilt remains separate from the cutting blade.
+- **GN Sword V rifle:** reduced two oversized solid rectangular receiver
+  volumes and replaced them with recessed dark inner structure, individual
+  white armor ribs, cobalt upper rails, cooling slots, and a narrowing
+  green-emitter muzzle that reads as a sword converted into a rifle.
+- **GN Buster Rifle:** expanded each of the existing 25 emerald cutting
+  sections to a broad, three-dimensional GN blade and added a long tapered
+  cobalt/white armored housing to each, leaving two separately visible
+  pointed green tips. The central receiver, real grip, and condenser
+  remain mechanically distinct from those blades.
+- **GN Buster Sword:** added face-paired sapphire blade-shells, inner
+  emerald channels, GN blade-tip details and all six bit couplers.
+  Preserved the existing front/back mirror shape and color, centered
+  single main blade and monotonically narrowing silhouette.
+- The distinct GN Sword II system and all other weapons, funnels, combat
+  characteristics and player offhand inventory are unchanged.
+
+Automated checks cover geometry parity, bounds and preserved
+symmetry, but **cannot certify pixel-for-pixel likeness to an image**.
+After installing the new JAR, refresh the resource pack and capture
+front/side/first-person poses for physical grip alignment checks.
