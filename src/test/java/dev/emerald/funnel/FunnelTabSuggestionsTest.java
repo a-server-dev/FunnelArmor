@@ -103,7 +103,7 @@ class FunnelTabSuggestionsTest {
     }
 
     @Test void gnSwordCompletionRespectsPermissionScope() {
-        assertEquals(List.of("gn"), FunnelTabSuggestions.complete(
+        assertEquals(List.of("gn","gn2","gnv"), FunnelTabSuggestions.complete(
                 new String[]{"gn"}, false, true, ONLINE));
         assertEquals(List.of("status"), FunnelTabSuggestions.complete(
                 new String[]{"gn",""}, false, true, ONLINE));
@@ -133,7 +133,7 @@ class FunnelTabSuggestionsTest {
     }
 
     @Test void consoleOnlyGetsSafeRelevantCompletions() {
-        assertEquals(List.of("aerial","angle","buster","diagnose","give","gn","hawk","pack","reload","saber","status"),
+        assertEquals(List.of("aerial","angle","buster","diagnose","give","gn","gn2","gnv","hawk","pack","reload","saber","status"),
                 FunnelTabSuggestions.complete(new String[]{""}, true, false, ONLINE));
         assertEquals(List.of("Pen4"),
                 FunnelTabSuggestions.complete(new String[]{"pack","pen"}, true, false, ONLINE));
