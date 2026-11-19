@@ -200,7 +200,9 @@ class ResourcePackTest {
                                     entry.getName().lastIndexOf('/') + 1,
                                     entry.getName().length() - 5);
                             String expectedTexture = modelName.startsWith("gn_sword_ii_")
-                                    ? "gn_sword_v_sword" : modelName;
+                                    ? "gn_sword_v_sword"
+                                    : modelName.equals("gn_sword_v_sword")
+                                        ? "gn_sword_v_buster_rifle" : modelName;
                             assertEquals("funnel:item/" + expectedTexture, texture);
                             int minDetail = modelName.contains("buster_") ? 160
                                     : modelName.equals("gn_sword_bit") ? 50
