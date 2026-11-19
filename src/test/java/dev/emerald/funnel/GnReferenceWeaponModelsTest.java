@@ -100,6 +100,14 @@ class GnReferenceWeaponModelsTest {
     @Test void leftSwordDisplayNeverWritesToActualOffhandSlot() throws Exception {
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GnSwordCombat.java"));
         assertTrue(code.contains("updateLeftSword(player)"),"Dual GN Sword must render in-game");
+        assertTrue(code.contains("setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND)"),
+                "Left sword must use the native left-hand model orientation, not the fixed preview pose");
+        assertTrue(code.contains("new Vector(facing.getZ(), 0, -facing.getX())"),
+                "Left sword must be placed on the player's left, not their right");
+        assertTrue(code.contains("add(left.multiply(0.54))"),
+                "Left-handed offset must be applied to the helper display");
+        assertFalse(code.contains("setPitch(-90.0f +"),
+                "Do not double-rotate the sword on top of its -90 degree item transform");
         assertTrue(code.contains("dualVisualMarker"),"Left-hand display needs cleanup marker");
         assertTrue(code.contains("clearLeftSword(owner)"),"Visual displays must be removed on transitions");
         assertTrue(code.contains("setPersistent(false)"),"Visual helper must not persist as an entity");

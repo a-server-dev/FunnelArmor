@@ -418,7 +418,7 @@ final class GnSwordCombat implements Listener {
             clearLeftSword(owner);
             display = player.getWorld().spawn(player.getLocation(), ItemDisplay.class, d -> {
                 d.setItemStack(leftSwordItem);
-                d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
                 d.setTeleportDuration(2);
                 d.setPersistent(false);
                 d.getPersistentDataContainer().set(dualVisualMarker, PersistentDataType.BYTE, (byte) 1);
@@ -429,12 +429,16 @@ final class GnSwordCombat implements Listener {
         Vector facing = base.getDirection().setY(0);
         if (facing.lengthSquared() < 1e-5) facing = new Vector(0, 0, 1);
         facing.normalize();
-        Vector right = new Vector(-facing.getZ(), 0, facing.getX());
+        // Facing-right is (-z, 0, x); negate it to anchor on the *left* arm.
+        // The previous positive-right offset put both swords on the same side.
+        Vector left = new Vector(facing.getZ(), 0, -facing.getX());
         Location leftHand = base.clone()
-                .add(right.multiply(0.54)).add(facing.multiply(0.33))
+                .add(left.multiply(0.54)).add(facing.multiply(0.33))
                 .add(0, 1.11, 0);
         leftHand.setYaw(base.getYaw() + 180.0f);
-        leftHand.setPitch(-90.0f + Math.max(-22.0f, Math.min(22.0f, base.getPitch() * 0.4f)));
+        // The left-hand item transform already supplies the sword's -90° X
+        // rotation. Applying another -90° to the entity doubled the rotation.
+        leftHand.setPitch(Math.max(-22.0f, Math.min(22.0f, base.getPitch() * 0.4f)));
         display.teleport(leftHand);
     }
 
