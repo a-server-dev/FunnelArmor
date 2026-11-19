@@ -34,6 +34,8 @@ public final class FunnelTabSuggestions {
             candidates.add("aerial");
             candidates.add("buster");
             candidates.add("gn");
+            candidates.add("gn2");
+            candidates.add("gnv");
             candidates.add("saber");
             candidates.add("hawk");
             candidates.add("pack");
@@ -59,7 +61,7 @@ public final class FunnelTabSuggestions {
                         candidates.addAll(onlineNames);
                     else return List.of();
                 }
-                case "gn" -> {
+                case "gn", "gn2", "gnv" -> {
                     if (args.length == 2) {
                         candidates.add("status");
                         if (admin) candidates.add("give");

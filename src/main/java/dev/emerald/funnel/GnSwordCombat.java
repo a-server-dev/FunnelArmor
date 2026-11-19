@@ -71,21 +71,17 @@ final class GnSwordCombat implements Listener {
     private final NamespacedKey weaponKey;
     private final NamespacedKey modeKey;
     private final NamespacedKey bitMarker;
-    private final NamespacedKey dualVisualMarker;
     private final Map<UUID, Long> actionCooldown = new HashMap<>();
     private final Map<UUID, Long> modeCooldown = new HashMap<>();
     private final Map<UUID, List<ItemDisplay>> bits = new HashMap<>();
-    private final Map<UUID, ItemDisplay> leftSwordDisplays = new HashMap<>();
     private final Set<UUID> internalDamage = new HashSet<>();
     private ItemStack bitItem;
-    private ItemStack leftSwordItem;
 
     GnSwordCombat(JavaPlugin plugin) {
         this.plugin = plugin;
         weaponKey = new NamespacedKey(plugin, "gn_sword_v_weapon");
         modeKey = new NamespacedKey(plugin, "gn_sword_v_mode");
         bitMarker = new NamespacedKey(plugin, "gn_sword_v_display");
-        dualVisualMarker = new NamespacedKey(plugin, "gn_sword_v_left_hand_visual");
     }
 
     void start() {
@@ -94,15 +90,9 @@ final class GnSwordCombat implements Listener {
         meta.setUnbreakable(true);
         meta.setItemModel(new NamespacedKey("funnel", "gn_sword_bit"));
         bitItem.setItemMeta(meta);
-        leftSwordItem = new ItemStack(Material.FEATHER);
-        ItemMeta leftMeta = leftSwordItem.getItemMeta();
-        leftMeta.setUnbreakable(true);
-        leftMeta.setItemModel(new NamespacedKey("funnel", "gn_sword_v_sword"));
-        leftSwordItem.setItemMeta(leftMeta);
         for (World world : Bukkit.getWorlds()) {
             for (ItemDisplay display : world.getEntitiesByClass(ItemDisplay.class)) {
-                if (display.getPersistentDataContainer().has(bitMarker, PersistentDataType.BYTE)
-                        || display.getPersistentDataContainer().has(dualVisualMarker, PersistentDataType.BYTE))
+                if (display.getPersistentDataContainer().has(bitMarker, PersistentDataType.BYTE))
                     display.remove();
             }
         }
@@ -112,7 +102,6 @@ final class GnSwordCombat implements Listener {
 
     void stop() {
         for (UUID owner : new ArrayList<>(bits.keySet())) clearBits(owner);
-        for (UUID owner : new ArrayList<>(leftSwordDisplays.keySet())) clearLeftSword(owner);
         actionCooldown.clear();
         modeCooldown.clear();
         internalDamage.clear();
@@ -220,7 +209,6 @@ final class GnSwordCombat implements Listener {
             modeCooldown.put(id, time + interval("switch-ticks", 12));
             // Old attached bits are discarded; next tick spawns the required formation.
             clearBits(id);
-            clearLeftSword(id);
             if (next.combined()) {
                 player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_EXTEND, .65f, .75f);
                 player.getWorld().spawnParticle(Particle.END_ROD,
@@ -344,17 +332,7 @@ final class GnSwordCombat implements Listener {
     private void tick() {
         if (!enabled()) {
             for (UUID owner : new ArrayList<>(bits.keySet())) clearBits(owner);
-            for (UUID owner : new ArrayList<>(leftSwordDisplays.keySet())) clearLeftSword(owner);
-            return;
-        }
-        for (UUID owner : new ArrayList<>(leftSwordDisplays.keySet())) {
-            Player player = Bukkit.getPlayer(owner);
-            if (player == null || !player.isOnline() || player.isDead()
-                    || !owns(player.getInventory().getItemInMainHand())
-                    || mode(player.getInventory().getItemInMainHand()) != Mode.SWORD
-                    || leftSwordDisplays.get(owner).getWorld() != player.getWorld()) {
-                clearLeftSword(owner);
-            }
+                return;
         }
         for (UUID owner : new ArrayList<>(bits.keySet())) {
             Player player = Bukkit.getPlayer(owner);
@@ -367,7 +345,6 @@ final class GnSwordCombat implements Listener {
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.isDead() || !owns(player.getInventory().getItemInMainHand())) continue;
             Mode currentMode = mode(player.getInventory().getItemInMainHand());
-            if (currentMode == Mode.SWORD) updateLeftSword(player);
             if (currentMode.combined()) continue;
             UUID owner = player.getUniqueId();
             List<ItemDisplay> active = bits.get(owner);
@@ -406,55 +383,6 @@ final class GnSwordCombat implements Listener {
     }
 
 
-    /**
-     * Render the second GN Sword beside the left hand without replacing the
-     * player's actual offhand inventory item (and without copying a PDC weapon).
-     * The tracked, nonpersistent display is removed on all transitions.
-     */
-    private void updateLeftSword(Player player) {
-        UUID owner = player.getUniqueId();
-        ItemDisplay display = leftSwordDisplays.get(owner);
-        if (display == null || !display.isValid()) {
-            clearLeftSword(owner);
-            display = player.getWorld().spawn(player.getLocation(), ItemDisplay.class, d -> {
-                d.setItemStack(leftSwordItem);
-                // Render the same weapon in its world-forward orientation, instead of
-                // reapplying an in-hand pose to a free-floating ItemDisplay.
-                d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
-                d.setTeleportDuration(2);
-                d.setPersistent(false);
-                d.getPersistentDataContainer().set(dualVisualMarker, PersistentDataType.BYTE, (byte) 1);
-            });
-            leftSwordDisplays.put(owner, display);
-        }
-        Location base = player.getLocation();
-        Vector facing = base.getDirection().setY(0);
-        if (facing.lengthSquared() < 1e-5) facing = new Vector(0, 0, 1);
-        facing.normalize();
-        // Facing-right is (-z, 0, x); negate it to anchor on the *left* arm.
-        // The previous positive-right offset put both swords on the same side.
-        Vector left = new Vector(facing.getZ(), 0, -facing.getX());
-        // The editable GN Sword has its grip at model Z ~= -7, not at
-        // Minecraft's model pivot Z = 8. Anchor THAT grip on the left wrist.
-        // With FIXED scale 0.76: (8 - (-7)) * 0.76 / 16 ~= 0.71 blocks.
-        // The source +Z blade direction must face away from the wrist.
-        double gripToPivot = (8.0 - (-7.0)) * 0.76 / 16.0;
-        Location leftHand = base.clone()
-                .add(left.multiply(0.42))
-                .add(facing.multiply(0.12 + gripToPivot))
-                .add(0, 1.24, 0);
-        // FIXED's own Y=180 rotation plus entity yaw+180 sets the
-        // green cutting blade ahead of the blue/gray rear handle.
-        leftHand.setYaw(base.getYaw() + 180.0f);
-        leftHand.setPitch(0.0f);
-        display.teleport(leftHand);
-    }
-
-    private void clearLeftSword(UUID owner) {
-        ItemDisplay display = leftSwordDisplays.remove(owner);
-        if (display != null && display.isValid()) display.remove();
-    }
-
     private void clearBits(UUID owner) {
         List<ItemDisplay> displays = bits.remove(owner);
         if (displays != null) for (ItemDisplay display : displays)
@@ -462,15 +390,15 @@ final class GnSwordCombat implements Listener {
     }
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
-        clearBits(event.getPlayer().getUniqueId()); clearLeftSword(event.getPlayer().getUniqueId());
+        clearBits(event.getPlayer().getUniqueId());
     }
     @EventHandler public void onWorldChange(PlayerChangedWorldEvent event) {
-        clearBits(event.getPlayer().getUniqueId()); clearLeftSword(event.getPlayer().getUniqueId());
+        clearBits(event.getPlayer().getUniqueId());
     }
     @EventHandler public void onHeld(PlayerItemHeldEvent event) {
-        clearBits(event.getPlayer().getUniqueId()); clearLeftSword(event.getPlayer().getUniqueId());
+        clearBits(event.getPlayer().getUniqueId());
     }
     @EventHandler public void onDeath(PlayerDeathEvent event) {
-        clearBits(event.getEntity().getUniqueId()); clearLeftSword(event.getEntity().getUniqueId());
+        clearBits(event.getEntity().getUniqueId());
     }
 }

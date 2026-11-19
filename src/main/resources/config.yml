@@ -180,3 +180,12 @@ heat-hawk:
 
 melee-weapons:
   toggle-debounce-ticks: 5
+
+# Double-O GN Sword II: separate twin-blade weapon, not the Qan[T] GN Sword V.
+gn-sword-ii:
+  enabled: true
+  switch-ticks: 10
+  attack-cooldown-ticks: 14
+  melee-damage: 5.0
+  rifle-range: 28.0
+  rifle-damage: 3.0

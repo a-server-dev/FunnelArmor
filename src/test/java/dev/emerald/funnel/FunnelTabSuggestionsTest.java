@@ -11,7 +11,7 @@ class FunnelTabSuggestionsTest {
 
     @Test void playerGetsRelevantCommandsButNoAdminActions() {
         var result = FunnelTabSuggestions.complete(new String[] {""}, false, true, ONLINE);
-        assertEquals(List.of("aerial", "barrier", "buster", "formation", "gn", "hawk", "pack", "saber", "shield", "status"), result);
+        assertEquals(List.of("aerial", "barrier", "buster", "formation", "gn", "gn2", "gnv", "hawk", "pack", "saber", "shield", "status"), result);
         assertEquals(List.of("pack"), FunnelTabSuggestions.complete(new String[]{"Pa"}, false, true, ONLINE));
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"give",""}, false, true, ONLINE));
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"angle","-"}, false, true, ONLINE));
@@ -111,6 +111,12 @@ class FunnelTabSuggestionsTest {
                 new String[]{"gn",""}, true, true, ONLINE));
         assertEquals(List.of("East"), FunnelTabSuggestions.complete(
                 new String[]{"gn","give","Ea"}, true, true, ONLINE));
+        for (String action : List.of("gn2","gnv")) {
+            assertEquals(List.of("status"), FunnelTabSuggestions.complete(
+                    new String[]{action,""}, false, true, ONLINE));
+            assertEquals(List.of("give","status"), FunnelTabSuggestions.complete(
+                    new String[]{action,""}, true, true, ONLINE));
+        }
     }
 
     @Test void meleeWeaponCompletionsRestrictGiveToAdmin() {
