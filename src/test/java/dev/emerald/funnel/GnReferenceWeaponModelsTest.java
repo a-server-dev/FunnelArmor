@@ -141,7 +141,7 @@ class GnReferenceWeaponModelsTest {
                 if(get(e,"from",0)>9)longRight++;
             }
         }
-        assertTrue(maxX-minX<9,"Receiver should not look like a wide shield");
+        assertTrue(maxX-minX<11,"Twin cutting blades may fan apart, but the total width must stay compact");
         assertTrue(maxY-minY<9,"Receiver should be vertically slim");
         assertTrue(longLeft>=1&&longRight>=1,"Both emerald prongs must reach the far tip");
         JsonObject display=model.getAsJsonObject("display");
