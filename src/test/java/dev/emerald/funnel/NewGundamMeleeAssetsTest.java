@@ -185,6 +185,27 @@ class NewGundamMeleeAssetsTest {
         }
     }
 
+    @Test void silverAndEmeraldBladeFacingIsIdenticalFrontAndBack() throws Exception {
+        JsonArray elements = model(pack(), "gn_sword_v_buster_sword").getAsJsonArray("elements");
+        int[][] colors = new int[2][16];
+        for (var entry : elements) {
+            JsonObject element = entry.getAsJsonObject();
+            boolean front = element.getAsJsonArray("from").get(2).getAsDouble() >= 9.22;
+            String face = front ? "south" : "north";
+            JsonArray uv = element.getAsJsonObject("faces")
+                    .getAsJsonObject(face).getAsJsonArray("uv");
+            int tile = (int)Math.floor(uv.get(0).getAsDouble() / 4)
+                    + 4 * (int)Math.floor(uv.get(1).getAsDouble() / 4);
+            assertTrue(tile >= 0 && tile < 16);
+            colors[front ? 0 : 1][tile]++;
+        }
+        assertArrayEquals(colors[0], colors[1],
+                "GN Buster Sword must mirror the same bright-facing color palette");
+        assertTrue(colors[0][3] >= 20, "Both sides must retain the polished silver blade");
+        assertTrue(colors[0][8] + colors[0][9] >= 30,
+                "Both sides must retain emerald GN energy lines");
+    }
+
     private static String key(JsonArray from, JsonArray to, boolean reversed) {
         double x1=from.get(0).getAsDouble(), x2=to.get(0).getAsDouble();
         double y1=from.get(1).getAsDouble(), y2=to.get(1).getAsDouble();
