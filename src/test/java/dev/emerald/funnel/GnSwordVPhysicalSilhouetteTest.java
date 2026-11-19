@@ -67,11 +67,13 @@ class GnSwordVPhysicalSilhouetteTest {
                 Path.of("models","gn_sword_v_"+mode+".bbmodel"))).getAsJsonObject();
             var game=JsonParser.parseString(Files.readString(
                 Path.of("resourcepack/assets/funnel/models/item/gn_sword_v_"+mode+".json"))).getAsJsonObject();
-            var a=source.getAsJsonArray("elements"),b=game.getAsJsonArray("elements");
+            JsonArray a=source.getAsJsonArray("elements");
+            JsonArray b=game.getAsJsonArray("elements");
             assertEquals(a.size(),b.size());
             Set<String> uuids=new HashSet<>();
             for(int i=0;i<a.size();i++) {
-                var el=a.get(i).getAsJsonObject(),ge=b.get(i).getAsJsonObject();
+                JsonObject el=a.get(i).getAsJsonObject();
+                JsonObject ge=b.get(i).getAsJsonObject();
                 assertTrue(uuids.add(el.get("uuid").getAsString()),"Editor part UUID must be unique");
                 assertEquals(el.get("from"),ge.get("from"));
                 assertEquals(el.get("to"),ge.get("to"));
