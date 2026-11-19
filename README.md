@@ -875,3 +875,34 @@ This release changes **only the GN Buster Sword model**, both Heat Hawk models a
 - Existing dedicated texture palettes are reused, no community assets,
   and GN II/V cooldowns and PDC keys are separate. Visual poses still
   require a client-side F5 and first-person check after installing the pack.
+
+## v0.13.1 — Qan[T] four-mode geometry/detail and grip pass
+
+This release modifies only four Qan[T] GN Sword V forms, with
+one-to-one editable Blockbench (.bbmodel) and resource-pack cuboids.
+
+- **GN Sword V (single sword):** replaced generic slab appearance with
+  layered white shoulder clamshells, asymmetric cobalt covers, engraved
+  GN capacitor seams, sharpened green edge bevel, receiver fasteners,
+  and a textured rear grip. The long blade is placed forward via the
+  first-/third-person hand transforms.
+- **GN Sword V Rifle:** reshaped the front emitter using tapering
+  section geometry and retained the sword-conversion joint, with
+  gunmetal cooling slots, white multi-layer shells, cobalt receiver
+  armor, green focus channels and grip knurling.
+- **GN Buster Rifle:** widened BOTH broad green cutting wings while
+  making each finish in an individual fine point, added 2-sided
+  highlight bevels, articulated blue dorsal plating, white receiver
+  shells, GN capacitance panels, mounting locks and grip details.
+  The combined weapon is held higher with its twin edges toward the front.
+- **GN Buster Sword:** kept the previously approved *single central*
+  blade and all six Sword Bit groups. Added front/rear axial engravings,
+  visible metallic seams, emitter joins and tiny condenser detailing
+  without changing its proven taper/point silhouette.
+- No changes to the Double-O **GN Sword II** dual-weapon subsystem,
+  other funnels, combat damage, UUID ownership or real offhand items.
+  Mechanical shapes use only authored editable BBModels; no community
+  models or replacement screenshot assets.
+- Display rotations/translations are initial grip-oriented settings
+  informed by provided in-game screenshots. Full visual sign-off
+  still requires live first-person and F5 checks.
