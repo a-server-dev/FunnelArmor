@@ -853,3 +853,25 @@ This release changes **only the GN Buster Sword model**, both Heat Hawk models a
   BBModel and game pack, and all cuboids stay within [-16,32]. No changes to
   approved GN Buster Sword V, other equipment mechanics, or attack damage. A live
   F5 screenshot is still necessary for final pose validation.
+
+## v0.13.0 — Double-O GN Sword II and Qan[T] GN Sword V separation
+
+- `/funnel gn2 give [player]` grants the independent double-GN-Sword-II item.
+  Shift-right click switches both visual swords from Sword to Rifle mode.
+  The real item remains in the main hand; a temporary ItemDisplay represents
+  the left-hand sword and does not replace a real offhand inventory item.
+- `/funnel gn give [player]` continues to grant the Qan[T] GN Sword V
+  (alias `/funnel gnv give [player]`). Previously granted Sword V items
+  retain their PDC and 4-mode Sword/Rifle/Buster Sword/Buster Rifle states,
+  including all six orbiting GN Sword Bits. It now displays only one sword.
+- Independent editable BBModels and game models are registered for both
+  GN Sword II Sword/Rifle states. The prior blue-and-teal twin gunblade design
+  is kept for II, with grip positions rebased nearer the model pivot.
+  Qan[T] GN Sword V is a separately sculpted one-handed white/cobalt
+  GN Sword with one emerald cutting edge.
+- The Qan[T] Buster Rifle has a shortened rear receiver to bring its grip
+  toward the hand pose, two separated long tapered GN cutting edges and
+  additional cobalt armor along their dorsal surfaces.
+- Existing dedicated texture palettes are reused, no community assets,
+  and GN II/V cooldowns and PDC keys are separate. Visual poses still
+  require a client-side F5 and first-person check after installing the pack.
