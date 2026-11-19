@@ -270,8 +270,8 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(26, checked,
-                    "10 existing + 4 Twin Buster + 5 GN Sword V + 5 Saber + 2 Heat Hawk models");
+            assertEquals(28, checked,
+                    "10 existing + 4 Twin Buster + 5 GN Sword V + 2 GN Sword II + 5 Saber + 2 Heat Hawk models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }
