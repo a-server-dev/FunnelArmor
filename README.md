@@ -1080,3 +1080,54 @@ reconstruction, not a display-angle-only adjustment.
   calculations, PDC identification or offhand inventory handling.
 - These are source-and-pack geometric changes. In-game F5 screenshots remain
   essential; repository tests cannot certify visual reference accuracy.
+
+## v0.16.0 — source-illustration reconstruction / real palette UV correction
+
+This is a second, more precise reconstruction in response to feedback that
+v0.15.0 was still mechanically inaccurate and assembled too quickly.
+
+**Reference**: Gundam 00 Qan[T] official weapon-setting illustration
+(`https://www.gundam00.net/movie/ms/img/c01a.png`), plus user F5 screenshots.
+The official reference is used as a shape/palette guide; no external copyrighted
+art/model files are copied into the repository.
+
+Critical discovered error: the previous generative sculpt assigned a texture UV
+from the *light gray* region of the buster-rifle palette to pieces named
+"blue sword-bit hood". This produced the two white cylinders seen in game.
+The correct 64px texture was inspected at individual swatch centers:
+
+- True saturated blue, texture (8,24) ≈ RGB (74,129,208)
+- Deep cobalt, texture (56,8) ≈ RGB (48,106,169)
+- Green crystal, texture (40,40) ≈ RGB (52,223,136)
+- White accents, texture (56,24) ≈ RGB (230,236,232)
+
+Both new model source files explicitly map material UVs to these true swatches;
+GN Sword V now shares the Buster Rifle's original cobalt/green 64px palette
+instead of its less saturated former sprite. Editable BBModels embed the same
+source palette as the one referenced by their packed item JSON. This is intentional:
+no other inventory items or source texture files are modified.
+
+Actual editable components:
+
+- **GN Sword V**: 223 named cuboids in 6 groups. Dark rear grip and receiver,
+  articulated two-prong cobalt handguard, condenser/joint, SHORT blue nose armor,
+  and a long continuous-looking exposed emerald blade with separately modeled
+  two-tone bevel edges, conductor lines and distinct sharp tip.
+- **GN Buster Rifle**: 454 named cuboids in 9 groups. Central narrow dark
+  rifle receiver, real trigger and back grip, two independent mechanical mounts,
+  TWO separate cobalt Sword Bit armored shells with differentiated ribbed surfaces,
+  and two fully exposed green emitter blades with fine edges. Thin white stripes
+  are limited to small mechanical accents instead of the previous long shells.
+- The new meshes remain within Minecraft model bounds. Source cuboids, face UVs
+  and packed JSON cuboids/UVs are generated from the same material map.
+- Right- and left-hand native transforms have their own calibration for
+  first and third person. Qan[T] Sword third-person [-26,160,-1], Buster Rifle
+  third-person [-11,161,0]. These are starting poses until live screenshot review.
+- Existing item model IDs and all item PDC data, combat mechanics, Buster Sword,
+  Rifle mode and GN Sword II remain untouched.
+- Palette and geometry regression tests cover the previous white-hood error,
+  green blade visibility, pack/source parity and preserving the other weapon modes.
+
+**Status**: authored models and CI checks, not visually approved in Minecraft.
+Apply the new plugin JAR, restart Paper, use `/funnel pack`, and verify
+`/funnel status` SHA-1 before visually judging the model.

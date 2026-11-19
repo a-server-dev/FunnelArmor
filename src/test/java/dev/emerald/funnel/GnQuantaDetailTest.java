@@ -40,9 +40,13 @@ class GnQuantaDetailTest {
             }
         }
     }
-    @Test void sourceUsesFewerPurposefulShapesThanFormerModels() throws Exception {
-        assertTrue(read("sword",true).getAsJsonArray("elements").size()<180);
-        assertTrue(read("buster_rifle",true).getAsJsonArray("elements").size()<300);
+    @Test void sourceRebuildKeepsStructuredGeometryWithinBudget() throws Exception {
+        int sword = read("sword", true).getAsJsonArray("elements").size();
+        int rifle = read("buster_rifle", true).getAsJsonArray("elements").size();
+        assertTrue(sword >= 200 && sword <= 400,
+            "Sword guard, condenser, crystal edge and frame require independently editable details");
+        assertTrue(rifle >= 420 && rifle <= 650,
+            "The two Sword Bit assemblies must have independent blue/green parts");
     }
     @Test void QanTSwordIsSingleAndBusterSwordRetainsSixBits() throws Exception {
         JsonObject sword=read("sword",true);

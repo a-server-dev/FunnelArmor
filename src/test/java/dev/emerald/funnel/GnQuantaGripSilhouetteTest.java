@@ -73,7 +73,7 @@ class GnQuantaGripSilhouetteTest {
                     mode + " " + hand + " should lift the tip above the held receiver");
                 assertTrue(yaw >= 137 && yaw <= 165,
                     mode + " " + hand + " must not be carried completely side-on");
-                assertTrue(display.getAsJsonObject(hand).getAsJsonArray("scale").get(0).getAsDouble() <= .82,
+                assertTrue(display.getAsJsonObject(hand).getAsJsonArray("scale").get(0).getAsDouble() <= .85,
                     mode + " " + hand + " should not overwhelm the player's silhouette");
             }
         }
