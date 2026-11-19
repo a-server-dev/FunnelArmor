@@ -1052,3 +1052,31 @@ blade profile was also foreshortened behind the blue covers.
 - This is a held-pose correction, **not final screenshot-approved likeness**.
   Rebuild/restart, use `/funnel pack`, check the updated SHA-1 with
   `/funnel status`, then evaluate front/side/F5 and first-person views.
+
+## v0.15.0 — actual model reconstruction following failed 0.14.1 in-game comparison
+
+The actual v0.14.1 screenshot showed two oversized white cylindrical barrels and
+an unnatural sideways/downward pose. This is a substantial new editable model
+reconstruction, not a display-angle-only adjustment.
+
+- GN Sword V is now structured around a grip, compact GN hinge/receiver,
+  short white mechanical cheek, stepped asymmetric cobalt upper hull and a
+  broad exposed emerald crystal blade tapering to a single sharp point.
+  The green surface remains visible below its blue dorsal blade guards.
+- GN Buster Rifle now has one thin shared central gun receiver with two
+  attached, physically separate cobalt Sword Bit assemblies (not two white
+  cylinders). Each Bit has a dark mount, blue segmented shell and exposed
+  long tapered green emitter blade. White appears primarily as thin trim,
+  couplers and detail. The pair is staggered modestly in Y, split in X and
+  connected to the central gun.
+- All Minecraft model coordinates and UVs were generated directly from
+  their respective editable Blockbench cuboids. Both reuse the existing
+  original 64x64 palettes and the unchanged item IDs.
+- Hand poses were rebuilt for a slight upward forward carry (rather than
+  horizontally left or downward): GN Sword V third person [-20,145,0],
+  GN Buster Rifle third person [-9,146,-3]. Dedicated first-person
+  transforms are [-17,148,0] and [-6,158,-3].
+- No changes to the approved Buster Sword, GN Sword II, sword/rifle combat
+  calculations, PDC identification or offhand inventory handling.
+- These are source-and-pack geometric changes. In-game F5 screenshots remain
+  essential; repository tests cannot certify visual reference accuracy.

@@ -58,7 +58,7 @@ class GnQuantaGripSilhouetteTest {
         JsonObject trigger=named("buster_rifle","Buster Rifle trigger block");
         assertTrue(axis(trigger,"to",2)<11,"Player grips the handle at the rear, not a GN edge");
     }
-    @Test void heldSwordAndBusterRifleExtendForwardInsteadOfPointingAtTheGround() throws Exception {
+    @Test void bothHandPosesCarryTheRebuiltWeaponsUpwardAndRevealTheBladeFace() throws Exception {
         for (String mode : List.of("sword", "buster_rifle")) {
             JsonObject model = JsonParser.parseString(Files.readString(
                 Path.of("resourcepack", "assets", "funnel", "models", "item",
@@ -67,19 +67,14 @@ class GnQuantaGripSilhouetteTest {
             for (String hand : List.of("firstperson_righthand", "firstperson_lefthand",
                     "thirdperson_righthand", "thirdperson_lefthand")) {
                 JsonArray rotation = display.getAsJsonObject(hand).getAsJsonArray("rotation");
-                double x = Math.toRadians(rotation.get(0).getAsDouble());
-                double y = Math.toRadians(rotation.get(1).getAsDouble());
-                // The remodeled GN blades grow in local +Z, with their broad green
-                // silhouette in the Y/Z plane. X=90 pitched the entire weapon down.
-                double forwardSideProjection = Math.abs(Math.cos(x) * Math.sin(y));
-                double downProjection = Math.abs(Math.sin(x));
-                double visibleBladeFace = Math.abs(Math.cos(x));
-                assertTrue(forwardSideProjection > 0.72,
-                    mode + " " + hand + " should show the forward-extending blade");
-                assertTrue(downProjection < 0.35,
-                    mode + " " + hand + " must not point its muzzle into the ground");
-                assertTrue(visibleBladeFace > 0.93,
-                    mode + " " + hand + " must expose the broad green blade profile");
+                double pitch = rotation.get(0).getAsDouble();
+                double yaw = rotation.get(1).getAsDouble();
+                assertTrue(pitch < 0 && pitch >= -30,
+                    mode + " " + hand + " should lift the tip above the held receiver");
+                assertTrue(yaw >= 137 && yaw <= 165,
+                    mode + " " + hand + " must not be carried completely side-on");
+                assertTrue(display.getAsJsonObject(hand).getAsJsonArray("scale").get(0).getAsDouble() <= .82,
+                    mode + " " + hand + " should not overwhelm the player's silhouette");
             }
         }
     }
