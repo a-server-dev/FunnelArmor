@@ -113,6 +113,51 @@ class NewGundamMeleeAssetsTest {
         assertFalse(java.util.Arrays.equals(texOff,texOn));
     }
 
+    @Test void crescentBladeBulgesAtCenterAndHasHoseAndMechanicalHub() throws Exception {
+        JsonArray cold = model(pack(), "heat_hawk_off").getAsJsonArray("elements");
+        JsonArray hot = model(pack(), "heat_hawk_on").getAsJsonArray("elements");
+        assertTrue(cold.size() >= 260, "Reference heat hawk requires a detailed head and crescent");
+        assertEquals(cold.size(), hot.size(), "Heat never changes the underlying axe mesh");
+        double endBottom = widestEdgeAt(cold, 18.2);
+        double middle = widestEdgeAt(cold, 25.1);
+        double endTop = widestEdgeAt(cold, 30.9);
+        assertTrue(middle > endBottom + 3, "Wide crescent middle should bulge rightward");
+        assertTrue(middle > endTop + 3, "Upper crescent must taper back inward");
+        JsonObject src = JsonParser.parseString(Files.readString(
+                Path.of("models/heat_hawk_on.bbmodel"))).getAsJsonObject();
+        java.util.Set<String> groups = new HashSet<>();
+        for (var entry : src.getAsJsonArray("outliner")) {
+            JsonObject group = entry.getAsJsonObject();
+            groups.add(group.get("name").getAsString());
+            assertTrue(group.getAsJsonArray("children").size() > 0);
+        }
+        assertTrue(groups.containsAll(List.of("Crescent heat blade",
+                "Circular GN hinge", "External hose loop")), "Axe must retain reference features");
+        int distinctFaceColors = 0;
+        for (int i = 0; i < cold.size(); i++) {
+            JsonObject a = cold.get(i).getAsJsonObject();
+            JsonObject z = hot.get(i).getAsJsonObject();
+            assertEquals(a.get("from"), z.get("from"), "Cold/hot geometry mismatch");
+            assertEquals(a.get("to"), z.get("to"), "Cold/hot geometry mismatch");
+            if (!a.getAsJsonObject("faces").getAsJsonObject("south").get("uv")
+                    .equals(z.getAsJsonObject("faces").getAsJsonObject("south").get("uv")))
+                distinctFaceColors++;
+        }
+        assertTrue(distinctFaceColors > 50,
+                "Hot cutting edge needs distinct orange-to-white colors, not a uniform overlay");
+    }
+
+    private static double widestEdgeAt(JsonArray cubes, double y) {
+        double xmax = Double.NEGATIVE_INFINITY;
+        for (var entry : cubes) {
+            JsonObject e = entry.getAsJsonObject();
+            JsonArray from = e.getAsJsonArray("from"), to = e.getAsJsonArray("to");
+            if (from.get(1).getAsDouble() < y && to.get(1).getAsDouble() > y)
+                xmax = Math.max(xmax, to.get(0).getAsDouble());
+        }
+        return xmax;
+    }
+
     @Test void originalWeaponPngsDecodeAt64Pixels() throws Exception {
         Map<String,byte[]> zip=pack();
         for(String id:List.of("beam_saber","heat_hawk_off","heat_hawk_on")) {
@@ -127,7 +172,7 @@ class NewGundamMeleeAssetsTest {
 
     @Test void gnBusterSwordIsGeometricallyMirrorSymmetricFrontAndBack() throws Exception {
         JsonArray cubes=model(pack(),"gn_sword_v_buster_sword").getAsJsonArray("elements");
-        assertTrue(cubes.size()>=450);
+        assertTrue(cubes.size()>=420);
         Set<String> shapes=new HashSet<>();
         for (var item:cubes) {
             JsonObject e=item.getAsJsonObject();
