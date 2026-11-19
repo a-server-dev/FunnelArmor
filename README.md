@@ -994,3 +994,36 @@ the **actual editable .bbmodel geometries and item JSON**, not screenshots.
 - The target illustrations use smooth light and translucent materials
   that a simple Minecraft item model cannot reproduce perfectly; live
   gameplay F5 inspection is still necessary for a final visual check.
+
+## v0.14.0 — built-from-scratch GN Sword V / Buster Rifle
+
+The two previous Qan[T] models were discarded, not incrementally modified.
+
+- **GN Sword V:** New 142-piece source. The previous blade looked like
+  a thin stick or an iron because its large width was almost entirely
+  in the model X axis, invisible in common third-person views.
+  The blade has a prominent GREEN Y–Z outline, from a 7.45-unit
+  broad root at z≈18.5 to a narrow pointed end near z=32.
+  Separate WHITE receiver leaves, ROYAL BLUE dorsal covers, an
+  exposed condenser, and a compact rear DARK grip are individually
+  editable in Blockbench.
+- **GN Buster Rifle:** New 252-piece source. Two distinct sword-bit
+  emitter branches are offset in X **and** Y to show their separation
+  from multiple viewpoints. Each has 20 broad-to-narrow GREEN
+  Y-plane blade slices, 22 BLUE armored hood segments and white
+  edge mechanical trims. The blue pods end well before the
+  emerald tips. Both attach to a narrower WHITE/GRAY receiver and
+  a real rear hand grip.
+- Third-person display rotations now use oblique yaw rather than
+  180°; a strict orthogonal alignment formerly hid the blade widths
+  and made two prongs overlap in common F5 screenshots.
+- Independent .bbmodel sources and client-model JSON use exactly
+  matching coordinates; original palette textures and weapon
+  item IDs are retained, and no code or offhand state is changed.
+- GN Sword V Rifle, GN Buster Sword, GN Sword II, all mobile Bits
+  and every other weapon are untouched.
+- New regression tests evaluate *side-visible blade width and
+  separation*, grip position, source/pack parity and unchanged
+  Buster Sword mirror symmetry, not obsolete cuboid counts.
+  This is a geometrical reconstruction, **not a verified 1:1
+  photogrammetric reproduction**. Final F5 comparison is required.

@@ -6,60 +6,67 @@ import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GnQuantaGripSilhouetteTest {
-    private JsonArray cubes(String key) throws Exception {
-        return JsonParser.parseString(Files.readString(
-                Path.of("models","gn_sword_v_"+key+".bbmodel"))).getAsJsonObject()
-                .getAsJsonArray("elements");
+    private JsonArray elements(String mode) throws Exception {
+        return JsonParser.parseString(Files.readString(Path.of("models","gn_sword_v_"+mode+".bbmodel")))
+            .getAsJsonObject().getAsJsonArray("elements");
     }
-    private double val(JsonObject c,String key,int axis) {
-        return c.getAsJsonArray(key).get(axis).getAsDouble();
-    }
-    private JsonObject named(JsonArray cubes,String name) {
-        for(var element:cubes) {
-            JsonObject c=element.getAsJsonObject();
-            if(c.get("name").getAsString().equals(name)) return c;
+    private JsonObject named(String mode,String name) throws Exception {
+        for(var x:elements(mode)){
+            JsonObject el=x.getAsJsonObject();
+            if(el.get("name").getAsString().equals(name))return el;
         }
-        fail("Missing modeled component "+name);
+        fail("Missing physical component: "+mode+"/"+name);
         return null;
     }
-    @Test void swordHasSingleBroadGreenRootAndSharpTip() throws Exception {
-        JsonArray elements=cubes("sword");
-        assertTrue(elements.size()<250,"Avoid the previous 348-cuboid iron/slab effect");
-        double first=0,last=0;
-        for(int i=0;i<20;i++) {
-            JsonObject c=named(elements,"Quanta single emerald blade segment "+i);
-            double width=val(c,"to",0)-val(c,"from",0);
-            if(i==0)first=width;
-            if(i==19)last=width;
+    private double axis(JsonObject el,String key,int axis) {
+        return el.getAsJsonArray(key).get(axis).getAsDouble();
+    }
+    @Test void swordHasBroadVerticalBladeThatNarrowsToTip() throws Exception {
+        double prev=Double.POSITIVE_INFINITY;
+        for(int i=0;i<20;i++){
+            JsonObject el=named("sword","QanT visible green sword blade "+i);
+            double w=axis(el,"to",1)-axis(el,"from",1);
+            assertTrue(w<prev,"Y-projected visible cutting blade should taper each step "+i);
+            prev=w;
+            if(i==0)assertTrue(w>7.0,"A broad first profile is needed to avoid the old green stick");
+            if(i==19){
+                assertTrue(w<1,"Tip must converge to a slim taper");
+                assertTrue(axis(el,"to",2)>31.5);
+            }
         }
-        assertTrue(first>5.5,"GN Sword V must have a visible broad single cutting edge");
-        assertTrue(last<1,"GN Sword V must converge to a sharp point");
-        assertNotNull(named(elements,"GN Sword V black blade rotation axle"));
-        assertNotNull(named(elements,"GN Sword V recessed green central power core"));
+        JsonObject hilt=named("sword","Rear blue rubber handle");
+        assertTrue(axis(hilt,"to",2)<10,"Sword grip must be behind the green cutting blade");
+        named("sword","GN Sword V exposed bright green GN condenser");
+        named("sword","GN Sword V large green light-catcher ring frame");
     }
-    @Test void rifleGripIsShortAndGunBarrelIsNotRectangular() throws Exception {
-        JsonArray elements=cubes("rifle");
-        JsonObject grip=named(elements,"Power Receiver / part 001");
-        double height=val(grip,"to",1)-val(grip,"from",1);
-        assertTrue(height<=4.1,"Pistol grip must not reach the player's knee");
-        JsonObject barrel=named(elements,"Barrel & GN Sword Bit Assembly / part 011");
-        assertTrue(val(barrel,"to",2)<=22.2,"Gun barrel must not be an uninterrupted rectangular slab");
+    @Test void busterRifleHasPhysicallyDistinctUpperLowerProngs() throws Exception {
+        for(String side:List.of("L","R")){
+            JsonObject blade=named("buster_rifle","GN emerald tapered cutting edge "+side+" 0");
+            JsonObject hood=named("buster_rifle","GN QanT "+side+" long tapered sapphire sword-bit hood 0");
+            assertTrue(axis(hood,"to",1)-axis(hood,"from",1)>0.9);
+            assertTrue(axis(blade,"to",2)>16);
+            named("buster_rifle",side+" Sword Bit white attachment flange");
+        }
+        JsonObject upper=named("buster_rifle","GN emerald tapered cutting edge L 12");
+        JsonObject lower=named("buster_rifle","GN emerald tapered cutting edge R 12");
+        assertTrue(axis(upper,"from",1)>axis(lower,"to",1)+0.5,
+            "Two points must remain visible as distinct silhouettes even in side-on F5 view");
+        JsonObject trigger=named("buster_rifle","Buster Rifle trigger block");
+        assertTrue(axis(trigger,"to",2)<11,"Player grips the handle at the rear, not a GN edge");
     }
-    @Test void busterRifleUsesBlueArmorAboveThinnerGreenTwinBlades() throws Exception {
-        JsonArray all=cubes("buster_rifle");
-        for(String side:List.of("L","R")) {
-            JsonObject blade=named(all,"Broad QanT GN energy cutting plane "+side+" 0");
-            JsonObject armor=named(all,"GN QanT "+side+" long tapered sapphire sword-bit hood 0");
-            double bladeThickness=val(blade,"to",1)-val(blade,"from",1);
-            double hoodThickness=val(armor,"to",1)-val(armor,"from",1);
-            assertTrue(bladeThickness<1.1,"GN blade should not resemble a thick opaque bar");
-            assertTrue(hoodThickness>1,"Blue sword-bit armor must have visible physical depth");
-            assertTrue(val(armor,"to",1)>val(blade,"to",1),"Armor belongs above blade, not underneath");
+    @Test void thirdPersonHoldsWeaponsAtObliqueAnglesSoBladesRemainVisible() throws Exception{
+        for(String mode:List.of("sword","buster_rifle")){
+            JsonObject model=JsonParser.parseString(Files.readString(
+                Path.of("resourcepack","assets","funnel","models","item","gn_sword_v_"+mode+".json")))
+                .getAsJsonObject();
+            JsonArray angles=model.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand")
+                .getAsJsonArray("rotation");
+            assertTrue(angles.get(1).getAsDouble()>=135&&angles.get(1).getAsDouble()<=160,
+                "Rotating 180 degrees hides the two separate blade surfaces in F5");
         }
     }
 }
