@@ -832,3 +832,24 @@ This release changes **only the GN Buster Sword model**, both Heat Hawk models a
   combat behavior is changed. Regression tests check left-hand display and
   source/pack cuboid parity. Real F5 and first-person screenshots are still
   required before visually approving the new pose.
+
+## v0.12.3 — Grip-correct GN swords and reference-length twin green blades
+
+- GN Sword's first- and third-person hand transforms now run longitudinally forward
+  instead of pointing the green cutting blade up or down. Both native hand poses
+  compensate for the exact rear grip location (model Z about -7) with an approximately
+  12–14-model-pixel Z translation. A second sword remains a world-space ephemeral
+  FIXED ItemDisplay, anchored to its blue/gray grip beside the player's left arm
+  instead of to the overall model center. The actual offhand inventory is untouched.
+- GN Buster Rifle third- and first-person pose now uses 0 degrees X (previously +85
+  degrees, pointing the front of the rifle downward), and rear-grip Z offsets and
+  smaller hand scales. Both blades are forward rather than under the player.
+- The editable Buster Rifle BBModel and item-pack JSON have been rebuilt together.
+  Two green GN cutting edges now begin at the armored receiver around Z 12.4 and
+  extend into individual slim needle points at Z 31.94. Each has twenty gradually
+  narrowing sections and six cobalt dorsal plates at the root. Old square-ended
+  emitter pieces were shortened to remove blunt protrusions.
+- Original source UV/material mapping retained, all 233 elements match between
+  BBModel and game pack, and all cuboids stay within [-16,32]. No changes to
+  approved GN Buster Sword V, other equipment mechanics, or attack damage. A live
+  F5 screenshot is still necessary for final pose validation.

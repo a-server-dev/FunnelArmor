@@ -76,11 +76,11 @@ class GnReferenceWeaponModelsTest {
         int left=0,right=0;
         for(var item:rifle){
             JsonObject e=item.getAsJsonObject();
-            if(get(e,"to",2)<30.8||get(e,"from",2)<18)continue;
+            if(get(e,"to",2)<31.7||get(e,"from",2)<30.5)continue;
             if(get(e,"to",0)<7)left++;
             if(get(e,"from",0)>9)right++;
         }
-        assertTrue(left>=2&&right>=2,"GN Buster Rifle must have two separate long GN prongs");
+        assertTrue(left>=1&&right>=1,"Both GN cutting edges must reach sharp independent tips");
     }
 
     @Test void swordAndBusterSwordHeldAnglesAreUpdatedByNinetyDegrees() throws Exception {
@@ -90,7 +90,10 @@ class GnReferenceWeaponModelsTest {
         for(String hand:new String[]{"firstperson_righthand","firstperson_lefthand",
                 "thirdperson_righthand","thirdperson_lefthand"}){
             JsonArray a=sword.getAsJsonObject("display").getAsJsonObject(hand).getAsJsonArray("rotation");
-            assertEquals(-90,a.get(0).getAsInt(),"Gunblade must be lifted upright on X");
+            assertEquals(0,a.get(0).getAsInt(),"GN Sword blade must point forward, not hang below the arm");
+            var gripPose=sword.getAsJsonObject("display").getAsJsonObject(hand);
+            assertTrue(gripPose.getAsJsonArray("translation").get(2).getAsDouble()<=-12,
+                    "GN Sword handle must sit at the wrist rather than the cutting edge");
             JsonArray b=buster.getAsJsonObject("display").getAsJsonObject(hand).getAsJsonArray("rotation");
             assertTrue(b.get(1).getAsInt()==263||b.get(1).getAsInt()==270,
                     "Buster Sword face must be rotated 90° about its long axis");
@@ -104,10 +107,10 @@ class GnReferenceWeaponModelsTest {
                 "Left world display must use FIXED to avoid duplicate native hand transforms");
         assertTrue(code.contains("new Vector(facing.getZ(), 0, -facing.getX())"),
                 "Left sword must be placed on the player's left, not their right");
-        assertTrue(code.contains("add(left.multiply(0.43))"),
+        assertTrue(code.contains("add(left.multiply(0.42))"),
                 "Secondary GN Sword must align beside the player's left arm");
-        assertTrue(code.contains("add(facing.multiply(0.67))"),
-                "World display must align the rear grip beside the hand");
+        assertTrue(code.contains("double gripToPivot = (8.0 - (-7.0)) * 0.76 / 16.0"),
+                "World display must be anchored to the model's actual grip position");
         assertTrue(code.contains("leftHand.setPitch(0.0f)"),
                 "World display must not tip a long sword into a vertical pose");
         assertFalse(code.contains("ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND"),
@@ -123,7 +126,7 @@ class GnReferenceWeaponModelsTest {
         Map<String,byte[]> zip=pack();
         JsonObject model=model(zip,"gn_sword_v_buster_rifle");
         JsonArray elems=model.getAsJsonArray("elements");
-        assertTrue(elems.size()>=181,"Eight articulated emerald tips must be included");
+        assertTrue(elems.size()>=233,"Each cutting blade needs extended taper and dorsal armoring");
         double minX=Double.POSITIVE_INFINITY,maxX=Double.NEGATIVE_INFINITY;
         double minY=Double.POSITIVE_INFINITY,maxY=Double.NEGATIVE_INFINITY;
         int longLeft=0,longRight=0;
@@ -133,7 +136,7 @@ class GnReferenceWeaponModelsTest {
             maxX=Math.max(maxX,get(e,"to",0));
             minY=Math.min(minY,get(e,"from",1));
             maxY=Math.max(maxY,get(e,"to",1));
-            if(get(e,"from",2)>=27.9 && get(e,"to",2)>31.65) {
+            if(get(e,"from",2)>=30.5 && get(e,"to",2)>31.7) {
                 if(get(e,"to",0)<7)longLeft++;
                 if(get(e,"from",0)>9)longRight++;
             }
@@ -145,14 +148,36 @@ class GnReferenceWeaponModelsTest {
         for(String hand:new String[]{"firstperson_righthand","firstperson_lefthand",
                 "thirdperson_righthand","thirdperson_lefthand"}){
             JsonObject pose=display.getAsJsonObject(hand);
-            assertEquals(85,pose.getAsJsonArray("rotation").get(0).getAsInt(),
-                    "Barrel must be posed as a forward gun instead of dangling vertically");
+            assertEquals(0,pose.getAsJsonArray("rotation").get(0).getAsInt(),
+                    "Barrel must point in front of the hand, not downward into the ground");
+            assertTrue(pose.getAsJsonArray("translation").get(2).getAsDouble()<=-12,
+                    "Gun must be mounted by its rear stock/grip, not the front emitter");
             assertTrue(pose.getAsJsonArray("scale").get(0).getAsDouble()<1.0,
                     "Large gun must not engulf the character");
         }
         JsonObject source=JsonParser.parseString(Files.readString(
                 Path.of("models/gn_sword_v_buster_rifle.bbmodel"))).getAsJsonObject();
         assertEquals(elems.size(),source.getAsJsonArray("elements").size());
+    }
+
+    @Test void bothGnBladeTipsNarrowTowardTheirExtremities() throws Exception {
+        JsonObject original=JsonParser.parseString(Files.readString(
+                Path.of("models/gn_sword_v_buster_rifle.bbmodel"))).getAsJsonObject();
+        JsonArray elements=original.getAsJsonArray("elements");
+        for(String side:new String[]{"L","R"}){
+            double previous=Double.POSITIVE_INFINITY;
+            int count=0;
+            for(var item:elements){
+                JsonObject element=item.getAsJsonObject();
+                String name=element.get("name").getAsString();
+                if(!name.startsWith("GN emerald tapered cutting edge "+side+" "))continue;
+                double width=get(element,"to",0)-get(element,"from",0);
+                assertTrue(width<previous,"Each later green blade section must taper toward its tip");
+                previous=width;
+                count++;
+            }
+            assertEquals(20,count,"Each GN blade must be a long twenty-section taper");
+        }
     }
 
 }

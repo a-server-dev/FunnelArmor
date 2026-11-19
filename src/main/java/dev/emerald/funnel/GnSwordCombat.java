@@ -434,14 +434,17 @@ final class GnSwordCombat implements Listener {
         // Facing-right is (-z, 0, x); negate it to anchor on the *left* arm.
         // The previous positive-right offset put both swords on the same side.
         Vector left = new Vector(facing.getZ(), 0, -facing.getX());
-        // Grip lies behind the model pivot; move the fixed display forward
-        // to put the handle, not the midpoint of the blade, beside the hand.
+        // The editable GN Sword has its grip at model Z ~= -7, not at
+        // Minecraft's model pivot Z = 8. Anchor THAT grip on the left wrist.
+        // With FIXED scale 0.76: (8 - (-7)) * 0.76 / 16 ~= 0.71 blocks.
+        // The source +Z blade direction must face away from the wrist.
+        double gripToPivot = (8.0 - (-7.0)) * 0.76 / 16.0;
         Location leftHand = base.clone()
-                .add(left.multiply(0.43)).add(facing.multiply(0.67))
-                .add(0, 1.12, 0);
-        // Model FIXED is already flipped 180° around Y, so the player yaw
-        // plus 180° points the long GN blade forwards in world space.
-        // Do not copy the player's look pitch into a world-space display.
+                .add(left.multiply(0.42))
+                .add(facing.multiply(0.12 + gripToPivot))
+                .add(0, 1.24, 0);
+        // FIXED's own Y=180 rotation plus entity yaw+180 sets the
+        // green cutting blade ahead of the blue/gray rear handle.
         leftHand.setYaw(base.getYaw() + 180.0f);
         leftHand.setPitch(0.0f);
         display.teleport(leftHand);
