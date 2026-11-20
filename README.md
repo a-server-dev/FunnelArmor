@@ -1131,3 +1131,34 @@ Actual editable components:
 **Status**: authored models and CI checks, not visually approved in Minecraft.
 Apply the new plugin JAR, restart Paper, use `/funnel pack`, and verify
 `/funnel status` SHA-1 before visually judging the model.
+
+## v0.17.0 — integrated Buster Rifle and forward carry after real 0.16.0 F5 failure
+
+The actual 0.16.0 F5 photos showed a severe regression: two blue/green spear
+attachments hung nearly vertically in front of the player's legs, visibly
+separated from the dark central receiver. Increasing part counts and only
+testing positive geometry bounds did not detect this.
+
+A new reference-guided rebuild addresses the underlying arrangement:
+
+- **GN Buster Rifle:** Both L/R Sword Bit assemblies now attach near one shared
+  grey receiver. The source centers are ~3.4 pixels apart in X and ~4.1 in Y
+  (previously ~7.5 and ~6.2). Real connecting bars, cross bridges, condenser
+  details and side-by-side blue shells make a single assembled weapon. The
+  compact blue shells terminate before two tapered green exposed tips.
+  Thin white pins are details only, not long white barrels.
+- **GN Sword V:** The blue fork guard, dark mechanical rifle base, short blue
+  socket and one clearly exposed green GN blade are arranged as independent
+  parts, with a separate physical rear hand grip.
+- **Both:** Held third-person X pitch is calibrated in the positive 36–38°
+  range rather than the known-bad negative 11–26° which pointed at the floor.
+  Models use right/left first-person and third-person transforms.
+  Remaining in-game pose fidelity cannot be proven without F5 inspection.
+- The editable BBModel geometry and item-pack JSON are generated with identical
+  coordinates and UVs, using the already tested original green/cobalt texture
+  swatches. Item IDs, special modes, six GN Bits, other equipment and attack
+  logic are unchanged.
+- New integrated-shape regression tests enforce two attached bit roots,
+  limited tip separation, no long white tubes and positive held-pose pitch.
+
+This release deliberately does not claim screenshot-level approval.

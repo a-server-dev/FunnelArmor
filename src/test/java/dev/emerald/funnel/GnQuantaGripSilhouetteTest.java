@@ -58,7 +58,9 @@ class GnQuantaGripSilhouetteTest {
         JsonObject trigger=named("buster_rifle","Buster Rifle trigger block");
         assertTrue(axis(trigger,"to",2)<11,"Player grips the handle at the rear, not a GN edge");
     }
-    @Test void bothHandPosesCarryTheRebuiltWeaponsUpwardAndRevealTheBladeFace() throws Exception {
+    @Test void poseMustNotRegressToNegativePitchThatDroppedRifleIntoGround() throws Exception {
+        // Observed v0.16.0 Minecraft screenshots: X=-11 for Buster Rifle pointed
+        // the entire assembly toward the player's feet. V0.17 carries it forward.
         for (String mode : List.of("sword", "buster_rifle")) {
             JsonObject model = JsonParser.parseString(Files.readString(
                 Path.of("resourcepack", "assets", "funnel", "models", "item",
@@ -66,15 +68,15 @@ class GnQuantaGripSilhouetteTest {
             JsonObject display = model.getAsJsonObject("display");
             for (String hand : List.of("firstperson_righthand", "firstperson_lefthand",
                     "thirdperson_righthand", "thirdperson_lefthand")) {
-                JsonArray rotation = display.getAsJsonObject(hand).getAsJsonArray("rotation");
-                double pitch = rotation.get(0).getAsDouble();
-                double yaw = rotation.get(1).getAsDouble();
-                assertTrue(pitch < 0 && pitch >= -30,
-                    mode + " " + hand + " should lift the tip above the held receiver");
-                assertTrue(yaw >= 137 && yaw <= 165,
-                    mode + " " + hand + " must not be carried completely side-on");
-                assertTrue(display.getAsJsonObject(hand).getAsJsonArray("scale").get(0).getAsDouble() <= .85,
-                    mode + " " + hand + " should not overwhelm the player's silhouette");
+                JsonObject pose = display.getAsJsonObject(hand);
+                JsonArray rot = pose.getAsJsonArray("rotation");
+                double x = rot.get(0).getAsDouble(), y = rot.get(1).getAsDouble();
+                assertTrue(x >= 28 && x <= 42,
+                    mode + " " + hand + " must not revert to downward X pitch");
+                assertTrue(y >= 120 && y <= 150,
+                    mode + " " + hand + " should reveal both blades and the central receiver");
+                assertTrue(pose.getAsJsonArray("scale").get(0).getAsDouble() <= .82,
+                    mode + " " + hand + " should remain proportional to the player");
             }
         }
     }
