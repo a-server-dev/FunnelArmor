@@ -249,6 +249,28 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
+                        if (entry.getName().matches(
+                                "assets/funnel/models/item/brau_bro_(controller|single_cannon|twin_cannon)\\.json")) {
+                            String tex = model.getAsJsonObject("textures").get("0").getAsString();
+                            assertEquals("funnel:item/brau_bro_cannon", tex);
+                            int min = entry.getName().contains("controller") ? 7
+                                    : entry.getName().contains("twin") ? 45 : 37;
+                            assertTrue(model.getAsJsonArray("elements").size() >= min);
+                            for (var part : model.getAsJsonArray("elements")) {
+                                var e = part.getAsJsonObject();
+                                for (int axis = 0; axis < 3; axis++) {
+                                    double lo = e.getAsJsonArray("from").get(axis).getAsDouble();
+                                    double hi = e.getAsJsonArray("to").get(axis).getAsDouble();
+                                    assertTrue(lo >= -16 && lo < hi && hi <= 32);
+                                }
+                                for (var face : e.getAsJsonObject("faces").entrySet())
+                                    assertEquals("#0", face.getValue().getAsJsonObject()
+                                            .get("texture").getAsString());
+                            }
+                            checked++;
+                            zip.closeEntry();
+                            continue;
+                        }
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
