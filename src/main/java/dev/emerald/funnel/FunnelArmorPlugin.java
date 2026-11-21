@@ -118,6 +118,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private GnSwordCombat gnSwordCombat;
     private GnSwordIICombat gnSwordIICombat;
     private GundamMeleeCombat meleeCombat;
+    private BrauBroWaistCannons brauBroWaistCannons;
     private final Map<UUID, String> lastObservedPackStatus = new ConcurrentHashMap<>();
 
     @Override public void onEnable() {
@@ -153,6 +154,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         gnSwordIICombat.start();
         meleeCombat = new GundamMeleeCombat(this);
         meleeCombat.start();
+        brauBroWaistCannons = new BrauBroWaistCannons(this);
+        brauBroWaistCannons.start();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         // Migrate the item-model COMPONENT of previously issued controllers.
@@ -173,6 +176,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (gnSwordCombat != null) gnSwordCombat.stop();
         if (gnSwordIICombat != null) gnSwordIICombat.stop();
         if (meleeCombat != null) meleeCombat.stop();
+        if (brauBroWaistCannons != null) brauBroWaistCannons.stop();
         lastObservedPackStatus.clear();
         if (httpServer != null) httpServer.stop(0);
         lastShots.clear();
@@ -1649,7 +1653,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel saber give [player] §7| §b/funnel hawk give [player] §7| §b/funnel gn give [player] §7| §b/funnel gn2 give [player] §7| §b/funnel buster give [player] §7| §b/funnel aerial give [player] §7| §b/funnel give <1|3|4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args.length == 0) { sender.sendMessage("§b/funnel brau give [player] §7| §b/funnel saber give [player] §7| §b/funnel hawk give [player] §7| §b/funnel gn give [player] §7| §b/funnel gn2 give [player] §7| §b/funnel buster give [player] §7| §b/funnel aerial give [player] §7| §b/funnel give <1|3|4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (args[0].equalsIgnoreCase("brau")) return brauBroWaistCannons.command(sender, args);
         if (args[0].equalsIgnoreCase("aerial")) return aerialCombat.command(sender, args);
         if (args[0].equalsIgnoreCase("buster")) return twinBusterCombat.command(sender, args);
         if (args[0].equalsIgnoreCase("gn") || args[0].equalsIgnoreCase("gnv")) return gnSwordCombat.command(sender, args);

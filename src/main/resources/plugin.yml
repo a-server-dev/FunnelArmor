@@ -6,7 +6,7 @@ author: Emerald
 commands:
   funnel:
     description: Funnel and Gundam weapon systems
-    usage: /funnel <saber|hawk|gn|gn2|gnv|buster|aerial|give|formation|shield|barrier|angle|pack|reload|status|diagnose>
+    usage: /funnel <saber|hawk|gn|gn2|gnv|buster|aerial|brau|give|formation|shield|barrier|angle|pack|reload|status|diagnose>
 permissions:
   funnel.admin:
     default: op

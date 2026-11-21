@@ -1162,3 +1162,15 @@ A new reference-guided rebuild addresses the underlying arrangement:
   limited tip separation, no long white tubes and positive held-pose pitch.
 
 This release deliberately does not claim screenshot-level approval.
+
+## v0.18.0 — MAN-03 ブラウ・ブロ 腰部メガ粒子砲（手持ちコントローラー）
+
+- `/funnel brau give [player]` (OP / `funnel.admin`) で専用コントローラーを配布。
+- コントローラーを **メインハンドに持つ間だけ** 腰の前方左右に連装砲2基、後方左右に単装砲2基（合計4ポッド）を表示。手持ちアイテムを外すと消去。
+- ブラウ・ブロの有線砲塔を参考に、銀灰色の角張った砲塔、淡い紫の腰部ジョイント、薄緑色の砲口を新規3Dモデルで構築。モデルは `models/brau_bro_*.bbmodel` と対応する `resourcepack` JSON の両方を用意。
+- プレイヤーの水平向きに追従。上下の視線には追従しない。死亡、ログアウト、ワールド移動、手持ち切替、プラグイン停止で表示を削除。
+- `/funnel brau status` で装備状態と表示中の砲塔数を確認。
+- 設定: `brau-bro.enabled` / `brau-bro.model-scale`。4門とも専用リソパモデルを使用。プラグインのみで動作しクライアントMODは不要（リソースパック必要）。
+- 今回は**外観・装着の初期実装のみ**。射撃、ビームダメージ、オールレンジの自律飛行は未実装。
+- 既存のフィンファンネル、GNソード、バスターライフル等のアイテム・動作は変更しない。
+

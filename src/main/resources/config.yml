@@ -189,3 +189,11 @@ gn-sword-ii:
   melee-damage: 5.0
   rifle-range: 28.0
   rifle-damage: 3.0
+
+# MAN-03 Brau-Bro waist guns. The hand-held controller deploys 4 cosmetic
+# gun-pod ItemDisplays (two twin-barrel, two single-barrel).
+# The four pods follow player yaw at waist height, not camera pitch.
+# Firing mechanics are deliberately not included in this first release.
+brau-bro:
+  enabled: true
+  model-scale: 0.74

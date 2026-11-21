@@ -11,7 +11,7 @@ class FunnelTabSuggestionsTest {
 
     @Test void playerGetsRelevantCommandsButNoAdminActions() {
         var result = FunnelTabSuggestions.complete(new String[] {""}, false, true, ONLINE);
-        assertEquals(List.of("aerial", "barrier", "buster", "formation", "gn", "gn2", "gnv", "hawk", "pack", "saber", "shield", "status"), result);
+        assertEquals(List.of("aerial", "barrier", "brau", "buster", "formation", "gn", "gn2", "gnv", "hawk", "pack", "saber", "shield", "status"), result);
         assertEquals(List.of("pack"), FunnelTabSuggestions.complete(new String[]{"Pa"}, false, true, ONLINE));
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"give",""}, false, true, ONLINE));
         assertEquals(List.of(), FunnelTabSuggestions.complete(new String[]{"angle","-"}, false, true, ONLINE));
@@ -132,8 +132,21 @@ class FunnelTabSuggestionsTest {
         }
     }
 
+    @Test void brauSuggestionsUseExistingAdminPermissionRules() {
+        assertEquals(List.of("brau"), FunnelTabSuggestions.complete(
+                new String[]{"br"}, false, true, ONLINE));
+        assertEquals(List.of("status"), FunnelTabSuggestions.complete(
+                new String[]{"brau", ""}, false, true, ONLINE));
+        assertEquals(List.of("give", "status"), FunnelTabSuggestions.complete(
+                new String[]{"brau", ""}, true, true, ONLINE));
+        assertEquals(List.of("East"), FunnelTabSuggestions.complete(
+                new String[]{"brau", "give", "ea"}, true, true, ONLINE));
+        assertEquals(List.of(), FunnelTabSuggestions.complete(
+                new String[]{"brau", "give", ""}, false, true, ONLINE));
+    }
+
     @Test void consoleOnlyGetsSafeRelevantCompletions() {
-        assertEquals(List.of("aerial","angle","buster","diagnose","give","gn","gn2","gnv","hawk","pack","reload","saber","status"),
+        assertEquals(List.of("aerial","angle","brau","buster","diagnose","give","gn","gn2","gnv","hawk","pack","reload","saber","status"),
                 FunnelTabSuggestions.complete(new String[]{""}, true, false, ONLINE));
         assertEquals(List.of("Pen4"),
                 FunnelTabSuggestions.complete(new String[]{"pack","pen"}, true, false, ONLINE));

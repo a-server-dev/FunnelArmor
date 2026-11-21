@@ -32,6 +32,7 @@ public final class FunnelTabSuggestions {
         String action = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 1) {
             candidates.add("aerial");
+            candidates.add("brau");
             candidates.add("buster");
             candidates.add("gn");
             candidates.add("gn2");
@@ -69,7 +70,7 @@ public final class FunnelTabSuggestions {
                         candidates.addAll(onlineNames);
                     else return List.of();
                 }
-                case "buster" -> {
+                case "brau", "buster" -> {
                     if (args.length == 2) {
                         candidates.add("status");
                         if (admin) candidates.add("give");
