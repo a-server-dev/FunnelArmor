@@ -141,6 +141,8 @@ final class GnSwordCombat implements Listener {
                 Component.text("§7バスター形態: 6基合体・威力強化")));
     }
 
+    ItemStack giftItem() { return swordItem(); }
+
     private ItemStack swordItem() {
         ItemStack sword = new ItemStack(Material.FEATHER);
         ItemMeta meta = sword.getItemMeta();
@@ -151,23 +153,6 @@ final class GnSwordCombat implements Listener {
     }
 
     boolean command(CommandSender sender, String[] args) {
-        if (args.length >= 2 && args[1].equalsIgnoreCase("give")) {
-            if (!sender.hasPermission("funnel.admin")) {
-                sender.sendMessage("§c権限がありません。");
-                return true;
-            }
-            Player target = args.length >= 3
-                    ? Bukkit.getPlayerExact(args[2])
-                    : sender instanceof Player player ? player : null;
-            if (target == null) {
-                sender.sendMessage("§c対象プレイヤーが見つかりません。");
-                return true;
-            }
-            target.getInventory().addItem(swordItem()).values().forEach(item ->
-                    target.getWorld().dropItemNaturally(target.getLocation(), item));
-            sender.sendMessage("§a" + target.getName() + " にGNソードVを配布しました。");
-            return true;
-        }
         if (args.length >= 2 && args[1].equalsIgnoreCase("status")) {
             if (!(sender instanceof Player player)) {
                 sender.sendMessage("§cプレイヤー専用です。");
@@ -181,7 +166,7 @@ final class GnSwordCombat implements Listener {
             }
             return true;
         }
-        sender.sendMessage("§b/funnel gn give [player] §7| §b/funnel gn status");
+        sender.sendMessage("§b/funnel gn status §7| 配布: /funnel give gn [player]");
         return true;
     }
 

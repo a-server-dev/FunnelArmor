@@ -160,6 +160,8 @@ final class TwinBusterCombat implements Listener {
         return "combined".equals(value) ? Mode.COMBINED : Mode.DUAL;
     }
 
+    ItemStack giftItem() { return newWeapon(); }
+
     private ItemStack newWeapon() {
         ItemStack item = new ItemStack(Material.FEATHER);
         ItemMeta meta = item.getItemMeta();
@@ -188,23 +190,7 @@ final class TwinBusterCombat implements Listener {
 
     boolean command(CommandSender sender, String[] args) {
         if (args.length == 1) {
-            sender.sendMessage("§b/funnel buster give [player] §8(OP) §7| §b/funnel buster status");
-            return true;
-        }
-        if (args[1].equalsIgnoreCase("give")) {
-            if (!sender.hasPermission("funnel.admin")) {
-                sender.sendMessage("§c権限がありません。");
-                return true;
-            }
-            Player target = args.length >= 3 ? Bukkit.getPlayerExact(args[2])
-                    : sender instanceof Player p ? p : null;
-            if (target == null) {
-                sender.sendMessage("§c対象プレイヤーが見つかりません。");
-                return true;
-            }
-            target.getInventory().addItem(newWeapon()).values().forEach(item ->
-                    target.getWorld().dropItemNaturally(target.getLocation(), item));
-            sender.sendMessage("§a" + target.getName() + " にツインバスターライフルを渡しました。");
+            sender.sendMessage("§b/funnel buster status §7| 配布: /funnel give buster [player]");
             return true;
         }
         if (args[1].equalsIgnoreCase("status")) {
@@ -226,7 +212,7 @@ final class TwinBusterCombat implements Listener {
                     + " §7/ 冷却 " + (remaining + 19) / 20 + "秒");
             return true;
         }
-        sender.sendMessage("§c/funnel buster <give|status>");
+        sender.sendMessage("§7/funnel buster status §7| 配布: /funnel give buster [player]");
         return true;
     }
 

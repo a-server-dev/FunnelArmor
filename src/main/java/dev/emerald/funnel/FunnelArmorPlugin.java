@@ -1643,17 +1643,41 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command,
                                       String alias, String[] args) {
-        if (!command.getName().equalsIgnoreCase("funnel")) return List.of();
+        if (!command.getName().equalsIgnoreCase("funnel") || !FunnelCommandAccess.allowed(sender)) return List.of();
         // Never disclose admin-only actions or offer player targets to non-admins.
         List<String> online = Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName).toList();
-        return FunnelTabSuggestions.complete(args, sender.hasPermission("funnel.admin"),
+        return FunnelTabSuggestions.complete(args, FunnelCommandAccess.allowed(sender),
                 sender instanceof Player,
                 sender instanceof Player p ? selectedVariant(p) : 0, online);
     }
 
+    private ItemStack createGift(String type) {
+        return switch (type) {
+            case "1" -> weapon(1);
+            case "3" -> weapon(3);
+            case "4" -> weapon(4);
+            case "aerial" -> aerialCombat.giftItem();
+            case "brau" -> brauBroWaistCannons.giftItem();
+            case "buster" -> twinBusterCombat.giftItem();
+            case "gn", "gnv" -> gnSwordCombat.giftItem();
+            case "gn2" -> gnSwordIICombat.giftItem();
+            case "saber", "hawk" -> meleeCombat.giftItem(type);
+            default -> throw new IllegalArgumentException("Unknown equipment type: " + type);
+        };
+    }
+
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 0) { sender.sendMessage("§b/funnel brau give [player] §7| §b/funnel saber give [player] §7| §b/funnel hawk give [player] §7| §b/funnel gn give [player] §7| §b/funnel gn2 give [player] §7| §b/funnel buster give [player] §7| §b/funnel aerial give [player] §7| §b/funnel give <1|3|4|all> [player] §7| §b/funnel formation <orbit|wings|rear|front|spiral|next> §7| §b/funnel pack [player] §7| §b/funnel shield §7| §b/funnel barrier §7| §b/funnel angle <-15..15> §7| §b/funnel reload §7| §b/funnel status"); return true; }
+        if (!FunnelCommandAccess.allowed(sender)) {
+            sender.sendMessage("§c/funnel コマンドはOPまたはEmeraldREX91のみ使用できます。");
+            return true;
+        }
+        if (args.length == 0) {
+            sender.sendMessage("§b/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|all> [player]"
+                + " §7| §b/funnel pack [player] §7| §b/funnel <装備名> status"
+                + " §7| §b/funnel formation <...> §7| §b/funnel reload §7| §b/funnel status");
+            return true;
+        }
         if (args[0].equalsIgnoreCase("brau")) return brauBroWaistCannons.command(sender, args);
         if (args[0].equalsIgnoreCase("aerial")) return aerialCombat.command(sender, args);
         if (args[0].equalsIgnoreCase("buster")) return twinBusterCombat.command(sender, args);
@@ -1663,30 +1687,30 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (args[0].equalsIgnoreCase("hawk")) return meleeCombat.command(sender, args, "hawk");
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
-                if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
-                int variant = 1;
-                boolean all = args.length > 1 && args[1].equalsIgnoreCase("all");
-                if (args.length > 1 && !all) {
-                    try { variant = Integer.parseInt(args[1]); }
-                    catch (NumberFormatException ex) {
-                        sender.sendMessage("§c指定: /funnel give <1|3|4|all> [player]");
-                        return true;
-                    }
-                    if (variant != 1 && variant != 3 && variant != 4) {
-                        sender.sendMessage("§c現在の対象は 1=フィン / 3=キュベレイ / 4=シールド です。旧試作2は新規配布を停止しました。");
-                        return true;
-                    }
+                if (args.length > 3) {
+                    sender.sendMessage("§c指定: /funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|all> [player]");
+                    return true;
                 }
-                Player target = args.length > 2 ? Bukkit.getPlayerExact(args[2]) : sender instanceof Player p ? p : null;
-                if (target == null) { sender.sendMessage("§cプレイヤーが見つかりません。"); return true; }
-                if (all) {
-                    for (int n : new int[]{1,3,4}) target.getInventory().addItem(weapon(n));
-                    aerialCombat.grant(target);
-                    sender.sendMessage("§a" + target.getName() + " に正式版4種類（フィン、キュベレイ、シールド、GUND）を渡しました。");
-                } else {
-                    target.getInventory().addItem(weapon(variant));
-                    sender.sendMessage("§a" + target.getName() + " にファンネル" + variant + "を渡しました。");
+                String kind = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "1";
+                if (!FunnelGiftCatalog.supported(kind)) {
+                    sender.sendMessage("§c対象が不明です。/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|all> [player]");
+                    return true;
                 }
+                Player target = args.length == 3 ? Bukkit.getPlayerExact(args[2])
+                    : sender instanceof Player player ? player : null;
+                if (target == null) {
+                    sender.sendMessage("§c対象プレイヤーが見つかりません。コンソールでは [player] を指定してください。");
+                    return true;
+                }
+                List<ItemStack> gifts = new ArrayList<>();
+                if (kind.equals("all")) {
+                    for (String type : FunnelGiftCatalog.ALL) gifts.add(createGift(type));
+                } else gifts.add(createGift(kind));
+                target.getInventory().addItem(gifts.toArray(ItemStack[]::new))
+                    .values().forEach(overflow ->
+                        target.getWorld().dropItemNaturally(target.getLocation(), overflow));
+                sender.sendMessage("§a" + target.getName() + " に "
+                    + gifts.size() + " 種類の装備（" + kind + "）を配布しました。");
             }
             case "formation" -> {
                 if (!(sender instanceof Player player)) {
@@ -1748,14 +1772,14 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             case "pack" -> {
                 Player target;
                 if (args.length > 1) {
-                    if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
+                    if (!FunnelCommandAccess.allowed(sender)) { sender.sendMessage("§c権限がありません。"); return true; }
                     target = Bukkit.getPlayerExact(args[1]);
                 } else target = sender instanceof Player p ? p : null;
                 if (target == null) { sender.sendMessage("§c対象プレイヤーが見つかりません。"); return true; }
                 applyPack(target);
             }
             case "angle" -> {
-                if (!sender.hasPermission("funnel.admin")) {
+                if (!FunnelCommandAccess.allowed(sender)) {
                     sender.sendMessage("§c権限がありません。");
                     return true;
                 }
@@ -1784,7 +1808,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                         + "° §aに変更・保存しました（展開中のバリアにも反映）。");
             }
             case "reload" -> {
-                if (!sender.hasPermission("funnel.admin")) { sender.sendMessage("§c権限がありません。"); return true; }
+                if (!FunnelCommandAccess.allowed(sender)) { sender.sendMessage("§c権限がありません。"); return true; }
                 reloadConfig(); startHttp();
                 Object raw = getConfig().get("fin-barrier.fin-tip-open-degrees");
                 sender.sendMessage("§a設定を再読み込みしました。フィン先端角度: §f"
@@ -1792,7 +1816,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 sender.sendMessage("§7モデル変更はJAR更新とサーバー再起動が必要です。");
             }
             case "diagnose" -> {
-                if (!sender.hasPermission("funnel.admin")) {
+                if (!FunnelCommandAccess.allowed(sender)) {
                     sender.sendMessage("§c権限がありません。"); return true;
                 }
                 if (!(sender instanceof Player p)) {

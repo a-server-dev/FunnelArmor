@@ -182,6 +182,8 @@ final class AerialCombat implements Listener {
         return item;
     }
 
+    ItemStack giftItem() { return device(); }
+
     void grant(Player target) {
         var leftovers = target.getInventory().addItem(device());
         leftovers.values().forEach(item ->
@@ -190,7 +192,7 @@ final class AerialCombat implements Listener {
 
     boolean command(CommandSender sender, String[] args) {
         if (args.length >= 2 && args[1].equalsIgnoreCase("preview")) {
-            if (!sender.hasPermission("funnel.admin")) {
+            if (!FunnelCommandAccess.allowed(sender)) {
                 sender.sendMessage("§c権限がありません。");
                 return true;
             }
@@ -247,17 +249,6 @@ final class AerialCombat implements Listener {
                     + " §7(/funnel aerial preview clear で削除)");
             return true;
         }
-        if (args.length >= 2 && args[1].equalsIgnoreCase("give")) {
-            if (!sender.hasPermission("funnel.admin")) {
-                sender.sendMessage("§c権限がありません。"); return true;
-            }
-            Player target = args.length >= 3 ? Bukkit.getPlayerExact(args[2])
-                    : sender instanceof Player p ? p : null;
-            if (target == null) { sender.sendMessage("§c対象のプレイヤーが見つかりません。"); return true; }
-            grant(target);
-            sender.sendMessage("§aエアリアル装備を " + target.getName() + " に渡しました。");
-            return true;
-        }
         if (args.length >= 2 && args[1].equalsIgnoreCase("status") && sender instanceof Player p) {
             State st = active.get(p.getUniqueId());
             if (st == null) { sender.sendMessage("§7エアリアルは現在未展開です。"); return true; }
@@ -267,7 +258,7 @@ final class AerialCombat implements Listener {
                     + " / ライフルCD " + Math.max(0,st.rifleCooldown-tick) + "t");
             return true;
         }
-        sender.sendMessage("§7/funnel aerial give [player] §8(OP) §7| /funnel aerial status §7| /funnel aerial preview <1..11|shield|clear> §8(OP)");
+        sender.sendMessage("§7/funnel aerial status §7| /funnel aerial preview <1..11|shield|clear> §7| 配布: /funnel give aerial [player]");
         return true;
     }
 

@@ -133,6 +133,10 @@ final class GundamMeleeCombat implements Listener {
         item.setItemMeta(meta);
     }
 
+    ItemStack giftItem(String type) {
+        return "saber".equals(type) ? newSaber() : newHawk();
+    }
+
     private ItemStack newSaber() {
         ItemStack item = new ItemStack(Material.FEATHER);
         ItemMeta meta = item.getItemMeta();
@@ -165,23 +169,6 @@ final class GundamMeleeCombat implements Listener {
 
     boolean command(CommandSender sender, String[] args, String type) {
         boolean isSaber = type.equals("saber");
-        if (args.length >= 2 && args[1].equalsIgnoreCase("give")) {
-            if (!sender.hasPermission("funnel.admin")) {
-                sender.sendMessage("§c権限がありません。");
-                return true;
-            }
-            Player target = args.length >= 3 ? Bukkit.getPlayerExact(args[2])
-                    : sender instanceof Player player ? player : null;
-            if (target == null) {
-                sender.sendMessage("§c対象プレイヤーが見つかりません。");
-                return true;
-            }
-            target.getInventory().addItem(isSaber ? newSaber() : newHawk()).values()
-                    .forEach(overflow -> target.getWorld().dropItemNaturally(target.getLocation(), overflow));
-            sender.sendMessage("§a" + target.getName() + " に"
-                    + (isSaber ? "ビームサーベル" : "ヒートホーク") + "を配布しました。");
-            return true;
-        }
         if (args.length >= 2 && args[1].equalsIgnoreCase("status")) {
             if (!(sender instanceof Player player)) sender.sendMessage("§cプレイヤー専用です。");
             else {
@@ -195,7 +182,7 @@ final class GundamMeleeCombat implements Listener {
             }
             return true;
         }
-        sender.sendMessage("§b/funnel " + type + " give [player] §7| §b/funnel " + type + " status");
+        sender.sendMessage("§b/funnel " + type + " status §7| 配布: /funnel give " + type + " [player]");
         return true;
     }
 

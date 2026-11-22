@@ -85,6 +85,8 @@ final class BrauBroWaistCannons implements Listener {
         return item;
     }
 
+    ItemStack giftItem() { return controller(); }
+
     private ItemStack controller() {
         ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = item.getItemMeta();
@@ -358,27 +360,6 @@ final class BrauBroWaistCannons implements Listener {
     }
 
     boolean command(CommandSender sender, String[] args) {
-        if (args.length >= 2 && args[1].equalsIgnoreCase("give")) {
-            if (!sender.hasPermission("funnel.admin")) {
-                sender.sendMessage("§c権限がありません。");
-                return true;
-            }
-            if (args.length > 3) {
-                sender.sendMessage("§7/funnel brau give [player]");
-                return true;
-            }
-            Player target = args.length == 3 ? Bukkit.getPlayerExact(args[2])
-                : sender instanceof Player p ? p : null;
-            if (target == null) {
-                sender.sendMessage("§c対象のプレイヤーが見つかりません。");
-                return true;
-            }
-            target.getInventory().addItem(controller()).values().forEach(item ->
-                target.getWorld().dropItemNaturally(target.getLocation(), item));
-            sender.sendMessage("§a" + target.getName()
-                + " にブラウ・ブロ有線メガ粒子砲コントローラーを渡しました。");
-            return true;
-        }
         if (args.length == 2 && args[1].equalsIgnoreCase("status")) {
             if (!(sender instanceof Player p)) {
                 sender.sendMessage("§7ゲーム内で確認してください。");
@@ -396,7 +377,7 @@ final class BrauBroWaistCannons implements Listener {
                 + " §7/ 射撃: §8未実装");
             return true;
         }
-        sender.sendMessage("§b/funnel brau give [player] §8(OP) §7| §b/funnel brau status");
+        sender.sendMessage("§b/funnel brau status §7| 配布: /funnel give brau [player]");
         return true;
     }
 

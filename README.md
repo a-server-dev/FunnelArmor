@@ -1184,3 +1184,31 @@ This release deliberately does not claim screenshot-level approval.
 - 設定: `brau-bro.extension-distance: 4.2`（2–8ブロック）と `brau-bro.extension-ticks: 16`（4–80tick）。既存の `model-scale` は変更していません。
 - `/funnel brau status` で展開状態、砲塔4基、ワイヤー節数を確認できます。古い配布済みコントローラーもPDCが同一なのでそのまま使用できます。
 - 射撃・ダメージはまだ実装していません。既存の砲塔テクスチャ／モデルを全く変更しないため、新JARでの描画は従来リソースパックを利用します。
+
+## v0.20.0 — Unified equipment distribution and exclusive /funnel access
+
+- `/funnel give all [player]` gives **10 kinds of equipment**, including the
+  previously missing Aerial GUND bits, Brau-Bro tethered waist cannons,
+  Twin Buster Rifle, GN Sword V, GN Sword II, Beam Saber and Heat Hawk,
+  in addition to the 3 active original funnel controllers (1, 3, 4).
+- `/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk> [player]`
+  gives only one weapon; `gnv` remains an accepted alias for `gn`.
+  `/funnel give` without a selection remains shorthand for variant 1.
+  The retired prototype variant 2 is not part of the catalog.
+- Removed all per-weapon `give` subcommands. For example,
+  `/funnel brau give` and `/funnel aerial give` no longer work;
+  use `/funnel give brau` and `/funnel give aerial` instead.
+  The per-weapon `status` commands and `aerial preview` remain.
+- **Command access** for every `/funnel` subcommand (including `status`,
+  `pack`, `formation`, `give`) is limited to OP players,
+  exactly named Minecraft player `EmeraldREX91`, and trusted server console.
+  An unrelated player's LuckPerms `funnel.admin` grant is no longer accepted.
+  Unauthorized players receive no completions and cannot run commands.
+- This does **not** restrict using already-distributed equipment. The
+  controller, combat actions and client resource pack are unaffected.
+  OP/EmeraldREX91 can distribute packs to non-OP players with
+  `/funnel pack <player>`.
+- Uses existing item creation code so PDC identity, item model, lore, weapon
+  variants and Twin Buster per-item UUIDs remain unchanged. All ten items
+  are delivered in one inventory operation; any overflow is dropped at the
+  target's feet rather than discarded.
