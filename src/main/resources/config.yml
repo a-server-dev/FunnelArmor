@@ -197,3 +197,7 @@ gn-sword-ii:
 brau-bro:
   enabled: true
   model-scale: 0.74
+  # Flight distance of each of the four tethered cannon pods in blocks (2..8).
+  extension-distance: 4.2
+  # Launch/retrieval animation duration in server ticks (4..80).
+  extension-ticks: 16
