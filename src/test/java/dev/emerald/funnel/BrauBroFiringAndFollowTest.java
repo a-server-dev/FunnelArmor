@@ -9,18 +9,18 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BrauBroFiringAndFollowTest {
-    @Test void fourCannonsHaveSixRealMuzzleOffsetsInTheExpectedOrder() {
+    @Test void fourReferencePodsHaveEightRealMuzzleOffsetsInTheExpectedOrder() {
         var guns = BrauBroFirePattern.BARRELS;
-        assertEquals(6, guns.size());
-        assertEquals(List.of(0,0,1,1,2,3),
+        assertEquals(8, guns.size());
+        assertEquals(List.of(0,0,1,1,2,2,3,3),
             guns.stream().map(BrauBroFirePattern.Barrel::podIndex).toList());
-        for (int i=0; i<2; i++) {
+        for (int i=0; i<4; i++) {
             assertEquals(-guns.get(i*2).lateral(),
                 guns.get(i*2+1).lateral(), 1e-8);
             assertTrue(Math.abs(guns.get(i*2).lateral()) > .03);
         }
-        assertEquals(0, guns.get(4).lateral(), 1e-8);
-        assertEquals(0, guns.get(5).lateral(), 1e-8);
+        assertEquals(.102, Math.abs(guns.get(4).lateral()),1e-8);
+        assertEquals(.102, Math.abs(guns.get(6).lateral()),1e-8);
         assertEquals(4, new HashSet<>(guns.stream()
             .map(BrauBroFirePattern.Barrel::podIndex).toList()).size());
     }

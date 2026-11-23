@@ -52,7 +52,7 @@ import java.util.UUID;
  * remain attached between waist harness and moving cannon roots.
  *
  * Left click OR sneak + right click toggles extension and retrieval.
- * Normal right click fires six barrels in a four-pod salvo, with safe block
+ * Normal right click fires eight barrels in a four-pod salvo, with safe block
  * occlusion and one aggregated damage application per target. The four pods
  * follow the player smoothly even while deployed; the wires remain attached.
  */
@@ -64,7 +64,6 @@ final class BrauBroWaistCannons implements Listener {
     private final NamespacedKey controllerKey;
     private final NamespacedKey displayMarker;
     private final Map<UUID, State> active = new HashMap<>();
-    private final ItemStack singleVisual;
     private final ItemStack twinVisual;
 
     private static final class State {
@@ -83,7 +82,6 @@ final class BrauBroWaistCannons implements Listener {
         this.plugin = plugin;
         controllerKey = new NamespacedKey(plugin, "brau_bro_controller");
         displayMarker = new NamespacedKey(plugin, "brau_bro_display");
-        singleVisual = visualItem("brau_bro_single_cannon");
         twinVisual = visualItem("brau_bro_twin_cannon");
     }
 
@@ -105,8 +103,8 @@ final class BrauBroWaistCannons implements Listener {
         meta.lore(List.of(
             Component.text("§7メインハンド保持中: 腰に砲塔4基を接続"),
             Component.text("§7左クリック / しゃがみ右クリック: 有線射出・収納"),
-            Component.text("§b通常右クリック: 4門からメガ粒子砲を斉射"),
-            Component.text("§7連装メガ粒子砲×2 / 単装メガ粒子砲×2"),
+            Component.text("§b通常右クリック: 4基8砲口からメガ粒子砲を斉射"),
+            Component.text("§7双砲口有線メガ粒子砲ポッド×4（計8門）"),
             Component.text("§8射出中はプレイヤーを追従")
         ));
         meta.setUnbreakable(true);
@@ -158,7 +156,7 @@ final class BrauBroWaistCannons implements Listener {
 
     private ItemDisplay spawnPod(Player player, BrauBroWaistLayout.Mount mount) {
         return player.getWorld().spawn(player.getLocation(), ItemDisplay.class, d -> {
-            d.setItemStack(mount.twin() ? twinVisual : singleVisual);
+            d.setItemStack(twinVisual); // All four use the SAME reference-shaped twin-muzzle pod.
             // Leave the existing v0.18.0 geometry and fixed display transform.
             d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
             d.setBillboard(Display.Billboard.FIXED);
@@ -289,7 +287,7 @@ final class BrauBroWaistCannons implements Listener {
 
     /**
      * Aiming is controlled by the handheld controller's crosshair; each of
-     * the six emitter rays actually starts at its own extended gun model.
+     * the eight emitter rays actually starts at its own extended gun model.
      * Block ray tracing limits both visuals and damage to unoccluded targets.
      */
     private void fire(Player player) {
@@ -320,7 +318,7 @@ final class BrauBroWaistCannons implements Listener {
 
         double perBeam = fireDamage();
         double maxBurstDamage = Math.max(perBeam, Math.min(24.0,
-            plugin.getConfig().getDouble("brau-bro.max-burst-damage", 9.0)));
+            plugin.getConfig().getDouble("brau-bro.max-burst-damage", 12.0)));
         double particleStep = Math.max(.35, Math.min(1.3,
             plugin.getConfig().getDouble("brau-bro.beam-particle-step", .72)));
         Particle.DustOptions mint = new Particle.DustOptions(
@@ -329,7 +327,7 @@ final class BrauBroWaistCannons implements Listener {
             Color.fromRGB(167, 118, 255), 1.0f);
 
         // Aggregate same-tick hits. Minecraft damage i-frames would silently
-        // discard 5 out of 6 .damage() calls if rays hit the same mob.
+        // discard 7 out of 8 .damage() calls if rays hit the same mob.
         Map<UUID, Integer> hitCounts = new HashMap<>();
         Map<UUID, LivingEntity> victims = new HashMap<>();
         for (var emitter : BrauBroFirePattern.BARRELS) {
@@ -343,7 +341,7 @@ final class BrauBroWaistCannons implements Listener {
             Vector forward = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
             Vector right = horizontalRight(forward);
             Location muzzle = turret.clone()
-                .add(forward.clone().multiply(.47))
+                .add(forward.clone().multiply(.61))
                 .add(right.multiply(emitter.lateral()));
             muzzle.setYaw(0);
             muzzle.setPitch(0);
@@ -471,12 +469,14 @@ final class BrauBroWaistCannons implements Listener {
             var mount = BrauBroWaistLayout.MOUNTS.get(i);
             Location harness = worldOffset(player.getLocation(), forward, right,
                 BrauBroWaistLayout.cableBase(mount), sneakShift);
-            // The cannon model's rear coupling is approximately 0.2 blocks
-            // behind its display pivot, measured along its own held yaw.
-            // Do NOT use the player's current facing to locate this end.
+            // Red-reference pod: the tether goes into the curved socket
+            // mounted ABOVE the body, not the rear end of the barrel box.
+            // World relative position is determined by the pod's yaw, never
+            // by the player's current yaw (prevents separated/double-rotated wires).
             double modelYaw = Math.toRadians(podLocations[i].getYaw() - 180.0);
-            Vector muzzle = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
-            Location coupling = podLocations[i].clone().subtract(muzzle.multiply(.25));
+            Vector podForward = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
+            Location coupling = podLocations[i].clone()
+                .add(0, .27, 0).subtract(podForward.multiply(.04));
             segment(state.cables.get(i), harness, coupling);
         }
     }
@@ -577,7 +577,7 @@ final class BrauBroWaistCannons implements Listener {
                 + " §7/ 状態: §f" + mode
                 + " §7/ 砲塔: §f" + (state == null ? 0 : state.pods.size()) + "/4"
                 + " §7/ ワイヤー: §f" + (state == null ? 0 : state.cables.size()) + "本"
-                + " §7/ 射撃: §a通常右クリック（6砲口）");
+                + " §7/ 射撃: §a通常右クリック（8砲口）");
             return true;
         }
         sender.sendMessage("§b/funnel brau status §7| 配布: /funnel give brau [player]");

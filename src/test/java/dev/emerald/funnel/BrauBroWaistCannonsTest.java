@@ -26,8 +26,8 @@ class BrauBroWaistCannonsTest {
     @Test void handheldControllerDeploysExactlyFourWaistMountedPods() {
         var mounts = BrauBroWaistLayout.MOUNTS;
         assertEquals(4, mounts.size());
-        assertEquals(2, mounts.stream().filter(BrauBroWaistLayout.Mount::twin).count());
-        assertEquals(2, mounts.stream().filter(m -> !m.twin()).count());
+        assertEquals(2, mounts.stream().filter(BrauBroWaistLayout.Mount::upper).count());
+        assertEquals(2, mounts.stream().filter(m -> !m.upper()).count());
         assertEquals(-mounts.get(1).side(), mounts.get(0).side(), .00001);
         assertEquals(-mounts.get(3).side(), mounts.get(2).side(), .00001);
         assertEquals(mounts.get(0).forward(), mounts.get(1).forward(), .00001);
@@ -77,18 +77,40 @@ class BrauBroWaistCannonsTest {
         }
     }
 
-    @Test void doubleGunHasTwiceAsManyIndependentlyModeledMuzzles() throws Exception {
+    @Test void bothLegacyModelIdsAreNowIdenticalTwinConePods() throws Exception {
         var single=read(Path.of("models/brau_bro_single_cannon.bbmodel"))
             .getAsJsonArray("elements");
         var twin=read(Path.of("models/brau_bro_twin_cannon.bbmodel"))
             .getAsJsonArray("elements");
-        long singleFocus=0,twinFocus=0;
-        for(var x : single) if(x.getAsJsonObject().get("name").getAsString()
-                .endsWith("green particle focus")) singleFocus++;
-        for(var x : twin) if(x.getAsJsonObject().get("name").getAsString()
-                .endsWith("green particle focus")) twinFocus++;
-        assertEquals(1, singleFocus);
-        assertEquals(2, twinFocus);
-        assertTrue(twin.size() > single.size());
+        assertTrue(single.size() >= 200);
+        assertEquals(twin.size(),single.size());
+        for(int i=0;i<single.size();i++) {
+            var a=single.get(i).getAsJsonObject();
+            var b=twin.get(i).getAsJsonObject();
+            assertEquals(a.get("name"),b.get("name"));
+            assertEquals(a.get("from"),b.get("from"));
+            assertEquals(a.get("to"),b.get("to"));
+        }
+        for(String model : List.of("single_cannon", "twin_cannon")) {
+            var parts=read(Path.of("models/brau_bro_"+model+".bbmodel"))
+                .getAsJsonArray("elements");
+            for(int emitter=1;emitter<=2;emitter++) {
+                String base="Emitter "+emitter;
+                assertNotNull(find(parts,base+" ivory ceramic base collar"));
+                assertNotNull(find(parts,base+" final ceramic pinpoint"));
+                for(int section=0;section<11;section++)
+                    assertNotNull(find(parts,
+                        base+" white ceramic conical section "+section));
+            }
+        }
+    }
+
+    private JsonObject find(JsonArray parts,String name) {
+        for(var value:parts) {
+            var part=value.getAsJsonObject();
+            if(name.equals(part.get("name").getAsString())) return part;
+        }
+        fail("Missing modeled component: "+name);
+        return null;
     }
 }

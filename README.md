@@ -1312,3 +1312,48 @@ This is intentionally replaced with a strictly forward-facing 2×2 formation:
 
 **Status:** Static model and animation code + CI checks; visual fidelity
 and on-server follow/aiming should still be reviewed in F5.
+
+## v0.24.0 — 4 identical MAN-03 twin-muzzle wired mega-particle pods
+
+Based directly on the user's marked reference illustration (November 23).
+The previous 2 twin/2 single interpretation was visually incorrect. The
+**four pods are now the same design**, each with two prominent off-white
+elongated conical emitters mounted on a compact deep-blue/purple rectangular
+housing. There are **eight firing emitters** in total.
+
+- Rebuilt both editable source models and packed item model JSON **from
+  scratch** rather than layering onto the old inaccurate geometries.
+  The two historical model IDs are deliberately kept valid and contain
+  identical 233-cuboid assemblies; all four deployed pods now use the
+  twin-cannon item model for visual consistency.
+- Reference design details: square violet armored hull, broad dark side
+  cheekplates, inset cooling slits, stamped light-metal rivets, stepped
+  iron-gray double front socket, off-white ceramic tapered cones with
+  increasingly narrow sections, and a **curved cable neck emerging from
+  the top center** of the pod.
+- White cones, **not green spear/blade tips**; green particles appear only
+  during the mega-particle beam firing visual effect. The existing 64×64
+  colored atlas is retained and UVs are remapped to its white/ivory/blue
+  swatches. No external model or reference image is bundled into the pack.
+- The four previous front-facing deployment positions (upper-left/right
+  and lower-left/right) remain unchanged. Both rows are dual-muzzle models.
+- The BlockDisplay wire coupling now attaches to the new **top socket**
+  (+0.27 Y, -0.04 forward relative to model pivot) rather than an arbitrary
+  location behind the lower cannon casing.
+- Normal right click fires 2 beams × 4 pods. Both barrels have separate
+  traced rays originating about 0.61 blocks forward and ±0.102 blocks to
+  each side of their cannon center, matching the new modeled cone tips.
+- 8 rays still aggregate damage per target once per volley to avoid normal
+  Minecraft immunity frames discarding hits. Default damage: 1.5 per beam,
+  max burst 12, 20-tick cooldown, 30-block range.
+- Existing left-click / sneak-right deploy-and-retrieve and the hand-held
+  controller PDC/ID remain unchanged. Commands retain OP/EmeraldREX91
+  restriction and `/funnel give brau` handling. Existing non-Brau-Bro
+  equipment is unaffected.
+- Additional automated tests check twin-muzzle symmetry for both legacy
+  item IDs, source/packed UV parity, 8 distinct muzzle rays, white tapered
+  cone tips, raised cable swivel and forward-only deployment.
+
+Note: Test success establishes model/logic consistency, **not a verified
+in-game appearance**. Visual pose and cable contact may still need review
+from a new F5 screenshot.

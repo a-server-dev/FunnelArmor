@@ -191,21 +191,21 @@ gn-sword-ii:
   rifle-damage: 3.0
 
 # MAN-03 Brau-Bro: the hand-held controller deploys 4 wire-tethered
-# mega-particle gun pods (2 twin-barrel + 2 single-barrel = six emitters).
+# mega-particle gun pods (4 twin-muzzle pods = eight emitters).
 # Left click or sneak-right toggles deployment; normal right click fires.
 brau-bro:
   enabled: true
   model-scale: 0.74
-  # Forward-fan deployment scale (2..8): upper twin guns float above the head,
-  # lower single guns hover around waist height, ALL FOUR in front.
+  # Forward-fan deployment scale (2..8): upper pair floats above the head,
+  # lower pair hovers around waist height, ALL FOUR twin-muzzle pods in front.
   extension-distance: 4.2
   # Approximate deployment/retrieval animation duration (4..80 ticks).
   extension-ticks: 16
   # The turrets automatically pursue the player's live location and yaw.
   # Pursuit speed is adaptive; no locked/frozen world-space launch destination.
-  # Six beams fired together from four pods, all aimed by the player's crosshair.
+  # Eight beams fired together from four twin-muzzle pods, aimed by crosshair.
   fire-range: 30.0
   fire-cooldown-ticks: 20
   fire-damage-per-beam: 1.5
-  max-burst-damage: 9.0
+  max-burst-damage: 12.0
   beam-particle-step: 0.72

@@ -84,7 +84,7 @@ class BrauBroForwardFormationTest {
             assertTrue(source.size()>=160,"Detailed weapon must not regress to a plain box");
             assertEquals("funnel:item/brau_bro_cannon",
                 pack.getAsJsonObject("textures").get("0").getAsString());
-            assertTrue(bb.getAsJsonArray("outliner").size()>=10);
+            assertTrue(bb.getAsJsonArray("outliner").size()>=8);
             for (int i=0;i<source.size();i++) {
                 var a=source.get(i).getAsJsonObject();
                 var b=elements.get(i).getAsJsonObject();

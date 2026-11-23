@@ -3,8 +3,8 @@ package dev.emerald.funnel;
 import java.util.List;
 
 /**
- * Four MAN-03 waist cannon mounts. Both twin emitters launch above and
- * ahead of the player, while both single emitters launch below them,
+ * Four identical MAN-03 twin-muzzle wired cannons. The upper pair launches
+ * above and ahead, while the lower pair launches slightly below them,
  * still IN FRONT of the player (not behind or to its four cardinal sides).
  *
  * Coordinates are player-relative: side = left/right, forward = facing,
@@ -12,14 +12,14 @@ import java.util.List;
  */
 final class BrauBroWaistLayout {
     record Mount(double side, double height, double forward,
-                 float yawOffset, boolean twin) {}
+                 float yawOffset, boolean upper) {}
     record Offset(double side, double height, double forward) {}
 
     static final List<Mount> MOUNTS = List.of(
-        // Twin-barrel high row, left and right.
+        // Upper row: same twin-muzzle pod as the lower row.
         new Mount(-0.43, 0.96,  0.22, -11.0f, true),
         new Mount( 0.43, 0.96,  0.22,  11.0f, true),
-        // Single-barrel low row, left and right. These WERE facing rearward.
+        // Lower row: these are also twin-muzzle pods, NOT single barrels.
         new Mount(-0.43, 0.91, -0.24, -13.0f, false),
         new Mount( 0.43, 0.91, -0.24,  13.0f, false)
     );
@@ -34,10 +34,10 @@ final class BrauBroWaistLayout {
         // 4.2 blocks: high row (+/-1.28 side, y=2.84, front=2.78);
         // low row (+/-1.47 side, y=1.26, front=2.62).
         double size = 0.5 + 0.5 * (clamped / 4.2);
-        double side = Math.copySign((mount.twin() ? 1.28 : 1.47) * size,
+        double side = Math.copySign((mount.upper() ? 1.28 : 1.47) * size,
             mount.side());
-        double forward = (mount.twin() ? 2.78 : 2.62) * size;
-        double lift = (mount.twin() ? 1.88 : 0.35) * size;
+        double forward = (mount.upper() ? 2.78 : 2.62) * size;
+        double lift = (mount.upper() ? 1.88 : 0.35) * size;
         return new Offset(side, mount.height() + lift, forward);
     }
 

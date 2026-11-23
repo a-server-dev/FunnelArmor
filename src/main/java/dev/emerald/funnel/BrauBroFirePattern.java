@@ -3,8 +3,8 @@ package dev.emerald.funnel;
 import java.util.List;
 
 /**
- * Four turret pods expose six separately modeled particle emitters:
- * first two pods have paired barrels, last two have one barrel each.
+ * Four reference-shaped wired turret pods, each with two conical
+ * white muzzles. Total: eight particle emitters.
  * These are lateral muzzle offsets in world blocks relative to each gun's
  * forward direction, preserving the source model's barrel spacing.
  */
@@ -12,9 +12,10 @@ final class BrauBroFirePattern {
     record Barrel(int podIndex, double lateral) {}
 
     static final List<Barrel> BARRELS = List.of(
-        new Barrel(0, -.066), new Barrel(0, .066),
-        new Barrel(1, -.066), new Barrel(1, .066),
-        new Barrel(2, 0), new Barrel(3, 0)
+        new Barrel(0, -.102), new Barrel(0, .102),
+        new Barrel(1, -.102), new Barrel(1, .102),
+        new Barrel(2, -.102), new Barrel(2, .102),
+        new Barrel(3, -.102), new Barrel(3, .102)
     );
 
     static int cooldown(int ticks) {
