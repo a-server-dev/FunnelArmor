@@ -1281,7 +1281,7 @@ This is intentionally replaced with a strictly forward-facing 2×2 formation:
   local side ±1.28, height **2.84 blocks above feet**, forward **2.78**.
   They hover above the head and slightly nearer the centerline.
 - **Lower left / lower right:** single-barrel turrets; side ±1.47, height
-  **1.26 blocks**, forward **2.50**. They fan out somewhat wider below.
+  **1.26 blocks**, forward **2.62**. They fan out somewhat wider below.
 - All four emitters point almost straight along the player's forward heading
   (yaw offsets -11/+11 for upper, -13/+13 for lower), instead of the
   old rearward-facing ±160° single guns.

@@ -32,11 +32,11 @@ final class BrauBroWaistLayout {
         double clamped = Math.max(2.0, Math.min(8.0, reach));
         // Scale the forward fan without switching quadrants. At the default
         // 4.2 blocks: high row (+/-1.28 side, y=2.84, front=2.78);
-        // low row (+/-1.47 side, y=1.26, front=2.50).
+        // low row (+/-1.47 side, y=1.26, front=2.62).
         double size = 0.5 + 0.5 * (clamped / 4.2);
         double side = Math.copySign((mount.twin() ? 1.28 : 1.47) * size,
             mount.side());
-        double forward = (mount.twin() ? 2.78 : 2.50) * size;
+        double forward = (mount.twin() ? 2.78 : 2.62) * size;
         double lift = (mount.twin() ? 1.88 : 0.35) * size;
         return new Offset(side, mount.height() + lift, forward);
     }
