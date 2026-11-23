@@ -1357,3 +1357,27 @@ housing. There are **eight firing emitters** in total.
 Note: Test success establishes model/logic consistency, **not a verified
 in-game appearance**. Visual pose and cable contact may still need review
 from a new F5 screenshot.
+
+## v0.24.1 — fix reversed MAN-03 pod orientation (no new resource pack)
+
+The twin-muzzle BBModel is authored along local +Z: two ivory cone tips point
+toward Z=20.82, while the cable terminal sits near Z=7 behind them. Its
+`display.fixed.rotation` has Y=180°. Modern Minecraft ItemDisplay rendering
+also includes an intrinsic 180° rotation. These two cancel. Previously the
+plugin additionally added **+180° to the entity yaw**, incorrectly making the
+cannon noses point toward the owner.
+
+- The entity's displayed yaw is now `playerYaw + mountYawOffset` instead of
+  `playerYaw + 180 + mountYawOffset` for all four pods, both deployed and docked.
+- Beam muzzle world direction and the curved top wire's direction use the same
+  `BrauBroWaistLayout.podForward(displayYaw)` helper, removing the previous
+  `displayYaw - 180` workaround. This prevents beams spawning behind the
+  ivory cone tips and the cable terminating on the wrong edge.
+- Canonical expected orientation (before mount offsets):
+  owner yaw 0 → +Z; yaw 90 → -X; yaw -90 → +X; yaw 180 → -Z.
+- Geometry remains identical (233 cuboids per twin pod); 4 × dual white cones,
+  front upper/lower formation, eight particle beams, shooting and follow
+  behavior are preserved. No other equipment is touched. No resource pack
+  rebuild is necessary; keep SHA-1 `4996a08ee561b35a86f4cca656f4f1ca5bc274ef`.
+- The correction is based on source transformations and Minecraft rendering
+  conventions; confirm the visual result with a game screenshot.

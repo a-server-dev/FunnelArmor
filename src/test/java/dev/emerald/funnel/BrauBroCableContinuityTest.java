@@ -48,7 +48,7 @@ class BrauBroCableContinuityTest {
             "World-space pursuit must be smoothed, not instantly rotated with the player");
         assertFalse(body.contains("launchTargets"),
             "Frozen world targets produced non-following turrets in v0.21");
-        assertTrue(body.contains("podLocations[i].getYaw() - 180.0"));
+        assertTrue(body.contains("BrauBroWaistLayout.podForward(podLocations[i].getYaw())"));
         assertTrue(body.contains("worldOffset(player.getLocation(), forward, right,"));
         assertTrue(body.contains("segment(state.cables.get(i), harness, coupling)"));
         assertTrue(body.contains("runTaskTimer(plugin, this::tick, 1L, 1L)"),

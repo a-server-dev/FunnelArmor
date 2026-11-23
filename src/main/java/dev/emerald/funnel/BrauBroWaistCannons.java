@@ -335,10 +335,11 @@ final class BrauBroWaistCannons implements Listener {
             Location turret = state.positions[pod];
             if (turret == null || !turret.getWorld().equals(world)) continue;
 
-            // The model is authored in local +Z and its fixed transform has
-            // a 180-degree yaw, cancelled by the stored display yaw - 180.
-            double modelYaw = Math.toRadians(turret.getYaw() - 180.0);
-            Vector forward = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
+            // BBModel +Z is the white cone direction. ItemDisplay's built-in
+            // 180-degree correction cancels the resource-pack FIXED 180-degree
+            // pose, so use the displayed entity yaw directly (no -180).
+            var facing = BrauBroWaistLayout.podForward(turret.getYaw());
+            Vector forward = new Vector(facing.x(), 0, facing.z());
             Vector right = horizontalRight(forward);
             Location muzzle = turret.clone()
                 .add(forward.clone().multiply(.61))
@@ -469,12 +470,12 @@ final class BrauBroWaistCannons implements Listener {
             var mount = BrauBroWaistLayout.MOUNTS.get(i);
             Location harness = worldOffset(player.getLocation(), forward, right,
                 BrauBroWaistLayout.cableBase(mount), sneakShift);
-            // Red-reference pod: the tether goes into the curved socket
-            // mounted ABOVE the body, not the rear end of the barrel box.
-            // World relative position is determined by the pod's yaw, never
-            // by the player's current yaw (prevents separated/double-rotated wires).
-            double modelYaw = Math.toRadians(podLocations[i].getYaw() - 180.0);
-            Vector podForward = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
+            // Keep the cable on the TOP curved socket, behind the forward
+            // white cones. The model and its beam now share one orientation.
+            // Do not subtract 180 from the pod yaw: fixed model and built-in
+            // ItemDisplay rotations already cancel.
+            var facing = BrauBroWaistLayout.podForward(podLocations[i].getYaw());
+            Vector podForward = new Vector(facing.x(), 0, facing.z());
             Location coupling = podLocations[i].clone()
                 .add(0, .27, 0).subtract(podForward.multiply(.04));
             segment(state.cables.get(i), harness, coupling);
@@ -508,7 +509,7 @@ final class BrauBroWaistCannons implements Listener {
                 var mount = BrauBroWaistLayout.MOUNTS.get(i);
                 Location home = worldOffset(base, forward, right,
                     BrauBroWaistLayout.stowed(mount), sneakShift);
-                home.setYaw(base.getYaw() + 180f + mount.yawOffset());
+                home.setYaw(BrauBroWaistLayout.podYaw(base.getYaw(), mount));
                 home.setPitch(0);
 
                 if (state.positions[i] == null

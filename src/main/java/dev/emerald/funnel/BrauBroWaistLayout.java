@@ -24,6 +24,27 @@ final class BrauBroWaistLayout {
         new Mount( 0.43, 0.91, -0.24,  13.0f, false)
     );
 
+    /**
+     * The authored BBModel faces +Z (ivory muzzles extend to local Z=20.82).
+     * The resource-pack FIXED pose contains yaw=180 and Minecraft ItemDisplay
+     * rendering itself applies the 180-degree 23w16a orientation correction.
+     * Those cancel. Do NOT add yet another 180 degrees to the entity yaw.
+     */
+    static float podYaw(float playerYaw, Mount mount) {
+        return playerYaw + mount.yawOffset();
+    }
+
+    record Facing(double x, double z) {}
+
+    /**
+     * World forward for the actual white cone tips, shared by firing and
+     * by the top wire coupling. Minecraft yaw=0 faces +Z, yaw=90 faces -X.
+     */
+    static Facing podForward(float displayYaw) {
+        double radians = Math.toRadians(displayYaw);
+        return new Facing(-Math.sin(radians), Math.cos(radians));
+    }
+
     static Offset stowed(Mount mount) {
         return new Offset(mount.side(), mount.height(), mount.forward());
     }
