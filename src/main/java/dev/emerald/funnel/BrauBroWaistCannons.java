@@ -137,7 +137,7 @@ final class BrauBroWaistCannons implements Listener {
             }
         }
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 2L, 2L);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
     }
 
     void stop() {
