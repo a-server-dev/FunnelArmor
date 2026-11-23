@@ -32,8 +32,8 @@ class BrauBroForwardFormationTest {
             assertTrue(Math.abs(p.side())>=1.15 && Math.abs(p.side())<=1.6);
             assertTrue(Math.abs(m.yawOffset())<20,
                 "No rear-facing -160/160-degree single-barrel emitters");
-            assertEquals(i<2,m.twin(),
-                "Upper left/right should be twin barrels, lower left/right singles");
+            assertEquals(i<2,m.upper(),
+                "The boolean marks upper vs lower position; every cannon has two muzzles");
         }
         var upperLeft=BrauBroWaistLayout.launched(mounts.get(0),4.2);
         var upperRight=BrauBroWaistLayout.launched(mounts.get(1),4.2);
@@ -105,25 +105,26 @@ class BrauBroForwardFormationTest {
         }
     }
 
-    @Test void separateGreenTipsAndIrisDetailsAreBuiltOnTheActualMuzzles() throws Exception {
-        for (int count=1;count<=2;count++) {
-            String mode=count==1?"single_cannon":"twin_cannon";
+    @Test void allFourPodsShareTwoWhitePointedConesAndTopCableNeck() throws Exception {
+        for (String mode:List.of("single_cannon","twin_cannon")) {
             var a=parse(Path.of("models","brau_bro_"+mode+".bbmodel"))
                 .getAsJsonArray("elements");
-            for(int barrel=1;barrel<=count;barrel++) {
-                assertNotNull(find(a,"Emitter "+barrel+" brass halo crown"));
-                assertNotNull(find(a,"Emitter "+barrel+" brass halo chin"));
-                var base=find(a,"Emitter "+barrel+" emerald progressively tapered cone 0");
-                var tip=find(a,"Emitter "+barrel+" emerald progressively tapered cone 4");
+            for(int emitter=1;emitter<=2;emitter++) {
+                var base=find(a,"Emitter "+emitter+" white ceramic conical section 0");
+                var tip=find(a,"Emitter "+emitter+" white ceramic conical section 10");
                 assertTrue(tip.getAsJsonArray("from").get(2).getAsDouble()
                     > base.getAsJsonArray("to").get(2).getAsDouble());
                 assertTrue(width(tip,0)<width(base,0));
                 assertTrue(width(tip,1)<width(base,1));
+                assertNotNull(find(a,"Emitter "+emitter+" wide metal ring drum"));
+                assertNotNull(find(a,"Emitter "+emitter+" final ceramic pinpoint"));
             }
-            assertNotNull(find(a,"Rear heavy black cable socket"));
-            assertNotNull(find(a,"Top purple locking fastener"));
-            assertNotNull(find(a,"Left vertical ventilation louvre 5"));
-            assertNotNull(find(a,"Right vertical ventilation louvre 5"));
+            assertNotNull(find(a,"Top violet elevated cable swivel"));
+            assertNotNull(find(a,"Upper cable attachment terminal"));
+            assertNotNull(find(a,"Arched black upward cable segment 6"));
+            assertNotNull(find(a,"Port black deep cooling slot 4"));
+            assertNotNull(find(a,"Starboard black deep cooling slot 4"));
+            assertNotNull(find(a,"Top broad blue-violet armor"));
         }
     }
 
