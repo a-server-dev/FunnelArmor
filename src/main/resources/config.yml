@@ -196,7 +196,8 @@ gn-sword-ii:
 brau-bro:
   enabled: true
   model-scale: 0.74
-  # Formation distance from player while extended (2..8 blocks).
+  # Forward-fan deployment scale (2..8): upper twin guns float above the head,
+  # lower single guns hover around waist height, ALL FOUR in front.
   extension-distance: 4.2
   # Approximate deployment/retrieval animation duration (4..80 ticks).
   extension-ticks: 16

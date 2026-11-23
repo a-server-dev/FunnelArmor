@@ -14,7 +14,7 @@ class BrauBroWireGeometryTest {
             var launched = BrauBroWaistLayout.launched(mount, 4.2);
             assertTrue(Math.abs(launched.side()) > Math.abs(waist.side()) + .7);
             assertTrue(Math.abs(launched.forward()) > Math.abs(waist.forward()) + 2.3);
-            assertEquals(Math.signum(mount.forward()), Math.signum(launched.forward()));
+            assertTrue(launched.forward() > 1.0, "All four turrets must deploy in front of the player");
             assertEquals(Math.signum(mount.side()), Math.signum(launched.side()));
             assertTrue(launched.height() > waist.height() + .3);
         }

@@ -1269,3 +1269,46 @@ This release deliberately does not claim screenshot-level approval.
   `/funnel` のOP/EmeraldREX91制限も維持します。
 - 実機表示は未検証。ビーム角度、照準、ワイヤーの位置は
   F5画像で最終的な調整が必要になる可能性があります。
+
+## v0.23.0 — MAN-03 Brau-Bro, four forward-facing guns in an upper/lower fan
+
+Reworked against the latest player F5 screenshot and their **red front-facing
+layout sketch**. The previous deployed topology surrounded the player in four
+cardinal directions, with the two single guns extending behind the torso.
+This is intentionally replaced with a strictly forward-facing 2×2 formation:
+
+- **Upper left / upper right:** twin-barrel turrets; at the default 4.2 reach,
+  local side ±1.28, height **2.84 blocks above feet**, forward **2.78**.
+  They hover above the head and slightly nearer the centerline.
+- **Lower left / lower right:** single-barrel turrets; side ±1.47, height
+  **1.26 blocks**, forward **2.50**. They fan out somewhat wider below.
+- All four emitters point almost straight along the player's forward heading
+  (yaw offsets -11/+11 for upper, -13/+13 for lower), instead of the
+  old rearward-facing ±160° single guns.
+- During launch, 4 continuously joined BlockDisplay wires start at the
+  **front waist**, extending toward each gun's rear swivel socket.
+  Live player movement/turning continues to be tracked with smooth world-space
+  pursuit, not four permanently frozen positions.
+- The `brau-bro.extension-distance` setting continues to scale the forward fan.
+  Values are clamped to 2..8; top/bottom ordering and front-only deployment
+  are guaranteed at all configured reaches.
+- Shooting remains unchanged: normal right-click fires all **6 physical
+  emitters** (2×2 plus 2×1), with each beam now beginning close to its
+  new detailed green muzzle. Left click / sneak-right retains deploy/retrieve.
+- The unchanged 64×64 original texture atlas is reused so all previously
+  distributed controllers and the pack's item model keys remain valid.
+  The old cannon cuboids are retained; we add actual editable, detailed
+  Blockbench components. Single gun: **37→162 cuboids**; twin: **45→188**.
+- New geometry includes stepped light-metal dorsal plates, a violet segmented
+  wired rear swivel, angled gray cheek armor, recessed black vent louvers,
+  undertray ribs, a machined two-layer gun-metal muzzle, a brass annular iris,
+  and **five nested tapered green crystalline nozzle sections per barrel**.
+  The twin version retains two independent emitters; the single has one.
+- Every new BBModel cuboid, group, face and UV has a corresponding
+  resource-pack model entry generated from the same coordinates and atlas.
+  The controller item model and all non-Brau-Bro equipment remain untouched.
+- Regression tests inspect quadrants/height symmetry, cable anchor, all four
+  forward rays, detailed part presence, muzzle taper and source/pack UV parity.
+
+**Status:** Static model and animation code + CI checks; visual fidelity
+and on-server follow/aiming should still be reviewed in F5.

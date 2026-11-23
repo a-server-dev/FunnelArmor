@@ -343,7 +343,7 @@ final class BrauBroWaistCannons implements Listener {
             Vector forward = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
             Vector right = horizontalRight(forward);
             Location muzzle = turret.clone()
-                .add(forward.clone().multiply(.40))
+                .add(forward.clone().multiply(.47))
                 .add(right.multiply(emitter.lateral()));
             muzzle.setYaw(0);
             muzzle.setPitch(0);
@@ -476,7 +476,7 @@ final class BrauBroWaistCannons implements Listener {
             // Do NOT use the player's current facing to locate this end.
             double modelYaw = Math.toRadians(podLocations[i].getYaw() - 180.0);
             Vector muzzle = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
-            Location coupling = podLocations[i].clone().subtract(muzzle.multiply(.20));
+            Location coupling = podLocations[i].clone().subtract(muzzle.multiply(.25));
             segment(state.cables.get(i), harness, coupling);
         }
     }

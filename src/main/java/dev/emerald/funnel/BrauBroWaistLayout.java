@@ -3,9 +3,12 @@ package dev.emerald.funnel;
 import java.util.List;
 
 /**
- * Four MAN-03 waist gun mounts and pure deployment geometry.
- * The held controller remains in the player's hand; only the pods travel.
- * All coordinates are local to the player's horizontal facing direction.
+ * Four MAN-03 waist cannon mounts. Both twin emitters launch above and
+ * ahead of the player, while both single emitters launch below them,
+ * still IN FRONT of the player (not behind or to its four cardinal sides).
+ *
+ * Coordinates are player-relative: side = left/right, forward = facing,
+ * height = blocks above feet. Units are Minecraft world blocks.
  */
 final class BrauBroWaistLayout {
     record Mount(double side, double height, double forward,
@@ -13,10 +16,12 @@ final class BrauBroWaistLayout {
     record Offset(double side, double height, double forward) {}
 
     static final List<Mount> MOUNTS = List.of(
-        new Mount(-0.43, 0.96,  0.22, -18.0f, true),
-        new Mount( 0.43, 0.96,  0.22,  18.0f, true),
-        new Mount(-0.43, 0.91, -0.24, -160.0f, false),
-        new Mount( 0.43, 0.91, -0.24,  160.0f, false)
+        // Twin-barrel high row, left and right.
+        new Mount(-0.43, 0.96,  0.22, -11.0f, true),
+        new Mount( 0.43, 0.96,  0.22,  11.0f, true),
+        // Single-barrel low row, left and right. These WERE facing rearward.
+        new Mount(-0.43, 0.91, -0.24, -13.0f, false),
+        new Mount( 0.43, 0.91, -0.24,  13.0f, false)
     );
 
     static Offset stowed(Mount mount) {
@@ -24,11 +29,16 @@ final class BrauBroWaistLayout {
     }
 
     static Offset launched(Mount mount, double reach) {
-        double distance = Math.max(2.0, Math.min(8.0, reach));
-        double outSide = Math.copySign(Math.abs(mount.side()) + 0.63 + 0.20 * distance,
-                mount.side());
-        double outForward = Math.copySign(0.24 + 0.71 * distance, mount.forward());
-        return new Offset(outSide, mount.height() + 0.38, outForward);
+        double clamped = Math.max(2.0, Math.min(8.0, reach));
+        // Scale the forward fan without switching quadrants. At the default
+        // 4.2 blocks: high row (+/-1.28 side, y=2.84, front=2.78);
+        // low row (+/-1.47 side, y=1.26, front=2.50).
+        double size = 0.5 + 0.5 * (clamped / 4.2);
+        double side = Math.copySign((mount.twin() ? 1.28 : 1.47) * size,
+            mount.side());
+        double forward = (mount.twin() ? 2.78 : 2.50) * size;
+        double lift = (mount.twin() ? 1.88 : 0.35) * size;
+        return new Offset(side, mount.height() + lift, forward);
     }
 
     static double smooth(double progress) {
@@ -49,18 +59,18 @@ final class BrauBroWaistLayout {
     }
 
     static Offset cableBase(Mount mount) {
-        // The cable originates inside the waist-mounted purple harness,
-        // not at the center of the player's chest or from the held item.
-        return new Offset(mount.side() * .66,
-                mount.height() - .065, mount.forward() * .52);
+        // All 4 wires originate at the FRONT of the player's waist
+        // rather than extending backward from a rear connection point.
+        return new Offset(mount.side() * 0.76,
+            mount.height() + 0.03, 0.20);
     }
 
     static Offset cablePoint(Offset start, Offset end, double fraction, double sag) {
         Offset straight = lerp(start, end, fraction);
         double t = Math.max(0.0, Math.min(1.0, fraction));
         return new Offset(straight.side(),
-                straight.height() - Math.max(0, sag) * 4.0 * t * (1.0 - t),
-                straight.forward());
+            straight.height() - Math.max(0, sag) * 4.0 * t * (1.0 - t),
+            straight.forward());
     }
 
     private BrauBroWaistLayout() {}
