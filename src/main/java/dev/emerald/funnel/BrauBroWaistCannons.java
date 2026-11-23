@@ -50,7 +50,7 @@ import java.util.UUID;
  * No damage, firing, inventory duplication or modifications to other weapons.
  */
 final class BrauBroWaistCannons implements Listener {
-    private static final int CABLE_SEGMENTS = 3;
+    private static final int CABLE_SEGMENTS = 1;
     private static final float CABLE_THICKNESS = .034f;
 
     private final JavaPlugin plugin;
@@ -63,8 +63,13 @@ final class BrauBroWaistCannons implements Listener {
     private static final class State {
         final List<ItemDisplay> pods = new ArrayList<>(4);
         final List<BlockDisplay> cables = new ArrayList<>(4 * CABLE_SEGMENTS);
+        // Independent world-space pod locations and frozen launch destinations:
+        // rotating the player does NOT drag deployed cannons around in an orbit.
+        final Location[] positions = new Location[4];
+        final Location[] launchTargets = new Location[4];
+        final float[] launchYaws = new float[4];
         boolean extended;
-        double progress;
+        boolean moving;
         long nextToggleTick;
     }
 
@@ -154,8 +159,8 @@ final class BrauBroWaistCannons implements Listener {
             d.setGravity(false);
             d.setInvulnerable(true);
             d.setSilent(true);
-            d.setTeleportDuration(2);
-            d.setInterpolationDuration(2);
+            d.setTeleportDuration(0);
+            d.setInterpolationDuration(0);
             float scale = (float) plugin.getConfig().getDouble("brau-bro.model-scale", .74);
             if (!Float.isFinite(scale) || scale < .1f || scale > 1.5f) scale = .74f;
             d.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(),
@@ -166,15 +171,20 @@ final class BrauBroWaistCannons implements Listener {
 
     private BlockDisplay spawnWire(Player player) {
         return player.getWorld().spawn(player.getLocation(), BlockDisplay.class, d -> {
-            // A REAL thin 3D rod per segment, not a one-tick particle trail.
+            // One continuous cable from harness to pod. Segmented rods were
+            // seen disconnected and additionally inherited the player's yaw.
             d.setBlock(Material.GRAY_CONCRETE.createBlockData());
             d.setBillboard(Display.Billboard.FIXED);
             d.setPersistent(false);
             d.setGravity(false);
             d.setInvulnerable(true);
             d.setSilent(true);
-            d.setTeleportDuration(2);
-            d.setInterpolationDuration(2);
+            // Both ends and the cable rotate in one server tick; independent
+            // interpolation of rotation, scale and teleport broke cable joins.
+            d.setTeleportDuration(0);
+            d.setInterpolationDuration(0);
+            d.setDisplayWidth(16);
+            d.setDisplayHeight(16);
             d.setTransformation(new Transformation(new Vector3f(),
                 new Quaternionf(), new Vector3f(.001f, .001f, .001f),
                 new Quaternionf()));
@@ -217,6 +227,24 @@ final class BrauBroWaistCannons implements Listener {
         if (tick < state.nextToggleTick) return;
         state.nextToggleTick = tick + 6L;
         state.extended = !state.extended;
+        if (state.extended) {
+            // Snapshot the four world-space deployment destinations at launch.
+            // Turning or moving afterward changes only the waist end of the
+            // tether; deployed cannons do not rotate with the player.
+            Location base = player.getLocation();
+            Vector forward = horizontalForward(base);
+            Vector right = horizontalRight(forward);
+            double sneakShift = player.isSneaking() ? -.22 : 0;
+            for (int i = 0; i < BrauBroWaistLayout.MOUNTS.size(); i++) {
+                var mount = BrauBroWaistLayout.MOUNTS.get(i);
+                Location destination = worldOffset(base, forward, right,
+                    BrauBroWaistLayout.launched(mount, reach()), sneakShift);
+                state.launchYaws[i] = base.getYaw() + 180f + mount.yawOffset();
+                destination.setYaw(state.launchYaws[i]);
+                destination.setPitch(0);
+                state.launchTargets[i] = destination;
+            }
+        }
         player.getWorld().playSound(player.getLocation(),
             state.extended ? Sound.BLOCK_PISTON_EXTEND : Sound.BLOCK_PISTON_CONTRACT,
             .64f, state.extended ? 1.26f : .92f);
@@ -260,51 +288,77 @@ final class BrauBroWaistCannons implements Listener {
             .add(0, offset.height() + yCorrection, 0);
     }
 
-    private static void segment(BlockDisplay segment, Location a, Location b) {
-        Vector v = b.toVector().subtract(a.toVector());
-        double length = v.length();
-        if (length <= .0001) return;
-        Vector3f direction = new Vector3f((float)(v.getX()/length),
-            (float)(v.getY()/length), (float)(v.getZ()/length));
-        Quaternionf rotation = new Quaternionf().rotationTo(
-            new Vector3f(0, 1, 0), direction);
-        Vector3f centering = rotation.transform(
-            new Vector3f(-CABLE_THICKNESS/2f, 0, -CABLE_THICKNESS/2f),
-            new Vector3f());
-        segment.setTransformation(new Transformation(centering, rotation,
-            new Vector3f(CABLE_THICKNESS, (float) length, CABLE_THICKNESS),
-            new Quaternionf()));
-        segment.teleport(a);
+    private static Vector horizontalForward(Location base) {
+        Vector front = base.getDirection().setY(0);
+        if (front.lengthSquared() < 1e-6) front = new Vector(0, 0, 1);
+        return front.normalize();
     }
 
-    private void updateWires(Player p, State st, Location[] podLocations,
+    private static Vector horizontalRight(Vector forward) {
+        return new Vector(forward.getZ(), 0, -forward.getX());
+    }
+
+    private static Location approach(Location previous, Location target, double step) {
+        // This movement is purely world-space. In particular, it does not
+        // transform already-launched locations by the player's current yaw.
+        Location result = previous.clone();
+        Vector delta = target.toVector().subtract(previous.toVector());
+        double distance = delta.length();
+        if (distance <= step || distance <= 1e-6) {
+            result.setX(target.getX());
+            result.setY(target.getY());
+            result.setZ(target.getZ());
+        } else {
+            result.add(delta.multiply(step / distance));
+        }
+        result.setYaw(target.getYaw());
+        result.setPitch(0);
+        return result;
+    }
+
+    private static void segment(BlockDisplay segment, Location a, Location b) {
+        Vector vector = b.toVector().subtract(a.toVector());
+        double length = vector.length();
+        if (length <= 1e-4) return;
+        Vector3f direction = new Vector3f((float)(vector.getX()/length),
+            (float)(vector.getY()/length), (float)(vector.getZ()/length));
+        Quaternionf orientation = new Quaternionf().rotationTo(
+            new Vector3f(0, 1, 0), direction);
+        // BlockDisplay's unit cube is centered around the Y segment line:
+        // rotate the thickness offset but leave the start of the rod at a.
+        Vector3f centering = orientation.transform(
+            new Vector3f(-CABLE_THICKNESS / 2, 0, -CABLE_THICKNESS / 2),
+            new Vector3f());
+        // CRITICAL: entity yaw/pitch must be neutral. Otherwise Minecraft
+        // applies the inherited player yaw on top of 'orientation', making
+        // cables miss their endpoints and scatter as detached black rods.
+        Location neutral = a.clone();
+        neutral.setYaw(0f);
+        neutral.setPitch(0f);
+        segment.teleport(neutral);
+        segment.setTransformation(new Transformation(centering, orientation,
+            new Vector3f(CABLE_THICKNESS, (float) length, CABLE_THICKNESS),
+            new Quaternionf()));
+    }
+
+    private void updateWires(Player player, State state, Location[] podLocations,
                              Vector forward, Vector right, double sneakShift) {
-        if (st.progress <= .00001 && !st.extended) {
-            removeCables(st);
+        if (!state.extended && !state.moving) {
+            removeCables(state);
             return;
         }
-        ensureCables(p, st);
-        for (int i=0; i<4; i++) {
+        ensureCables(player, state);
+        for (int i=0; i<BrauBroWaistLayout.MOUNTS.size(); i++) {
             var mount = BrauBroWaistLayout.MOUNTS.get(i);
-            Location origin = worldOffset(p.getLocation(), forward, right,
+            Location harness = worldOffset(player.getLocation(), forward, right,
                 BrauBroWaistLayout.cableBase(mount), sneakShift);
-            // Model root is at Z≈3.5, behind its pivot Z=8 (0.2 blocks).
-            double angle = Math.toRadians(mount.yawOffset());
-            Vector gunForward = forward.clone().multiply(Math.cos(angle))
-                .add(right.clone().multiply(Math.sin(angle)));
-            Location attach = podLocations[i].clone()
-                .subtract(gunForward.multiply(.20));
-            Vector diff = attach.toVector().subtract(origin.toVector());
-            double distance = diff.length();
-            double sag = (.045 + .047 * distance) * Math.max(.25, st.progress);
-            Location[] points = new Location[CABLE_SEGMENTS+1];
-            for (int j=0; j<=CABLE_SEGMENTS; j++) {
-                double f = (double) j / CABLE_SEGMENTS;
-                points[j] = origin.clone().add(diff.clone().multiply(f))
-                    .subtract(0, sag * 4 * f * (1-f), 0);
-            }
-            for (int j=0; j<CABLE_SEGMENTS; j++)
-                segment(st.cables.get(i*CABLE_SEGMENTS+j), points[j], points[j+1]);
+            // The cannon model's rear coupling is approximately 0.2 blocks
+            // behind its display pivot, measured along its own held yaw.
+            // Do NOT use the player's current facing to locate this end.
+            double modelYaw = Math.toRadians(podLocations[i].getYaw() - 180.0);
+            Vector muzzle = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
+            Location coupling = podLocations[i].clone().subtract(muzzle.multiply(.20));
+            segment(state.cables.get(i), harness, coupling);
         }
     }
 
@@ -314,39 +368,68 @@ final class BrauBroWaistCannons implements Listener {
             return;
         }
         for (UUID owner : new ArrayList<>(active.keySet())) {
-            Player player = Bukkit.getPlayer(owner);
-            if (player == null || !player.isOnline() || player.isDead()
-                || !isHeld(player)) clear(owner);
+            Player p = Bukkit.getPlayer(owner);
+            if (p == null || !p.isOnline() || p.isDead() || !isHeld(p))
+                clear(owner);
         }
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.isDead() || !isHeld(player)) continue;
-            State state = active.computeIfAbsent(player.getUniqueId(), ignored -> new State());
+            State state = active.computeIfAbsent(player.getUniqueId(), unused -> new State());
             ensurePods(player, state);
-            double step = 2.0 / extensionTicks();
-            state.progress = Math.max(0, Math.min(1,
-                state.progress + (state.extended ? step : -step)));
 
             Location base = player.getLocation();
-            Vector forward = base.getDirection().setY(0);
-            if (forward.lengthSquared() < 1e-6) forward = new Vector(0, 0, 1);
-            forward.normalize();
-            // Keep the existing v0.18.0 horizontal axis to preserve the
-            // already-approved visual left/right mount positions.
-            Vector right = new Vector(forward.getZ(), 0, -forward.getX());
-            Location[] positions = new Location[4];
-            double reach = reach();
+            Vector forward = horizontalForward(base);
+            Vector right = horizontalRight(forward);
             double sneakShift = player.isSneaking() ? -.22 : 0;
+            double speed = reach() / extensionTicks() * 1.18;
+            Location[] positions = new Location[4];
+            boolean stillMoving = false;
+
             for (int i=0; i<4; i++) {
                 var mount = BrauBroWaistLayout.MOUNTS.get(i);
-                var offset = BrauBroWaistLayout.position(mount, reach, state.progress);
-                Location goal = worldOffset(base, forward, right, offset, sneakShift);
-                if (state.progress >= .99)
-                    goal.add(0, .045 * Math.sin(Bukkit.getCurrentTick()*.09+i*1.7), 0);
-                goal.setYaw(base.getYaw()+180.0f+mount.yawOffset());
-                goal.setPitch(0);
-                state.pods.get(i).teleport(goal);
-                positions[i] = goal;
+                Location home = worldOffset(base, forward, right,
+                    BrauBroWaistLayout.stowed(mount), sneakShift);
+                home.setYaw(base.getYaw()+180f+mount.yawOffset());
+                home.setPitch(0);
+
+                if (state.positions[i] == null
+                        || !state.positions[i].getWorld().equals(base.getWorld()))
+                    state.positions[i] = home.clone();
+
+                // Fixed world-space target, generated ONCE per launch rather
+                // than every tick from current player position and facing.
+                Location target = state.extended && state.launchTargets[i] != null
+                    ? state.launchTargets[i] : home;
+                double distance = state.positions[i].distance(target);
+                // Auto-retrieve if the player travels far beyond physical
+                // cable reach; prevents limitless stretches across the world.
+                if (state.extended && state.positions[i].distance(base) > reach() + 5.0) {
+                    state.extended = false;
+                    target = home;
+                    distance = state.positions[i].distance(target);
+                }
+                if (distance > .018) {
+                    // On return, the target can move with the waist: chase in
+                    // world space at a bounded speed instead of orbiting.
+                    double step = state.extended ? speed : Math.max(.43, speed * 1.5);
+                    state.positions[i] = approach(state.positions[i], target, step);
+                    stillMoving = true;
+                } else {
+                    state.positions[i] = target.clone();
+                }
+                // When docked, keep the controller's original fitted waist
+                // orientation. While in flight, retain launch-facing yaw.
+                if (!state.extended && state.positions[i].distance(home) < .10)
+                    state.positions[i].setYaw(home.getYaw());
+                else if (state.launchTargets[i] != null)
+                    state.positions[i].setYaw(state.launchYaws[i]);
+                state.positions[i].setPitch(0);
+                state.pods.get(i).teleport(state.positions[i]);
+                positions[i] = state.positions[i];
             }
+
+            state.moving = stillMoving;
             updateWires(player, state, positions, forward, right, sneakShift);
         }
     }
@@ -357,6 +440,10 @@ final class BrauBroWaistCannons implements Listener {
         for (ItemDisplay d : state.pods) if (d.isValid()) d.remove();
         state.pods.clear();
         removeCables(state);
+        for (int i=0; i<4; i++) {
+            state.positions[i] = null;
+            state.launchTargets[i] = null;
+        }
     }
 
     boolean command(CommandSender sender, String[] args) {
@@ -367,7 +454,7 @@ final class BrauBroWaistCannons implements Listener {
             }
             State state = active.get(p.getUniqueId());
             String mode = state == null ? "未装備"
-                : state.progress > .001 && state.progress < .999 ? "展開・帰還中"
+                : state.moving ? "射出・帰還中"
                 : state.extended ? "有線射出中" : "腰部格納";
             sender.sendMessage("§dブラウ・ブロ §7/ 手持ち: §f"
                 + (isHeld(p) ? "あり" : "なし")
