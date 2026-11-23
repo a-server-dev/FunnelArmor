@@ -3,6 +3,9 @@ package dev.emerald.funnel;
 import io.papermc.paper.event.player.PlayerArmSwingEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Particle;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -13,6 +16,7 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -30,6 +34,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
@@ -47,7 +52,9 @@ import java.util.UUID;
  * remain attached between waist harness and moving cannon roots.
  *
  * Left click OR sneak + right click toggles extension and retrieval.
- * No damage, firing, inventory duplication or modifications to other weapons.
+ * Normal right click fires six barrels in a four-pod salvo, with safe block
+ * occlusion and one aggregated damage application per target. The four pods
+ * follow the player smoothly even while deployed; the wires remain attached.
  */
 final class BrauBroWaistCannons implements Listener {
     private static final int CABLE_SEGMENTS = 1;
@@ -63,14 +70,13 @@ final class BrauBroWaistCannons implements Listener {
     private static final class State {
         final List<ItemDisplay> pods = new ArrayList<>(4);
         final List<BlockDisplay> cables = new ArrayList<>(4 * CABLE_SEGMENTS);
-        // Independent world-space pod locations and frozen launch destinations:
-        // rotating the player does NOT drag deployed cannons around in an orbit.
+        // World-space positions move toward *live* player-relative destinations:
+        // slight pursuit lag, not permanent world anchors or instant snapping.
         final Location[] positions = new Location[4];
-        final Location[] launchTargets = new Location[4];
-        final float[] launchYaws = new float[4];
         boolean extended;
         boolean moving;
         long nextToggleTick;
+        long nextFireTick;
     }
 
     BrauBroWaistCannons(JavaPlugin plugin) {
@@ -99,8 +105,9 @@ final class BrauBroWaistCannons implements Listener {
         meta.lore(List.of(
             Component.text("§7メインハンド保持中: 腰に砲塔4基を接続"),
             Component.text("§7左クリック / しゃがみ右クリック: 有線射出・収納"),
+            Component.text("§b通常右クリック: 4門からメガ粒子砲を斉射"),
             Component.text("§7連装メガ粒子砲×2 / 単装メガ粒子砲×2"),
-            Component.text("§8射撃・ダメージなし（有線展開のみ）")
+            Component.text("§8射出中はプレイヤーを追従")
         ));
         meta.setUnbreakable(true);
         meta.setItemModel(new NamespacedKey("funnel", "brau_bro_controller"));
@@ -227,24 +234,8 @@ final class BrauBroWaistCannons implements Listener {
         if (tick < state.nextToggleTick) return;
         state.nextToggleTick = tick + 6L;
         state.extended = !state.extended;
-        if (state.extended) {
-            // Snapshot the four world-space deployment destinations at launch.
-            // Turning or moving afterward changes only the waist end of the
-            // tether; deployed cannons do not rotate with the player.
-            Location base = player.getLocation();
-            Vector forward = horizontalForward(base);
-            Vector right = horizontalRight(forward);
-            double sneakShift = player.isSneaking() ? -.22 : 0;
-            for (int i = 0; i < BrauBroWaistLayout.MOUNTS.size(); i++) {
-                var mount = BrauBroWaistLayout.MOUNTS.get(i);
-                Location destination = worldOffset(base, forward, right,
-                    BrauBroWaistLayout.launched(mount, reach()), sneakShift);
-                state.launchYaws[i] = base.getYaw() + 180f + mount.yawOffset();
-                destination.setYaw(state.launchYaws[i]);
-                destination.setPitch(0);
-                state.launchTargets[i] = destination;
-            }
-        }
+        // Do not freeze launch destinations. The tick loop continuously
+        // re-evaluates the 4 formation targets from the player's live pose.
         player.getWorld().playSound(player.getLocation(),
             state.extended ? Sound.BLOCK_PISTON_EXTEND : Sound.BLOCK_PISTON_CONTRACT,
             .64f, state.extended ? 1.26f : .92f);
@@ -271,13 +262,141 @@ final class BrauBroWaistCannons implements Listener {
         if (!isHeld(player) || !enabled()) return;
         Action action = event.getAction();
         boolean left = action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK;
-        boolean shiftRight = player.isSneaking()
-            && (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK);
-        if (!left && !shiftRight) return;
+        boolean right = action == Action.RIGHT_CLICK_AIR
+            || action == Action.RIGHT_CLICK_BLOCK;
+        if (!left && !right) return;
         event.setUseItemInHand(Event.Result.DENY);
         event.setUseInteractedBlock(Event.Result.DENY);
         event.setCancelled(true);
-        toggle(player);
+        if (left || player.isSneaking()) toggle(player);
+        else fire(player);
+    }
+
+    private int fireCooldown() {
+        return BrauBroFirePattern.cooldown(
+            plugin.getConfig().getInt("brau-bro.fire-cooldown-ticks", 20));
+    }
+
+    private double fireRange() {
+        return BrauBroFirePattern.range(
+            plugin.getConfig().getDouble("brau-bro.fire-range", 30.0));
+    }
+
+    private double fireDamage() {
+        return BrauBroFirePattern.damage(
+            plugin.getConfig().getDouble("brau-bro.fire-damage-per-beam", 1.5));
+    }
+
+    /**
+     * Aiming is controlled by the handheld controller's crosshair; each of
+     * the six emitter rays actually starts at its own extended gun model.
+     * Block ray tracing limits both visuals and damage to unoccluded targets.
+     */
+    private void fire(Player player) {
+        if (!enabled() || !isHeld(player) || player.isDead()) return;
+        State state = active.get(player.getUniqueId());
+        if (state == null || !state.extended || state.pods.size() != 4
+                || state.positions[0] == null) {
+            player.sendActionBar(Component.text("§7先にブラウ・ブロ砲塔を射出してください"));
+            return;
+        }
+        long tick = Bukkit.getCurrentTick();
+        if (tick < state.nextFireTick) return;
+        state.nextFireTick = tick + fireCooldown();
+
+        World world = player.getWorld();
+        double range = fireRange();
+        Location eye = player.getEyeLocation();
+        Vector eyeDirection = eye.getDirection().normalize();
+        RayTraceResult sightWall = world.rayTraceBlocks(eye, eyeDirection,
+            range, FluidCollisionMode.NEVER, true);
+        double sightDistance = sightWall == null ? range
+            : Math.min(range, eye.toVector().distance(sightWall.getHitPosition()));
+        RayTraceResult sightEntity = world.rayTraceEntities(eye, eyeDirection,
+            sightDistance, .2, entity -> validTarget(entity, player));
+        Vector aimed = sightEntity == null ? eye.toVector().add(
+            eyeDirection.clone().multiply(sightDistance))
+            : sightEntity.getHitPosition();
+
+        double perBeam = fireDamage();
+        double maxBurstDamage = Math.max(perBeam, Math.min(24.0,
+            plugin.getConfig().getDouble("brau-bro.max-burst-damage", 9.0)));
+        double particleStep = Math.max(.35, Math.min(1.3,
+            plugin.getConfig().getDouble("brau-bro.beam-particle-step", .72)));
+        Particle.DustOptions mint = new Particle.DustOptions(
+            Color.fromRGB(105, 240, 191), 1.2f);
+        Particle.DustOptions violet = new Particle.DustOptions(
+            Color.fromRGB(167, 118, 255), 1.0f);
+
+        // Aggregate same-tick hits. Minecraft damage i-frames would silently
+        // discard 5 out of 6 .damage() calls if rays hit the same mob.
+        Map<UUID, Integer> hitCounts = new HashMap<>();
+        Map<UUID, LivingEntity> victims = new HashMap<>();
+        for (var emitter : BrauBroFirePattern.BARRELS) {
+            int pod = emitter.podIndex();
+            Location turret = state.positions[pod];
+            if (turret == null || !turret.getWorld().equals(world)) continue;
+
+            // The model is authored in local +Z and its fixed transform has
+            // a 180-degree yaw, cancelled by the stored display yaw - 180.
+            double modelYaw = Math.toRadians(turret.getYaw() - 180.0);
+            Vector forward = new Vector(-Math.sin(modelYaw), 0, Math.cos(modelYaw));
+            Vector right = horizontalRight(forward);
+            Location muzzle = turret.clone()
+                .add(forward.clone().multiply(.40))
+                .add(right.multiply(emitter.lateral()));
+            muzzle.setYaw(0);
+            muzzle.setPitch(0);
+
+            Vector trajectory = aimed.clone().subtract(muzzle.toVector());
+            if (trajectory.lengthSquared() < .01) trajectory = eyeDirection.clone();
+            trajectory.normalize();
+            RayTraceResult obstruction = world.rayTraceBlocks(
+                muzzle, trajectory, range, FluidCollisionMode.NEVER, true);
+            double maxTravel = obstruction == null ? range
+                : Math.min(range, muzzle.toVector().distance(obstruction.getHitPosition()));
+            RayTraceResult hit = world.rayTraceEntities(muzzle, trajectory,
+                maxTravel, .19, entity -> validTarget(entity, player));
+            double visualDistance = hit == null ? maxTravel
+                : Math.min(maxTravel, muzzle.toVector().distance(hit.getHitPosition()));
+            if (hit != null && hit.getHitEntity() instanceof LivingEntity target) {
+                hitCounts.merge(target.getUniqueId(), 1, Integer::sum);
+                victims.put(target.getUniqueId(), target);
+            }
+
+            // Every muzzle has its own thin teal beam, with alternating
+            // violet accents and a small energetic terminal flare.
+            int particles = 0;
+            for (double distance = 0; distance <= visualDistance
+                    && particles < 80; distance += particleStep, particles++) {
+                Location at = muzzle.clone().add(
+                    trajectory.clone().multiply(distance));
+                world.spawnParticle(Particle.DUST, at, 1, 0, 0, 0, 0,
+                    particles % 5 == 0 ? violet : mint);
+            }
+            Location tip = muzzle.clone().add(
+                trajectory.clone().multiply(visualDistance));
+            world.spawnParticle(Particle.ELECTRIC_SPARK, tip,
+                hit == null ? 2 : 5, .10, .10, .10, .025);
+            world.spawnParticle(Particle.END_ROD, muzzle, 2, .07, .07, .07, .01);
+        }
+
+        for (Map.Entry<UUID, LivingEntity> victim : victims.entrySet()) {
+            LivingEntity target = victim.getValue();
+            if (!target.isValid() || target.isDead()) continue;
+            double damage = Math.min(maxBurstDamage,
+                perBeam * hitCounts.getOrDefault(victim.getKey(), 0));
+            if (damage > 0) target.damage(damage, player);
+        }
+        world.playSound(player.getLocation(),
+            Sound.ENTITY_GUARDIAN_ATTACK, .82f, .91f);
+    }
+
+    private static boolean validTarget(org.bukkit.entity.Entity entity, Player shooter) {
+        return entity instanceof LivingEntity living && entity != shooter
+            && living.isValid() && !living.isDead()
+            && !(entity instanceof Player other
+                && other.getGameMode() == org.bukkit.GameMode.SPECTATOR);
     }
 
     private static Location worldOffset(Location base, Vector front, Vector right,
@@ -382,7 +501,6 @@ final class BrauBroWaistCannons implements Listener {
             Vector forward = horizontalForward(base);
             Vector right = horizontalRight(forward);
             double sneakShift = player.isSneaking() ? -.22 : 0;
-            double speed = reach() / extensionTicks() * 1.18;
             Location[] positions = new Location[4];
             boolean stillMoving = false;
 
@@ -390,40 +508,41 @@ final class BrauBroWaistCannons implements Listener {
                 var mount = BrauBroWaistLayout.MOUNTS.get(i);
                 Location home = worldOffset(base, forward, right,
                     BrauBroWaistLayout.stowed(mount), sneakShift);
-                home.setYaw(base.getYaw()+180f+mount.yawOffset());
+                home.setYaw(base.getYaw() + 180f + mount.yawOffset());
                 home.setPitch(0);
 
                 if (state.positions[i] == null
                         || !state.positions[i].getWorld().equals(base.getWorld()))
                     state.positions[i] = home.clone();
 
-                // Fixed world-space target, generated ONCE per launch rather
-                // than every tick from current player position and facing.
-                Location target = state.extended && state.launchTargets[i] != null
-                    ? state.launchTargets[i] : home;
+                // IMPORTANT: while deployed the formation target follows the
+                // player's LIVE position and yaw. Each gun pursues that moving
+                // target in world coordinates (no direct rotation/teleport of
+                // the previously deployed gun around the player).
+                Location target = state.extended ? worldOffset(base,
+                    forward, right, BrauBroWaistLayout.launched(mount, reach()),
+                    sneakShift) : home;
+                target.setYaw(home.getYaw());
+                target.setPitch(0);
+
                 double distance = state.positions[i].distance(target);
-                // Auto-retrieve if the player travels far beyond physical
-                // cable reach; prevents limitless stretches across the world.
-                if (state.extended && state.positions[i].distance(base) > reach() + 5.0) {
-                    state.extended = false;
-                    target = home;
-                    distance = state.positions[i].distance(target);
-                }
-                if (distance > .018) {
-                    // On return, the target can move with the waist: chase in
-                    // world space at a bounded speed instead of orbiting.
-                    double step = state.extended ? speed : Math.max(.43, speed * 1.5);
+                double distanceFromPlayer = state.positions[i].distance(base);
+                if (distanceFromPlayer > reach() + 8.0 || distance > 16.0) {
+                    // Same-world teleport or an extreme camera change: keep
+                    // physical cable length bounded rather than stretching
+                    // an ugly wire across chunks.
+                    state.positions[i] = target.clone();
+                } else if (distance > .018) {
+                    double step = state.extended
+                        ? BrauBroFirePattern.followStep(distance, reach())
+                        : Math.max(.48, reach() / extensionTicks() * 1.5);
                     state.positions[i] = approach(state.positions[i], target, step);
                     stillMoving = true;
                 } else {
                     state.positions[i] = target.clone();
                 }
-                // When docked, keep the controller's original fitted waist
-                // orientation. While in flight, retain launch-facing yaw.
-                if (!state.extended && state.positions[i].distance(home) < .10)
-                    state.positions[i].setYaw(home.getYaw());
-                else if (state.launchTargets[i] != null)
-                    state.positions[i].setYaw(state.launchYaws[i]);
+                // Keep each turret oriented with the owner's live heading.
+                state.positions[i].setYaw(target.getYaw());
                 state.positions[i].setPitch(0);
                 state.pods.get(i).teleport(state.positions[i]);
                 positions[i] = state.positions[i];
@@ -440,10 +559,7 @@ final class BrauBroWaistCannons implements Listener {
         for (ItemDisplay d : state.pods) if (d.isValid()) d.remove();
         state.pods.clear();
         removeCables(state);
-        for (int i=0; i<4; i++) {
-            state.positions[i] = null;
-            state.launchTargets[i] = null;
-        }
+        for (int i=0; i<4; i++) state.positions[i] = null;
     }
 
     boolean command(CommandSender sender, String[] args) {
@@ -460,8 +576,8 @@ final class BrauBroWaistCannons implements Listener {
                 + (isHeld(p) ? "あり" : "なし")
                 + " §7/ 状態: §f" + mode
                 + " §7/ 砲塔: §f" + (state == null ? 0 : state.pods.size()) + "/4"
-                + " §7/ ワイヤー: §f" + (state == null ? 0 : state.cables.size()) + "節"
-                + " §7/ 射撃: §8未実装");
+                + " §7/ ワイヤー: §f" + (state == null ? 0 : state.cables.size()) + "本"
+                + " §7/ 射撃: §a通常右クリック（6砲口）");
             return true;
         }
         sender.sendMessage("§b/funnel brau status §7| 配布: /funnel give brau [player]");

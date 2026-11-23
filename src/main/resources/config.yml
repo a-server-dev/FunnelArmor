@@ -190,14 +190,21 @@ gn-sword-ii:
   rifle-range: 28.0
   rifle-damage: 3.0
 
-# MAN-03 Brau-Bro waist guns. The hand-held controller deploys 4 cosmetic
-# gun-pod ItemDisplays (two twin-barrel, two single-barrel).
-# The four pods follow player yaw at waist height, not camera pitch.
-# Firing mechanics are deliberately not included in this first release.
+# MAN-03 Brau-Bro: the hand-held controller deploys 4 wire-tethered
+# mega-particle gun pods (2 twin-barrel + 2 single-barrel = six emitters).
+# Left click or sneak-right toggles deployment; normal right click fires.
 brau-bro:
   enabled: true
   model-scale: 0.74
-  # Flight distance of each of the four tethered cannon pods in blocks (2..8).
+  # Formation distance from player while extended (2..8 blocks).
   extension-distance: 4.2
-  # Launch/retrieval animation duration in server ticks (4..80).
+  # Approximate deployment/retrieval animation duration (4..80 ticks).
   extension-ticks: 16
+  # The turrets automatically pursue the player's live location and yaw.
+  # Pursuit speed is adaptive; no locked/frozen world-space launch destination.
+  # Six beams fired together from four pods, all aimed by the player's crosshair.
+  fire-range: 30.0
+  fire-cooldown-ticks: 20
+  fire-damage-per-beam: 1.5
+  max-burst-damage: 9.0
+  beam-particle-step: 0.72

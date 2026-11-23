@@ -39,14 +39,19 @@ class BrauBroCableContinuityTest {
         assertTrue(body.contains("d.setInterpolationDuration(0)"));
     }
 
-    @Test void launchedGunDestinationsAreWorldFixedAndWiresFollowOnlyEndpoints() throws Exception {
+    @Test void deployedCannonsPursueLivePlayerFormationWhileWireUsesRealEndpoints() throws Exception {
         var body=source();
-        assertTrue(body.contains("state.launchTargets[i] = destination;"));
-        assertTrue(body.contains("state.launchTargets[i] : home"));
+        assertTrue(body.contains("state.extended ? worldOffset(base,"),
+            "Every deployed turret destination must use live player position and yaw");
+        assertTrue(body.contains("BrauBroWaistLayout.launched(mount, reach())"));
+        assertTrue(body.contains("BrauBroFirePattern.followStep(distance, reach())"),
+            "World-space pursuit must be smoothed, not instantly rotated with the player");
+        assertFalse(body.contains("launchTargets"),
+            "Frozen world targets produced non-following turrets in v0.21");
         assertTrue(body.contains("podLocations[i].getYaw() - 180.0"));
         assertTrue(body.contains("worldOffset(player.getLocation(), forward, right,"));
         assertTrue(body.contains("segment(state.cables.get(i), harness, coupling)"));
         assertTrue(body.contains("runTaskTimer(plugin, this::tick, 1L, 1L)"),
-            "Both wire endpoints must refresh each tick with no camera-yaw interpolation");
+            "Both wire endpoints must refresh each tick");
     }
 }
