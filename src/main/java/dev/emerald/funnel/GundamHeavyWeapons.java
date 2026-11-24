@@ -291,7 +291,7 @@ final class GundamHeavyWeapons implements Listener {
                 double y=foldedHeight+(openedHeight-foldedHeight)*p;
                 double backwards=-.44-.18*p;
                 Location pos=around(base,front,right,sideOffset,y,backwards);
-                pos.setYaw(base.getYaw()+side*11*p);
+                pos.setYaw((float)(base.getYaw()+side*11*p));
                 pos.setPitch(0);
                 ItemDisplay panel=v.reflectors.get(i);
                 panel.teleport(pos);
@@ -303,7 +303,7 @@ final class GundamHeavyWeapons implements Listener {
                 int side=i==0?-1:1;
                 Location pos=around(base,front,right,side*(.26+.40*p),
                     1.47+.17*p,-.31+.56*p);
-                pos.setYaw(base.getYaw()+side*3*p);
+                pos.setYaw((float)(base.getYaw()+side*3*p));
                 pos.setPitch(0);
                 ItemDisplay barrel=v.barrels.get(i);
                 barrel.teleport(pos);
