@@ -733,8 +733,16 @@ final class GundamHeavyWeapons implements Listener {
         for(int i=0;i<2;i++){
             ItemDisplay barrel=v.barrels.get(i);
             if(!barrel.isValid())continue;
-            Vector front=front(barrel.getLocation());
-            Location muzzle=barrel.getLocation().add(front.multiply(.68));
+            // The authored twin satellite cannon ends near local Z=30.56.
+            // At display scale 0.82 that is ~1.15 blocks from its
+            // 8-unit pivot, including the pitch imposed on ItemDisplay.
+            // Trace from this actual modeled tip, NOT the old .68 offset
+            // that spawned a beam inside the barrel mesh.
+            double pitch=Math.toRadians(Math.max(-45,Math.min(45,
+                p.getLocation().getPitch())));
+            Vector axis=front(barrel.getLocation())
+                .multiply(Math.cos(pitch)).setY(-Math.sin(pitch));
+            Location muzzle=barrel.getLocation().add(axis.multiply(1.15));
             start[i]=muzzle;
             direction[i]=aimed.toVector().subtract(muzzle.toVector()).normalize();
             RayTraceResult wall=w.rayTraceBlocks(muzzle,direction[i],range,

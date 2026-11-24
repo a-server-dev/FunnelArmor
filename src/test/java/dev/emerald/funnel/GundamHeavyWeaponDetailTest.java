@@ -75,6 +75,10 @@ class GundamHeavyWeaponDetailTest {
         assertTrue(src.contains("v.reflectors.size()!=6 || v.barrels.size()!=2"));
         assertTrue(src.contains("rotateZ(roll).rotateX(hingePitch)"));
         assertTrue(src.contains("new Quaternionf().rotateX(aim)"));
+        assertTrue(src.contains("Location muzzle=barrel.getLocation().add(axis.multiply(1.15))"),
+            "Beam must emerge from actual animated muzzle tip, not inside cannon");
+        assertTrue(src.contains("setY(-Math.sin(pitch))"),
+            "Barrel muzzle must follow player look pitch");
         assertTrue(src.contains("1.47+.17*p"));
         assertTrue(src.contains("Color.fromRGB(255,225,93)"));
     }
