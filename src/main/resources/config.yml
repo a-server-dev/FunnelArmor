@@ -230,6 +230,9 @@ heavy-weapons:
     slam-damage: 9.0
     slam-radius: 4.0
     slam-cooldown-ticks: 110
+    pile-range: 4.5
+    pile-damage: 17.0
+    pile-cooldown-ticks: 165
   satellite:
     enabled: true
     open-ticks: 22

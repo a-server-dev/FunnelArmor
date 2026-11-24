@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GundamHeavyWeaponsTest {
     private static final List<String> MODELS=List.of(
         "gp02_atomic_bazooka","gp02_atomic_shield","barbatos_ultra_mace",
+        "barbatos_ultra_mace_pile",
         "gx_twin_satellite_controller","gx_satellite_reflector",
         "gx_satellite_barrel");
 
@@ -32,7 +33,7 @@ class GundamHeavyWeaponsTest {
                 "items",name+".json"));
             assertEquals("funnel:item/"+name,
                 item.getAsJsonObject("model").get("model").getAsString());
-            assertEquals("funnel:item/brau_bro_cannon",
+            assertEquals("funnel:item/heavy_weapon_palette",
                 packed.getAsJsonObject("textures").get("0").getAsString());
             var original=source.getAsJsonArray("elements");
             var exported=packed.getAsJsonArray("elements");
@@ -96,6 +97,8 @@ class GundamHeavyWeaponsTest {
         assertTrue(code.contains("private void atomicBlast(Player shooter,Location origin)"));
         assertTrue(code.contains("private void slam(Player p)"));
         assertTrue(code.contains("private void fireSatellite(Player p)"));
+        assertTrue(code.contains("private void pileBunker(Player p)"));
+        assertTrue(code.contains("private void restoreMace(Player player)"));
         assertTrue(code.contains("new Charge(kind,itemId,p.getWorld().getUID(),now)"));
         assertTrue(code.contains("charging.remove(playerId)"));
         assertTrue(code.contains("v.reflectors.clear();v.barrels.clear();"));

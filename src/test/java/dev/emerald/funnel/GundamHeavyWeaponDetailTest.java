@@ -1,0 +1,126 @@
+package dev.emerald.funnel;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Test;
+
+import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/** Regression coverage for the design-refinement pass (GP02 / Rex / Double X). */
+class GundamHeavyWeaponDetailTest {
+    private static JsonObject model(String id) throws Exception {
+        return JsonParser.parseString(Files.readString(
+            Path.of("models",id+".bbmodel"))).getAsJsonObject();
+    }
+
+    private static boolean hasPart(String id,String name) throws Exception {
+        for(var e:model(id).getAsJsonArray("elements"))
+            if(e.getAsJsonObject().get("name").getAsString().equals(name))return true;
+        return false;
+    }
+
+    @Test void gp02ShieldIncludesWhiteHexagonalRadiatorAndRedEmblem() throws Exception {
+        String name="gp02_atomic_shield";
+        assertTrue(model(name).getAsJsonArray("elements").size()>125);
+        for(int i=0;i<7;i++)
+            assertTrue(hasPart(name,"Hexagonal white main shield plate "+i));
+        for(int i=0;i<8;i++){
+            assertTrue(hasPart(name,"GP02 red V emblem left swept wing "+i));
+            assertTrue(hasPart(name,"GP02 red V emblem right swept wing "+i));
+        }
+        assertTrue(hasPart(name,"Rear bazooka integrated stowage rail"));
+        assertTrue(hasPart(name,"Removable barrel securing clamp 10"));
+        assertTrue(hasPart(name,"Port amber cooling shutter 6"));
+        assertTrue(hasPart(name,"Starboard amber cooling shutter 6"));
+    }
+
+    @Test void oversizedMaceHasActivePileModelWithTrueExtendedTip() throws Exception {
+        String id="barbatos_ultra_mace";
+        String active="barbatos_ultra_mace_pile";
+        assertTrue(hasPart(id,"Silver retracted central pile rod"));
+        assertTrue(hasPart(active,"Piled penetrating tungsten sharp tip 5"));
+        assertTrue(hasPart(active,"Actuated six-sided reinforcing collar"));
+        double folded=maximumY(id);
+        double extended=maximumY(active);
+        assertTrue(extended-folded>2.0,"Pile tip must visibly extend beyond the mace head");
+        assertTrue(model(active).getAsJsonArray("elements").size()
+            >model(id).getAsJsonArray("elements").size());
+    }
+
+    private static double maximumY(String id) throws Exception {
+        double maximum=-99;
+        for(var e:model(id).getAsJsonArray("elements"))maximum=Math.max(
+            maximum,e.getAsJsonObject().getAsJsonArray("to").get(1).getAsDouble());
+        return maximum;
+    }
+
+    @Test void dxReflectorHasSixPetalModelAndHingedRotationLogic() throws Exception {
+        assertTrue(model("gx_satellite_reflector").getAsJsonArray("elements").size()>130);
+        assertTrue(hasPart("gx_satellite_reflector","Reflector golden faceted inset wing 4"));
+        assertTrue(hasPart("gx_satellite_reflector","Precise reflectance hexagon dot 45"));
+        assertTrue(hasPart("gx_satellite_reflector","Rear radiator support black fold-out rib 6"));
+        assertTrue(model("gx_satellite_barrel").getAsJsonArray("elements").size()>80);
+        assertTrue(hasPart("gx_satellite_barrel","Long ceramic-white upper energy exchanger"));
+        assertTrue(hasPart("gx_satellite_barrel","Emerald core emitting focus"));
+        String src=Files.readString(Path.of(
+            "src/main/java/dev/emerald/funnel/GundamHeavyWeapons.java"));
+        assertTrue(src.contains("v.reflectors.size()!=6 || v.barrels.size()!=2"));
+        assertTrue(src.contains("rotateZ(roll).rotateX(hingePitch)"));
+        assertTrue(src.contains("new Quaternionf().rotateX(aim)"));
+        assertTrue(src.contains("1.47+.17*p"));
+        assertTrue(src.contains("Color.fromRGB(255,225,93)"));
+    }
+
+    @Test void uniquePackedPaletteIsAReal64SquareAndContainsRedGoldWhiteAndCyan() throws Exception {
+        boolean found=false;
+        try(var stream=getClass().getResourceAsStream("/funnel-pack.zip")) {
+            assertNotNull(stream);
+            try(var zip=new ZipInputStream(stream)) {
+                ZipEntry e;
+                while((e=zip.getNextEntry())!=null) {
+                    if(e.getName().equals("assets/funnel/textures/item/heavy_weapon_palette.png")) {
+                        found=true;
+                        var img=ImageIO.read(new ByteArrayInputStream(zip.readAllBytes()));
+                        assertNotNull(img);
+                        assertEquals(64,img.getWidth());
+                        assertEquals(64,img.getHeight());
+                        int white=img.getRGB(24,24);
+                        assertTrue(((white>>16)&255)>220);
+                        int gold=img.getRGB(40,40);
+                        assertTrue(((gold>>16)&255)>180 && ((gold>>8)&255)>120);
+                        int red=img.getRGB(8,56);
+                        assertTrue(((red>>16)&255)>155 && ((red>>8)&255)<100);
+                        int cyan=img.getRGB(40,56);
+                        assertTrue(((cyan>>8)&255)>160 && (cyan&255)>175);
+                    }
+                    zip.closeEntry();
+                }
+            }
+        }
+        assertTrue(found,"Dedicated color atlas must be shipped inside built JAR");
+    }
+
+    @Test void controlsKeepOldActionsAndAddSafePileBunkerWithCompleteCleanup() throws Exception {
+        String src=Files.readString(Path.of(
+            "src/main/java/dev/emerald/funnel/GundamHeavyWeapons.java"));
+        assertTrue(src.contains("if(p.isSneaking())pileBunker(p);"));
+        assertTrue(src.contains("else slam(p);"));
+        assertTrue(src.contains("restoreMace(e.getPlayer())"));
+        assertTrue(src.contains("restoreMace(e.getEntity())"));
+        assertTrue(src.contains("restoreMace(player);"));
+        assertTrue(src.contains("mace.pile-cooldown-ticks"));
+        assertTrue(src.contains("world.rayTraceBlocks(eye,ray,reach,"));
+        assertTrue(src.contains("damage,shooter"));
+        assertTrue(src.contains("rayTraceBlocks("));
+        assertFalse(src.contains("createExplosion("));
+        assertFalse(src.contains("setType(Material.AIR)"));
+    }
+}

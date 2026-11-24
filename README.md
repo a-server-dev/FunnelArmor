@@ -1435,3 +1435,54 @@ to OP / EmeraldREX91 / server console; item operation is allowed for others.
 - Visuals and damage logic are **server-side**, tested for static correctness
   and build validity; do not consider the in-game pose finalized without F5
   screenshots and weapon hits under actual server conditions.
+
+
+## v0.26.0 — Gundam weapon model-fidelity and mechanical refinement
+
+**GP02A / Atomic Bazooka.** Comparing kit references reveals the rear barrel
+stowage and huge white *radiator shield* are as important as the long dark-blue
+bazooka itself. Updated the editable shield model to a tall stepped hexagonal
+outline with white armor plating, red winged warning emblem, yellow vent/shutter
+rows, steel back-side stored bazooka-barrel clamps, carrying handle and locks.
+The bazooka now has finer dark-metal receiver bands, red/gold safety markings,
+side optical sensor, eight raised heat rails, and a properly reinforced muzzle.
+The held model remains a complete firearm; the shield stowage is a **decorative
+mechanical detail**, not yet an independent detachable muzzle assembly. Larger
+left-side shield (scale 0.85) and muzzle-origin launch effects. Nuclear flash,
+shock rings and mushroom clouds stay **cosmetic with no terrain destruction**.
+
+**Lupus Rex / Super Large Mace.** Refined the head toward the real long,
+flat, spiked gunmetal spear silhouette instead of an undifferentiated gray
+hammer cube. Added longitudinal segmented armor, side cutting claws,
+metallic reinforced head, telescoping center column, rear butt spike and an
+individually modeled **front pile bunker**. Sneak + right-click triggers
+an animated active-pile variant, followed by a block-occluded precise stab at
+4.5 blocks (default 17 damage, 165-tick cooldown). Normal right-click is
+still the area slam. The item always returns to its normal model, even if the
+player switches slots, quits, dies or the plugin stops. New source model and
+item asset: `barbatos_ultra_mace_pile` (not a separate give-all item).
+
+**Double X / Twin Satellite Cannon.** Replaced simplified square gold panels
+with independently detailed gold/ivory, tapered radiator petals, navy and
+silver hinges, metallic frame and numerous gold capture cells. Six separately
+posed panels fold flat to the back and, when toggled, spread into a **three-petal
+upper/middle/lower fan on each side**, including independent rotations around
+Z and X rather than only changing their entity positions. Rebuilt the white
++ cobalt shoulder cannon shells, silver long barrel rails, green muzzle and
+power indicators. Barrel pitch is now driven by the controller's look pitch.
+The firing rays now begin at the barrel's actual forward end, about 1.1 blocks
+from the cannon display center, and the panels glow gold while charging.
+
+**Common technical detail.** The six source BBModels and matching packed model
+JSON use a new dedicated **64×64 heavy_weapon_palette** with white, navy,
+steel, bronze, red, orange, cyan and violet swatches. The atlas is a real PNG
+in the pack, never a missing inherited Brau-Bro material. Cuboid geometry and
+UV maps remain identical between each editable source and game export.
+The existing `/funnel give atomic|mace|satellite|all`, OP/EmeraldREX91
+restrictions, safe block occlusion, server-side particle combat and all
+other weapons are preserved. Automated tests verify the source-to-pack UV
+relationship, detailed model parts, pile state and stage transitions.
+
+**Caveat:** Model and behavior refinements are validated by source checks and
+Gradle CI, not by an in-game side-by-side reference screenshot; hand pose,
+barrel aiming and 3rd-person alignment may still require tuning.

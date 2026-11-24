@@ -90,6 +90,9 @@ class ResourcePackTest {
                 assertTrue(entries.contains("assets/funnel/items/" + id + ".json"), id);
                 assertTrue(entries.contains("assets/funnel/models/item/" + id + ".json"), id);
             }
+            assertTrue(entries.contains("assets/funnel/items/barbatos_ultra_mace_pile.json"));
+            assertTrue(entries.contains("assets/funnel/models/item/barbatos_ultra_mace_pile.json"));
+            assertTrue(entries.contains("assets/funnel/textures/item/heavy_weapon_palette.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/gn_sword_v.png"));
             for (int i = 0; i <= 4; i++) {
                 String id = "beam_saber_" + i;
@@ -279,9 +282,9 @@ class ResourcePackTest {
                             continue;
                         }
                         if (entry.getName().matches(
-                                "assets/funnel/models/item/(gp02_atomic_(bazooka|shield)|barbatos_ultra_mace|gx_(twin_satellite_controller|satellite_(reflector|barrel)))\\.json")) {
+                                "assets/funnel/models/item/(gp02_atomic_(bazooka|shield)|barbatos_ultra_mace(_pile)?|gx_(twin_satellite_controller|satellite_(reflector|barrel)))\\.json")) {
                             var tex = model.getAsJsonObject("textures").get("0").getAsString();
-                            assertEquals("funnel:item/brau_bro_cannon", tex);
+                            assertEquals("funnel:item/heavy_weapon_palette", tex);
                             assertTrue(model.getAsJsonArray("elements").size() >= 20);
                             for (var element : model.getAsJsonArray("elements")) {
                                 var cube = element.getAsJsonObject();
@@ -322,8 +325,8 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(37, checked,
-                    "31 existing validated models + 6 atomic/mace/satellite models");
+            assertEquals(38, checked,
+                    "31 existing validated models + 7 atomic/mace/satellite model states");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }

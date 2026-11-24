@@ -75,6 +75,7 @@ final class GundamHeavyWeapons implements Listener {
     private final Map<UUID, Long> cooldownsSatellite = new HashMap<>();
     private final Map<UUID, Long> cooldownsMaceSlam = new HashMap<>();
     private final Map<UUID, Long> cooldownsMaceHit = new HashMap<>();
+    private final Map<UUID, Long> cooldownsMacePile = new HashMap<>();
     private final Map<UUID, Long> toggleDebounce = new HashMap<>();
     private final Set<UUID> slamDamage = new HashSet<>();
 
@@ -130,6 +131,7 @@ final class GundamHeavyWeapons implements Listener {
                 meta.lore(List.of(
                     Component.text("§7左クリック: 強力な近接打撃"),
                     Component.text("§e右クリック: 衝撃波つき叩きつけ"),
+                    Component.text("§bしゃがみ右クリック: パイルバンカー刺突"),
                     Component.text("§8地形破壊なし")));
             }
             case SATELLITE -> {
@@ -194,6 +196,8 @@ final class GundamHeavyWeapons implements Listener {
         cooldownsSatellite.clear();
         cooldownsMaceSlam.clear();
         cooldownsMaceHit.clear();
+        cooldownsMacePile.clear();
+        for(Player player:Bukkit.getOnlinePlayers())restoreMace(player);
         toggleDebounce.clear();
         slamDamage.clear();
     }
@@ -224,7 +228,7 @@ final class GundamHeavyWeapons implements Listener {
             if(v.shield==null || !v.shield.isValid()
                     || !v.shield.getWorld().equals(player.getWorld())) {
                 if(v.shield!=null&&v.shield.isValid())v.shield.remove();
-                v.shield=display(player,shieldVisual,.65f);
+                v.shield=display(player,shieldVisual,.85f);
             }
         } else if(SATELLITE.equals(kind)) {
             boolean rebuild=v.reflectors.size()!=6 || v.barrels.size()!=2
@@ -236,8 +240,8 @@ final class GundamHeavyWeapons implements Listener {
                 for(ItemDisplay d:v.reflectors)if(d.isValid())d.remove();
                 for(ItemDisplay d:v.barrels)if(d.isValid())d.remove();
                 v.reflectors.clear();v.barrels.clear();
-                for(int i=0;i<6;i++)v.reflectors.add(display(player,reflectorVisual,.56f));
-                for(int i=0;i<2;i++)v.barrels.add(display(player,cannonVisual,.71f));
+                for(int i=0;i<6;i++)v.reflectors.add(display(player,reflectorVisual,.83f));
+                for(int i=0;i<2;i++)v.barrels.add(display(player,cannonVisual,.82f));
             }
         }
     }
@@ -253,40 +257,76 @@ final class GundamHeavyWeapons implements Listener {
             .add(front.clone().multiply(forward)).add(0,height,0);
     }
 
+    private static void pose(ItemDisplay display,Quaternionf turn,float scale) {
+        // Rebuild around the display origin; a quaternion gives each
+        // solar radiator its own fan rotation, unlike teleport yaw alone.
+        display.setTransformation(new Transformation(new Vector3f(),
+            turn,new Vector3f(scale,scale,scale),new Quaternionf()));
+    }
+
     private void updateVisuals(Player player,Visuals v) {
         Location base=player.getLocation();
         Vector front=front(base),right=new Vector(front.getZ(),0,-front.getX());
         if(ATOMIC.equals(v.kind)) {
-            Location position=around(base,front,right,-.59,1.03,.09);
-            position.setYaw(base.getYaw()-13);
+            // The physical GP02 shield is a large front-facing radiator,
+            // close to the LEFT forearm and out of the bazooka's muzzle.
+            Location position=around(base,front,right,-.72,1.11,.02);
+            position.setYaw(base.getYaw()-7);
             position.setPitch(0);
             v.shield.teleport(position);
         } else if(SATELLITE.equals(v.kind)) {
             double rate=1.0/ticks("satellite.open-ticks",22,5,80);
             v.progress=Math.max(0,Math.min(1,v.progress+(v.opened?rate:-rate)));
             double p=v.progress*v.progress*(3-2*v.progress);
+            // Double X really has 3 independently articulated radiator
+            // petals on EACH side. The tip of each plate sweeps up/out/down
+            // in a six-point fan rather than remaining vertical.
             for(int i=0;i<6;i++) {
                 int side=i<3?-1:1,row=i%3;
-                double lateral=side*(.25+.14*row+p*(.42+.12*row));
-                double up=1.32+row*.21+p*(.34+.20*row);
-                double backward=-.29-.22*p;
-                Location loc=around(base,front,right,lateral,up,backward);
-                loc.setYaw(base.getYaw()+side*(18+row*12)*((float)p));
-                loc.setPitch(0);
-                v.reflectors.get(i).teleport(loc);
+                double foldLateral=.24+row*.035;
+                double fanLateral=row==1?1.12:.92;
+                double sideOffset=side*(foldLateral+(fanLateral-foldLateral)*p);
+                double foldedHeight=1.55;
+                double openedHeight=row==0?2.25:row==1?1.54:.80;
+                double y=foldedHeight+(openedHeight-foldedHeight)*p;
+                double backwards=-.44-.18*p;
+                Location pos=around(base,front,right,sideOffset,y,backwards);
+                pos.setYaw(base.getYaw()+side*11*p);
+                pos.setPitch(0);
+                ItemDisplay panel=v.reflectors.get(i);
+                panel.teleport(pos);
+                float roll=(float)Math.toRadians(side*(row==0?44:row==1?86:131)*p);
+                float hingePitch=(float)Math.toRadians(-9*p);
+                pose(panel,new Quaternionf().rotateZ(roll).rotateX(hingePitch),.83f);
             }
-            for(int i=0;i<2;i++){
+            for(int i=0;i<2;i++) {
                 int side=i==0?-1:1;
-                Location loc=around(base,front,right,side*(.29+.29*p),
-                    1.38+.20*p,-.21+.39*p);
-                loc.setYaw(base.getYaw()+side*4);
-                loc.setPitch(0);
-                v.barrels.get(i).teleport(loc);
+                Location pos=around(base,front,right,side*(.26+.40*p),
+                    1.47+.17*p,-.31+.56*p);
+                pos.setYaw(base.getYaw()+side*3*p);
+                pos.setPitch(0);
+                ItemDisplay barrel=v.barrels.get(i);
+                barrel.teleport(pos);
+                // The twin long cannon barrels pitch together with crosshair
+                // while their backpack mounts stay locked to body yaw.
+                float aim=(float)Math.toRadians(Math.max(-45,Math.min(45,
+                    base.getPitch()))*p);
+                pose(barrel,new Quaternionf().rotateX(aim),.82f);
             }
-            if(p>.01 && Bukkit.getCurrentTick()%5==0) {
-                Location at=around(base,front,right,0,1.83,-.45);
-                player.getWorld().spawnParticle(Particle.DUST,at,3,.28,.16,.1,0,
-                    new Particle.DustOptions(Color.fromRGB(241,193,63),1.25f));
+            Charge current=charging.get(player.getUniqueId());
+            if(p>.92 && current!=null && SATELLITE.equals(current.kind)
+                    && Bukkit.getCurrentTick()%4==0) {
+                for(ItemDisplay panel:v.reflectors) {
+                    Location glow=panel.getLocation().add(0,.12,.04);
+                    player.getWorld().spawnParticle(Particle.DUST,glow,6,
+                        .19,.25,.07,0,new Particle.DustOptions(
+                            Color.fromRGB(255,225,93),1.25f));
+                }
+                for(ItemDisplay barrel:v.barrels) {
+                    Location focus=barrel.getLocation().add(front.clone().multiply(.95));
+                    player.getWorld().spawnParticle(Particle.END_ROD,focus,4,
+                        .11,.12,.11,.035);
+                }
             }
         }
     }
@@ -306,7 +346,10 @@ final class GundamHeavyWeapons implements Listener {
         event.setCancelled(true);
         if(!enabled(type))return;
         if(ATOMIC.equals(type)&&right)begin(p,ATOMIC);
-        else if(MACE.equals(type)&&right)slam(p);
+        else if(MACE.equals(type)&&right) {
+            if(p.isSneaking())pileBunker(p);
+            else slam(p);
+        }
         else if(SATELLITE.equals(type)){
             if(left||p.isSneaking())toggle(p);
             else begin(p,SATELLITE);
@@ -447,9 +490,13 @@ final class GundamHeavyWeapons implements Listener {
 
     private void launchAtomic(Player p) {
         World w=p.getWorld();
-        Location start=p.getEyeLocation();
-        Vector dir=start.getDirection().normalize();
         Location destination=shotAim(p,number("atomic.range",48,8,80));
+        Location eye=p.getEyeLocation();
+        Vector view=eye.getDirection().normalize();
+        Vector right=new Vector(view.getZ(),0,-view.getX());
+        Location start=eye.clone().add(view.clone().multiply(.60))
+            .add(right.multiply(.24)).add(0,-.23,0);
+        Vector dir=destination.toVector().subtract(start.toVector()).normalize();
         double length=destination.distance(start);
         w.playSound(start,Sound.ENTITY_FIREWORK_ROCKET_LAUNCH,2f,.55f);
         // The shell is a cosmetic projectile only. No TNT, world mutation or
@@ -476,6 +523,8 @@ final class GundamHeavyWeapons implements Listener {
         double radius=number("atomic.radius",7.0,1.0,12.0);
         double baseDamage=number("atomic.damage",24,0,60);
         w.playSound(origin,Sound.ENTITY_GENERIC_EXPLODE,3f,.52f);
+        w.spawnParticle(Particle.EXPLOSION,origin,7,.85,.85,.85,.025);
+        w.spawnParticle(Particle.FLASH,origin,2,.50,.50,.50,0);
         for(Entity e:w.getNearbyEntities(origin,radius,radius,radius)) {
             if(!targetable(e,shooter))continue;
             LivingEntity t=(LivingEntity)e;
@@ -523,13 +572,94 @@ final class GundamHeavyWeapons implements Listener {
         }.runTaskTimer(plugin,0L,2L);
     }
 
+    /**
+     * Lupus Rex's spear point is a real, separately modeled pile bunker.
+     * Sneak + right-click plays an extended weapon model and after 6 ticks
+     * inflicts one short-range, block-occluded armor-piercing strike.
+     * All modified items are restored on cancel, logout, death and disable.
+     */
+    private void pileBunker(Player p) {
+        long now=Bukkit.getCurrentTick();
+        UUID owner=p.getUniqueId();
+        if(now<cooldownsMacePile.getOrDefault(owner,0L))return;
+        int cooldown=ticks("mace.pile-cooldown-ticks",165,20,600);
+        cooldownsMacePile.put(owner,now+cooldown);
+        String serial=weaponSerial(p);
+        if(serial==null)return;
+        ItemStack held=p.getInventory().getItemInMainHand();
+        ItemMeta meta=held.getItemMeta();
+        meta.setItemModel(new NamespacedKey("funnel","barbatos_ultra_mace_pile"));
+        held.setItemMeta(meta);
+        p.getInventory().setItemInMainHand(held);
+        World world=p.getWorld();
+        UUID worldId=world.getUID();
+        world.playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,1.4f,.52f);
+        p.sendActionBar(Component.text("§7超大型メイス：パイルバンカー射出！"));
+        Bukkit.getScheduler().runTaskLater(plugin,() -> {
+            Player shooter=Bukkit.getPlayer(owner);
+            if(shooter==null||!shooter.isOnline())return;
+            if(shooter.isDead()||!worldId.equals(shooter.getWorld().getUID())
+                ||!MACE.equals(kind(shooter))||!serial.equals(weaponSerial(shooter))) {
+                restoreMace(shooter);
+                return;
+            }
+            Location eye=shooter.getEyeLocation();
+            Vector ray=eye.getDirection().normalize();
+            double reach=number("mace.pile-range",4.5,2,8);
+            RayTraceResult wall=world.rayTraceBlocks(eye,ray,reach,
+                FluidCollisionMode.NEVER,true);
+            double unobstructed=wall==null?reach:Math.min(reach,
+                eye.toVector().distance(wall.getHitPosition()));
+            RayTraceResult hit=world.rayTraceEntities(eye,ray,unobstructed,.45,
+                entity->targetable(entity,shooter));
+            if(hit!=null&&hit.getHitEntity() instanceof LivingEntity victim) {
+                double damage=number("mace.pile-damage",17.0,0,48);
+                slamDamage.add(owner);
+                try {if(damage>0)victim.damage(damage,shooter);}
+                finally {slamDamage.remove(owner);}
+                Vector away=ray.clone().multiply(.66);away.setY(.38);
+                if(victim.isValid())
+                    victim.setVelocity(victim.getVelocity().add(away));
+            }
+            double visual=hit==null?unobstructed:Math.min(unobstructed,
+                eye.toVector().distance(hit.getHitPosition()));
+            for(double d=0;d<=visual;d+=.22) {
+                Location at=eye.clone().add(ray.clone().multiply(d));
+                world.spawnParticle(Particle.CRIT,at,2,.08,.08,.08,.08);
+            }
+            world.playSound(shooter.getLocation(),Sound.ENTITY_IRON_GOLEM_ATTACK,
+                1.22f,1.35f);
+            restoreMace(shooter);
+        },6L);
+    }
+
+    private void restoreMace(Player player) {
+        if(player==null)return;
+        var inv=player.getInventory();
+        ItemStack[] contents=inv.getContents();
+        for(int slot=0;slot<contents.length;slot++){
+            ItemStack stack=contents[slot];
+            if(stack==null||!stack.hasItemMeta())continue;
+            ItemMeta meta=stack.getItemMeta();
+            if(!MACE.equals(meta.getPersistentDataContainer()
+                .get(kindKey,PersistentDataType.STRING)))continue;
+            NamespacedKey itemModel=meta.getItemModel();
+            if(itemModel!=null && itemModel.equals(
+                new NamespacedKey("funnel","barbatos_ultra_mace_pile"))) {
+                meta.setItemModel(new NamespacedKey("funnel","barbatos_ultra_mace"));
+                stack.setItemMeta(meta);
+                inv.setItem(slot,stack);
+            }
+        }
+    }
+
     private void slam(Player p) {
         long now=Bukkit.getCurrentTick();
         UUID id=p.getUniqueId();
         if(now<cooldownsMaceSlam.getOrDefault(id,0L))return;
         cooldownsMaceSlam.put(id,now+ticks("mace.slam-cooldown-ticks",110,15,400));
-        Location center=p.getLocation().add(p.getLocation().getDirection()
-            .setY(0).normalize().multiply(1.8));
+        Vector horizontal=front(p.getLocation());
+        Location center=p.getLocation().add(horizontal.multiply(1.8));
         center.setY(Math.max(center.getY(),p.getLocation().getY())+.2);
         World w=p.getWorld();
         double radius=number("mace.slam-radius",4.0,1,8);
@@ -676,8 +806,8 @@ final class GundamHeavyWeapons implements Listener {
         return true;
     }
 
-    @EventHandler public void onQuit(PlayerQuitEvent e){clear(e.getPlayer().getUniqueId());}
-    @EventHandler public void onDeath(PlayerDeathEvent e){clear(e.getEntity().getUniqueId());}
-    @EventHandler public void onWorld(PlayerChangedWorldEvent e){clear(e.getPlayer().getUniqueId());}
-    @EventHandler public void onHeld(PlayerItemHeldEvent e){clear(e.getPlayer().getUniqueId());}
+    @EventHandler public void onQuit(PlayerQuitEvent e){restoreMace(e.getPlayer());clear(e.getPlayer().getUniqueId());}
+    @EventHandler public void onDeath(PlayerDeathEvent e){restoreMace(e.getEntity());clear(e.getEntity().getUniqueId());}
+    @EventHandler public void onWorld(PlayerChangedWorldEvent e){restoreMace(e.getPlayer());clear(e.getPlayer().getUniqueId());}
+    @EventHandler public void onHeld(PlayerItemHeldEvent e){restoreMace(e.getPlayer());clear(e.getPlayer().getUniqueId());}
 }
