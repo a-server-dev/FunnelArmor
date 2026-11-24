@@ -82,6 +82,8 @@ final class GundamHeavyWeapons implements Listener {
     private final ItemStack shieldVisual = displayItem("gp02_atomic_shield");
     private final ItemStack reflectorVisual = displayItem("gx_satellite_reflector");
     private final ItemStack cannonVisual = displayItem("gx_satellite_barrel");
+    private final ItemStack backpackVisual = displayItem("gx_twin_satellite_controller");
+    private static final double DX_MUZZLE_DISTANCE = 1.70;
 
     private static final class Visuals {
         String kind;
@@ -90,6 +92,7 @@ final class GundamHeavyWeapons implements Listener {
         final List<ItemDisplay> barrels = new ArrayList<>();
         boolean opened;
         double progress;
+        double barrelPitch;
     }
 
     private record Charge(String kind, String itemId, UUID world, long started) {}
@@ -138,7 +141,7 @@ final class GundamHeavyWeapons implements Listener {
                 meta.displayName(Component.text("§eダブルエックス ツインサテライトキャノン"));
                 meta.setItemModel(new NamespacedKey("funnel","gx_twin_satellite_controller"));
                 meta.lore(List.of(
-                    Component.text("§7保持中: 背部砲身と6枚のリフレクター"),
+                    Component.text("§7保持中: 背面ユニットと6枚のリフレクター（手持ち非表示）"),
                     Component.text("§e左クリック / しゃがみ右クリック: 展開・収納"),
                     Component.text("§b通常右クリック: 充填後に2門同時発射")));
             }
@@ -228,9 +231,13 @@ final class GundamHeavyWeapons implements Listener {
             if(v.shield==null || !v.shield.isValid()
                     || !v.shield.getWorld().equals(player.getWorld())) {
                 if(v.shield!=null&&v.shield.isValid())v.shield.remove();
-                v.shield=display(player,shieldVisual,.85f);
+                v.shield=display(player,shieldVisual,1.15f);
             }
         } else if(SATELLITE.equals(kind)) {
+            if(v.shield==null || !v.shield.isValid() || v.shield.getWorld()!=player.getWorld()) {
+                if(v.shield!=null&&v.shield.isValid())v.shield.remove();
+                v.shield=display(player,backpackVisual,1.08f);
+            }
             boolean rebuild=v.reflectors.size()!=6 || v.barrels.size()!=2
                 || v.reflectors.stream().anyMatch(d->!d.isValid()
                     || d.getWorld()!=player.getWorld())
@@ -240,8 +247,8 @@ final class GundamHeavyWeapons implements Listener {
                 for(ItemDisplay d:v.reflectors)if(d.isValid())d.remove();
                 for(ItemDisplay d:v.barrels)if(d.isValid())d.remove();
                 v.reflectors.clear();v.barrels.clear();
-                for(int i=0;i<6;i++)v.reflectors.add(display(player,reflectorVisual,.83f));
-                for(int i=0;i<2;i++)v.barrels.add(display(player,cannonVisual,.82f));
+                for(int i=0;i<6;i++)v.reflectors.add(display(player,reflectorVisual,1.03f));
+                for(int i=0;i<2;i++)v.barrels.add(display(player,cannonVisual,1.15f));
             }
         }
     }
@@ -270,50 +277,54 @@ final class GundamHeavyWeapons implements Listener {
         if(ATOMIC.equals(v.kind)) {
             // The physical GP02 shield is a large front-facing radiator,
             // close to the LEFT forearm and out of the bazooka's muzzle.
-            Location position=around(base,front,right,-.72,1.11,.02);
-            position.setYaw(base.getYaw()-7);
+            Location position=around(base,front,right,.80,.63,.18);
+            position.setYaw(base.getYaw()+7);
             position.setPitch(0);
             v.shield.teleport(position);
         } else if(SATELLITE.equals(v.kind)) {
             double rate=1.0/ticks("satellite.open-ticks",22,5,80);
             v.progress=Math.max(0,Math.min(1,v.progress+(v.opened?rate:-rate)));
             double p=v.progress*v.progress*(3-2*v.progress);
+            Location pack=around(base,front,right,0,1.44,-.36);
+            pack.setYaw(base.getYaw());pack.setPitch(0);v.shield.teleport(pack);
+            Charge current=charging.get(player.getUniqueId());
+            boolean aiming=current!=null && SATELLITE.equals(current.kind);
             // Double X really has 3 independently articulated radiator
             // petals on EACH side. The tip of each plate sweeps up/out/down
             // in a six-point fan rather than remaining vertical.
             for(int i=0;i<6;i++) {
                 int side=i<3?-1:1,row=i%3;
-                double foldLateral=.24+row*.035;
-                double fanLateral=row==1?1.12:.92;
+                double foldLateral=.23+row*.085;
+                double fanLateral=.49;
                 double sideOffset=side*(foldLateral+(fanLateral-foldLateral)*p);
                 double foldedHeight=1.55;
-                double openedHeight=row==0?2.25:row==1?1.54:.80;
+                double openedHeight=row==0?1.72:row==1?1.50:1.28;
                 double y=foldedHeight+(openedHeight-foldedHeight)*p;
-                double backwards=-.44-.18*p;
+                double backwards=-.43-.07*p;
                 Location pos=around(base,front,right,sideOffset,y,backwards);
-                pos.setYaw((float)(base.getYaw()+side*11*p));
+                pos.setYaw(base.getYaw());
                 pos.setPitch(0);
                 ItemDisplay panel=v.reflectors.get(i);
                 panel.teleport(pos);
-                float roll=(float)Math.toRadians(side*(row==0?44:row==1?86:131)*p);
+                float roll=(float)Math.toRadians(-side*(row==0?48:row==1?90:132)*p);
                 float hingePitch=(float)Math.toRadians(-9*p);
-                pose(panel,new Quaternionf().rotateZ(roll).rotateX(hingePitch),.83f);
+                pose(panel,new Quaternionf().rotateZ(roll).rotateX(hingePitch),1.03f);
             }
             for(int i=0;i<2;i++) {
                 int side=i==0?-1:1;
-                Location pos=around(base,front,right,side*(.26+.40*p),
-                    1.47+.17*p,-.31+.56*p);
-                pos.setYaw((float)(base.getYaw()+side*3*p));
+                Location pos=around(base,front,right,side*(.30+.15*p),
+                    1.57+.18*p,-.31);
+                pos.setYaw(base.getYaw());
                 pos.setPitch(0);
                 ItemDisplay barrel=v.barrels.get(i);
                 barrel.teleport(pos);
                 // The twin long cannon barrels pitch together with crosshair
                 // while their backpack mounts stay locked to body yaw.
-                float aim=(float)Math.toRadians(Math.max(-45,Math.min(45,
-                    base.getPitch()))*p);
-                pose(barrel,new Quaternionf().rotateX(aim),.82f);
+                double deployedPitch=aiming?Math.max(-65,Math.min(65,base.getPitch())):-34;
+                v.barrelPitch=Math.toRadians(-80*(1-p)+deployedPitch*p);
+                float aim=(float)v.barrelPitch;
+                pose(barrel,new Quaternionf().rotateX(aim),1.15f);
             }
-            Charge current=charging.get(player.getUniqueId());
             if(p>.92 && current!=null && SATELLITE.equals(current.kind)
                     && Bukkit.getCurrentTick()%4==0) {
                 for(ItemDisplay panel:v.reflectors) {
@@ -323,7 +334,7 @@ final class GundamHeavyWeapons implements Listener {
                             Color.fromRGB(255,225,93),1.25f));
                 }
                 for(ItemDisplay barrel:v.barrels) {
-                    Location focus=barrel.getLocation().add(front.clone().multiply(.95));
+                    Location focus=satelliteMuzzle(barrel,v.barrelPitch);
                     player.getWorld().spawnParticle(Particle.END_ROD,focus,4,
                         .11,.12,.11,.035);
                 }
@@ -718,6 +729,12 @@ final class GundamHeavyWeapons implements Listener {
         }
     }
 
+    // Matches the 31.688 model-space muzzle at scale 1.15, pivot 8.
+    private static Location satelliteMuzzle(ItemDisplay barrel,double pitch) {
+        Vector axis=front(barrel.getLocation()).multiply(Math.cos(pitch)).setY(-Math.sin(pitch));
+        return barrel.getLocation().add(axis.multiply(DX_MUZZLE_DISTANCE));
+    }
+
     private void fireSatellite(Player p) {
         Visuals v=visuals.get(p.getUniqueId());
         if(v==null||!v.opened||v.progress<.95||v.barrels.size()!=2)return;
@@ -733,16 +750,7 @@ final class GundamHeavyWeapons implements Listener {
         for(int i=0;i<2;i++){
             ItemDisplay barrel=v.barrels.get(i);
             if(!barrel.isValid())continue;
-            // The authored twin satellite cannon ends near local Z=30.56.
-            // At display scale 0.82 that is ~1.15 blocks from its
-            // 8-unit pivot, including the pitch imposed on ItemDisplay.
-            // Trace from this actual modeled tip, NOT the old .68 offset
-            // that spawned a beam inside the barrel mesh.
-            double pitch=Math.toRadians(Math.max(-45,Math.min(45,
-                p.getLocation().getPitch())));
-            Vector axis=front(barrel.getLocation())
-                .multiply(Math.cos(pitch)).setY(-Math.sin(pitch));
-            Location muzzle=barrel.getLocation().add(axis.multiply(1.15));
+            Location muzzle=satelliteMuzzle(barrel,v.barrelPitch);
             start[i]=muzzle;
             direction[i]=aimed.toVector().subtract(muzzle.toVector()).normalize();
             RayTraceResult wall=w.rayTraceBlocks(muzzle,direction[i],range,
