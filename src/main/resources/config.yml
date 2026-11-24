@@ -209,3 +209,31 @@ brau-bro:
   fire-damage-per-beam: 1.5
   max-burst-damage: 12.0
   beam-particle-step: 0.72
+
+# Three standalone handheld Gundam weapons. These options never change terrain.
+# Atomic GP02: short arming interval, flying shell, crater-free mushroom-cloud
+# shockwave, and an attached shield model while held.
+# Mace: strong melee impact and a right-click knockback shockwave.
+# Twin Satellite: deploy 6 backpack reflectors, then charge 2 long beams.
+heavy-weapons:
+  atomic:
+    enabled: true
+    charge-ticks: 55
+    cooldown-ticks: 600
+    range: 48.0
+    radius: 7.0
+    damage: 24.0
+  mace:
+    enabled: true
+    hit-damage: 11.0
+    hit-cooldown-ticks: 11
+    slam-damage: 9.0
+    slam-radius: 4.0
+    slam-cooldown-ticks: 110
+  satellite:
+    enabled: true
+    open-ticks: 22
+    charge-ticks: 75
+    cooldown-ticks: 360
+    range: 56.0
+    beam-damage: 18.0

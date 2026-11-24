@@ -83,6 +83,13 @@ class ResourcePackTest {
                     "Deprecated BetterModel overlay must not be in the vanilla resource pack");
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_escutcheon.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/aerial_gunbit_rifle.png"));
+            for (String id : java.util.List.of("gp02_atomic_bazooka",
+                    "gp02_atomic_shield", "barbatos_ultra_mace",
+                    "gx_twin_satellite_controller", "gx_satellite_reflector",
+                    "gx_satellite_barrel")) {
+                assertTrue(entries.contains("assets/funnel/items/" + id + ".json"), id);
+                assertTrue(entries.contains("assets/funnel/models/item/" + id + ".json"), id);
+            }
             assertTrue(entries.contains("assets/funnel/textures/item/gn_sword_v.png"));
             for (int i = 0; i <= 4; i++) {
                 String id = "beam_saber_" + i;
@@ -271,6 +278,27 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
+                        if (entry.getName().matches(
+                                "assets/funnel/models/item/(gp02_atomic_(bazooka|shield)|barbatos_ultra_mace|gx_(twin_satellite_controller|satellite_(reflector|barrel)))\\.json")) {
+                            var tex = model.getAsJsonObject("textures").get("0").getAsString();
+                            assertEquals("funnel:item/brau_bro_cannon", tex);
+                            assertTrue(model.getAsJsonArray("elements").size() >= 20);
+                            for (var element : model.getAsJsonArray("elements")) {
+                                var cube = element.getAsJsonObject();
+                                for (int axis=0; axis<3; axis++) {
+                                    double lo = cube.getAsJsonArray("from").get(axis).getAsDouble();
+                                    double hi = cube.getAsJsonArray("to").get(axis).getAsDouble();
+                                    assertTrue(lo>=-16 && lo<hi && hi<=32,
+                                        entry.getName() + " invalid cube at axis " + axis);
+                                }
+                                for (var face : cube.getAsJsonObject("faces").entrySet())
+                                    assertEquals("#0", face.getValue().getAsJsonObject()
+                                        .get("texture").getAsString());
+                            }
+                            checked++;
+                            zip.closeEntry();
+                            continue;
+                        }
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
@@ -294,8 +322,8 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(31, checked,
-                    "28 existing validated models + 3 Brau-Bro waist/handheld models");
+            assertEquals(37, checked,
+                    "31 existing validated models + 6 atomic/mace/satellite models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }

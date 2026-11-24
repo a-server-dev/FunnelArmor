@@ -15,9 +15,9 @@ class FunnelCommandAccessTest {
         assertFalse(FunnelCommandAccess.authorizedPlayer("", false));
     }
 
-    @Test void catalogHasTenUniqueNonLegacyEquipmentKinds() {
-        assertEquals(10, FunnelGiftCatalog.ALL.size());
-        assertEquals(10, new HashSet<>(FunnelGiftCatalog.ALL).size());
+    @Test void catalogHasThirteenUniqueNonLegacyEquipmentKinds() {
+        assertEquals(13, FunnelGiftCatalog.ALL.size());
+        assertEquals(13, new HashSet<>(FunnelGiftCatalog.ALL).size());
         assertTrue(FunnelGiftCatalog.OPTIONS.containsAll(FunnelGiftCatalog.ALL));
         assertTrue(FunnelGiftCatalog.supported("all"));
         assertTrue(FunnelGiftCatalog.supported("gnv"));

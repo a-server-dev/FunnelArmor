@@ -21,7 +21,8 @@ class FunnelTabSuggestionsTest {
     @Test void fullAdminCommandsAndConsoleCompletionStayAvailable() {
         var player = FunnelTabSuggestions.complete(new String[]{""},true,true,ONLINE);
         assertTrue(player.containsAll(List.of("give","pack","status","aerial",
-            "brau","buster","gn","gn2","gnv","saber","hawk","formation",
+            "brau","buster","gn","gn2","gnv","saber","hawk",
+            "atomic","mace","satellite","formation",
             "barrier","shield","diagnose","reload","angle")));
         var console=FunnelTabSuggestions.complete(new String[]{""},true,false,ONLINE);
         assertTrue(console.containsAll(List.of("give","pack","status","diagnose")));
@@ -32,7 +33,7 @@ class FunnelTabSuggestionsTest {
     @Test void giveAllIncludesEveryAvailableEquipmentAndSupportsNamedRecipient() {
         List<String> offers = FunnelTabSuggestions.complete(
             new String[]{"give",""},true,true,ONLINE);
-        assertEquals(12, offers.size());
+        assertEquals(15, offers.size());
         assertTrue(offers.containsAll(FunnelGiftCatalog.ALL));
         assertTrue(offers.contains("all"));
         assertTrue(offers.contains("gnv"));
@@ -48,7 +49,7 @@ class FunnelTabSuggestionsTest {
 
     @Test void weaponSpecificGiveCompletionsAreRemovedButStatusRemains() {
         for (String weapon : List.of("aerial","brau","buster","gn","gnv",
-                "gn2","saber","hawk")) {
+                "gn2","saber","hawk","atomic","mace","satellite")) {
             var subcommands=FunnelTabSuggestions.complete(
                 new String[]{weapon,""},true,true,ONLINE);
             assertTrue(subcommands.contains("status"),weapon);

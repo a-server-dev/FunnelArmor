@@ -1381,3 +1381,57 @@ cannon noses point toward the owner.
   rebuild is necessary; keep SHA-1 `4996a08ee561b35a86f4cca656f4f1ca5bc274ef`.
 - The correction is based on source transformations and Minecraft rendering
   conventions; confirm the visual result with a game screenshot.
+
+## v0.25.0 — GP02A Atomic Bazooka, Barbatos Lupus Rex Ultra Large Mace, Double X Twin Satellite Cannon
+
+Three new fully standalone, main-hand weapons. Run `/funnel give all` to distribute
+all **13** equipment types, or `/funnel give atomic`, `/funnel give mace`,
+`/funnel give satellite` (optional `[player]`). Command access remains limited
+to OP / EmeraldREX91 / server console; item operation is allowed for others.
+
+### GP02A アトミック・バズーカ
+- Handheld dark blue long bazooka with large machined muzzle; while held, one
+  enormous GP02 heat shield is rendered beside the player's left arm.
+- Right-click starts a **55-tick / 2.75-second arming cycle**. On completion
+  a fast glowing shell travels along the crosshair sight to the first block
+  or mob within 48 blocks. The visual detonation plays rings, ascending
+  smoke/cloud stem and an expanding mushroom-shaped cloud.
+- Explosion does **not place TNT, break terrain, light fires or spawn physical
+  explosive entities**. Radius 7 blocks with distance falloff, line-of-sight
+  screening, once-only server-side damage, knockback, and 600-tick cooldown.
+- Switching weapons or changing worlds cancels charging and removes the shield.
+
+### ASW-G-08 超大型メイス
+- Long two-handed styled shaft and thick gray, armored spiked hammer head.
+- Left-click entity deals heavy contact damage (11 default) with knockback
+  and hit debounce; right-click triggers a 4-block radius heavy ground
+  impact shockwave, particles, knockback and up to 9 base damage (110-tick CD).
+- No block modification; no separate client mod.
+
+### GX-9901-DX ツインサテライトキャノン
+- Handheld activation controller; six individually modeled gold reflector
+  panels follow the wearer's back, plus two independent long shoulder cannons.
+- Left-click OR sneak-right-click deploys/folds the six reflective panels
+  and moves the two cannons into firing position over 22 ticks.
+- Normal right-click after deployment starts a 75-tick energy charge.
+  On completion two real cannon-origin beams aim at the player's crosshair,
+  with block occlusion, ray-traced mob hits, damage aggregated per target,
+  a repeated white/blue beam core and golden particle glints.
+- Cooldown 360 ticks. Charge is cancelled by disconnecting, dying,
+  changing the held weapon or switching worlds.
+
+### Model and system integration
+- Six complete editable Blockbench source files and matching JSON item models:
+  `gp02_atomic_bazooka`, `gp02_atomic_shield`,
+  `barbatos_ultra_mace`, `gx_twin_satellite_controller`,
+  `gx_satellite_reflector`, `gx_satellite_barrel`.
+- Models use existing `funnel:item/brau_bro_cannon` material swatches in the
+  bundle; unique PDC keys prevent any old equipment from being misrecognized.
+  Draws only the equipment of the held weapon; ghost ItemDisplays are removed
+  on switch, death, logout, world transfer and plugin disable.
+- Dedicated settings under `heavy-weapons.atomic`, `.mace`, `.satellite`.
+  New `/funnel atomic status`, `/funnel mace status`,
+  `/funnel satellite status` report held weapon/cooldowns.
+- Visuals and damage logic are **server-side**, tested for static correctness
+  and build validity; do not consider the in-game pose finalized without F5
+  screenshots and weapon hits under actual server conditions.

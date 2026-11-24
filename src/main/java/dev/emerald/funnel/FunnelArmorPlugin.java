@@ -119,6 +119,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     private GnSwordIICombat gnSwordIICombat;
     private GundamMeleeCombat meleeCombat;
     private BrauBroWaistCannons brauBroWaistCannons;
+    private GundamHeavyWeapons heavyWeapons;
     private final Map<UUID, String> lastObservedPackStatus = new ConcurrentHashMap<>();
 
     @Override public void onEnable() {
@@ -156,6 +157,8 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         meleeCombat.start();
         brauBroWaistCannons = new BrauBroWaistCannons(this);
         brauBroWaistCannons.start();
+        heavyWeapons = new GundamHeavyWeapons(this);
+        heavyWeapons.start();
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         // Migrate the item-model COMPONENT of previously issued controllers.
@@ -177,6 +180,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (gnSwordIICombat != null) gnSwordIICombat.stop();
         if (meleeCombat != null) meleeCombat.stop();
         if (brauBroWaistCannons != null) brauBroWaistCannons.stop();
+        if (heavyWeapons != null) heavyWeapons.stop();
         lastObservedPackStatus.clear();
         if (httpServer != null) httpServer.stop(0);
         lastShots.clear();
@@ -1663,6 +1667,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             case "gn", "gnv" -> gnSwordCombat.giftItem();
             case "gn2" -> gnSwordIICombat.giftItem();
             case "saber", "hawk" -> meleeCombat.giftItem(type);
+            case "atomic", "mace", "satellite" -> heavyWeapons.giftItem(type);
             default -> throw new IllegalArgumentException("Unknown equipment type: " + type);
         };
     }
@@ -1673,12 +1678,15 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("§b/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|all> [player]"
+            sender.sendMessage("§b/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|atomic|mace|satellite|all> [player]"
                 + " §7| §b/funnel pack [player] §7| §b/funnel <装備名> status"
                 + " §7| §b/funnel formation <...> §7| §b/funnel reload §7| §b/funnel status");
             return true;
         }
         if (args[0].equalsIgnoreCase("brau")) return brauBroWaistCannons.command(sender, args);
+        if (args[0].equalsIgnoreCase("atomic") || args[0].equalsIgnoreCase("mace")
+                || args[0].equalsIgnoreCase("satellite"))
+            return heavyWeapons.command(sender, args);
         if (args[0].equalsIgnoreCase("aerial")) return aerialCombat.command(sender, args);
         if (args[0].equalsIgnoreCase("buster")) return twinBusterCombat.command(sender, args);
         if (args[0].equalsIgnoreCase("gn") || args[0].equalsIgnoreCase("gnv")) return gnSwordCombat.command(sender, args);
@@ -1688,12 +1696,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (args.length > 3) {
-                    sender.sendMessage("§c指定: /funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|all> [player]");
+                    sender.sendMessage("§c指定: /funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|atomic|mace|satellite|all> [player]");
                     return true;
                 }
                 String kind = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "1";
                 if (!FunnelGiftCatalog.supported(kind)) {
-                    sender.sendMessage("§c対象が不明です。/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|all> [player]");
+                    sender.sendMessage("§c対象が不明です。/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|atomic|mace|satellite|all> [player]");
                     return true;
                 }
                 Player target = args.length == 3 ? Bukkit.getPlayerExact(args[2])

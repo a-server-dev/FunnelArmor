@@ -1,0 +1,683 @@
+package dev.emerald.funnel;
+
+import io.papermc.paper.event.player.PlayerArmSwingEvent;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * Three independent main-hand weapons.
+ *
+ * - GP02 atomic bazooka: a short warning/charge, animated shell and
+ *   mushroom-cloud AoE, NEVER destroys the world.
+ * - ASW-G-08 ultra-large mace: heavy vanilla contact strike and a
+ *   cooldown-controlled right-click ground shockwave.
+ * - GX-9901-DX twin satellite cannon: six deployed backpack reflectors,
+ *   two shoulder cannon barrels, charge and double continuous beam.
+ *
+ * Resource-pack visuals are ItemDisplays. No client mod is required.
+ * /funnel give {atomic|mace|satellite} is the only distribution route.
+ */
+final class GundamHeavyWeapons implements Listener {
+    static final String ATOMIC = "atomic";
+    static final String MACE = "mace";
+    static final String SATELLITE = "satellite";
+
+    private final JavaPlugin plugin;
+    private final NamespacedKey kindKey;
+    private final NamespacedKey uidKey;
+    private final NamespacedKey markerKey;
+    private final Map<UUID, Visuals> visuals = new HashMap<>();
+    private final Map<UUID, Charge> charging = new HashMap<>();
+    private final Map<UUID, Long> cooldownsAtomic = new HashMap<>();
+    private final Map<UUID, Long> cooldownsSatellite = new HashMap<>();
+    private final Map<UUID, Long> cooldownsMaceSlam = new HashMap<>();
+    private final Map<UUID, Long> cooldownsMaceHit = new HashMap<>();
+    private final Map<UUID, Long> toggleDebounce = new HashMap<>();
+    private final Set<UUID> slamDamage = new HashSet<>();
+
+    private final ItemStack shieldVisual = displayItem("gp02_atomic_shield");
+    private final ItemStack reflectorVisual = displayItem("gx_satellite_reflector");
+    private final ItemStack cannonVisual = displayItem("gx_satellite_barrel");
+
+    private static final class Visuals {
+        String kind;
+        ItemDisplay shield;
+        final List<ItemDisplay> reflectors = new ArrayList<>();
+        final List<ItemDisplay> barrels = new ArrayList<>();
+        boolean opened;
+        double progress;
+    }
+
+    private record Charge(String kind, String itemId, UUID world, long started) {}
+
+    GundamHeavyWeapons(JavaPlugin plugin) {
+        this.plugin = plugin;
+        this.kindKey = new NamespacedKey(plugin,"heavy_weapon_type");
+        this.uidKey = new NamespacedKey(plugin,"heavy_weapon_serial");
+        this.markerKey = new NamespacedKey(plugin,"heavy_weapon_visual");
+    }
+
+    private static ItemStack displayItem(String model) {
+        ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+        ItemMeta meta=item.getItemMeta();
+        meta.setItemModel(new NamespacedKey("funnel",model));
+        meta.setUnbreakable(true);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    ItemStack giftItem(String kind) {
+        if (!List.of(ATOMIC,MACE,SATELLITE).contains(kind))
+            throw new IllegalArgumentException("Unknown heavy weapon: "+kind);
+        ItemStack result = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+        ItemMeta meta = result.getItemMeta();
+        meta.setUnbreakable(true);
+        switch(kind) {
+            case ATOMIC -> {
+                meta.displayName(Component.text("§bGP02A アトミック・バズーカ"));
+                meta.setItemModel(new NamespacedKey("funnel","gp02_atomic_bazooka"));
+                meta.lore(List.of(
+                    Component.text("§7保持中: 耐熱シールドが左側へ展開"),
+                    Component.text("§e右クリック: チャージ後に大爆発を発射"),
+                    Component.text("§8演出のみ地形を変更しません")));
+            }
+            case MACE -> {
+                meta.displayName(Component.text("§7バルバトスルプスレクス 超大型メイス"));
+                meta.setItemModel(new NamespacedKey("funnel","barbatos_ultra_mace"));
+                meta.lore(List.of(
+                    Component.text("§7左クリック: 強力な近接打撃"),
+                    Component.text("§e右クリック: 衝撃波つき叩きつけ"),
+                    Component.text("§8地形破壊なし")));
+            }
+            case SATELLITE -> {
+                meta.displayName(Component.text("§eダブルエックス ツインサテライトキャノン"));
+                meta.setItemModel(new NamespacedKey("funnel","gx_twin_satellite_controller"));
+                meta.lore(List.of(
+                    Component.text("§7保持中: 背部砲身と6枚のリフレクター"),
+                    Component.text("§e左クリック / しゃがみ右クリック: 展開・収納"),
+                    Component.text("§b通常右クリック: 充填後に2門同時発射")));
+            }
+        }
+        meta.getPersistentDataContainer().set(kindKey,PersistentDataType.STRING,kind);
+        meta.getPersistentDataContainer().set(uidKey,PersistentDataType.STRING,
+            UUID.randomUUID().toString());
+        result.setItemMeta(meta);
+        return result;
+    }
+
+    private String kind(Player player) {
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item.getType()!=Material.LEATHER_HORSE_ARMOR || !item.hasItemMeta())
+            return "";
+        String value=item.getItemMeta().getPersistentDataContainer()
+            .get(kindKey,PersistentDataType.STRING);
+        return value!=null && List.of(ATOMIC,MACE,SATELLITE).contains(value) ? value : "";
+    }
+
+    private String weaponSerial(Player player) {
+        ItemStack item=player.getInventory().getItemInMainHand();
+        if (!item.hasItemMeta()) return null;
+        return item.getItemMeta().getPersistentDataContainer()
+            .get(uidKey,PersistentDataType.STRING);
+    }
+
+    private boolean enabled(String kind) {
+        return plugin.getConfig().getBoolean("heavy-weapons."+kind+".enabled",true);
+    }
+
+    private int ticks(String path,int fallback,int minimum,int maximum) {
+        return Math.max(minimum,Math.min(maximum,
+            plugin.getConfig().getInt("heavy-weapons."+path,fallback)));
+    }
+
+    private double number(String path,double fallback,double minimum,double maximum) {
+        double v=plugin.getConfig().getDouble("heavy-weapons."+path,fallback);
+        return Double.isFinite(v)?Math.max(minimum,Math.min(maximum,v)):fallback;
+    }
+
+    void start() {
+        for(World world:Bukkit.getWorlds())
+            for(ItemDisplay d:world.getEntitiesByClass(ItemDisplay.class))
+                if(d.getPersistentDataContainer().has(markerKey,PersistentDataType.BYTE))
+                    d.remove();
+        Bukkit.getPluginManager().registerEvents(this,plugin);
+        Bukkit.getScheduler().runTaskTimer(plugin,this::tick,1L,1L);
+    }
+
+    void stop() {
+        for(UUID owner:new ArrayList<>(visuals.keySet())) clear(owner);
+        charging.clear();
+        cooldownsAtomic.clear();
+        cooldownsSatellite.clear();
+        cooldownsMaceSlam.clear();
+        cooldownsMaceHit.clear();
+        toggleDebounce.clear();
+        slamDamage.clear();
+    }
+
+    private ItemDisplay display(Player owner,ItemStack visual,float scale) {
+        return owner.getWorld().spawn(owner.getLocation(), ItemDisplay.class,d-> {
+            d.setItemStack(visual);
+            d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+            d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
+            d.setPersistent(false);
+            d.setGravity(false);
+            d.setSilent(true);
+            d.setInvulnerable(true);
+            d.setTeleportDuration(0);
+            d.setInterpolationDuration(1);
+            d.setTransformation(new Transformation(new Vector3f(),
+                new Quaternionf(),new Vector3f(scale,scale,scale),new Quaternionf()));
+            d.getPersistentDataContainer().set(markerKey,PersistentDataType.BYTE,(byte)1);
+        });
+    }
+
+    private void ensureVisuals(Player player,String kind) {
+        UUID owner=player.getUniqueId();
+        Visuals v=visuals.get(owner);
+        if(v!=null && !v.kind.equals(kind)) {clear(owner);v=null;}
+        if(v==null){v=new Visuals();v.kind=kind;visuals.put(owner,v);}
+        if(ATOMIC.equals(kind)) {
+            if(v.shield==null || !v.shield.isValid()
+                    || !v.shield.getWorld().equals(player.getWorld())) {
+                if(v.shield!=null&&v.shield.isValid())v.shield.remove();
+                v.shield=display(player,shieldVisual,.65f);
+            }
+        } else if(SATELLITE.equals(kind)) {
+            boolean rebuild=v.reflectors.size()!=6 || v.barrels.size()!=2
+                || v.reflectors.stream().anyMatch(d->!d.isValid()
+                    || d.getWorld()!=player.getWorld())
+                || v.barrels.stream().anyMatch(d->!d.isValid()
+                    || d.getWorld()!=player.getWorld());
+            if(rebuild){
+                for(ItemDisplay d:v.reflectors)if(d.isValid())d.remove();
+                for(ItemDisplay d:v.barrels)if(d.isValid())d.remove();
+                v.reflectors.clear();v.barrels.clear();
+                for(int i=0;i<6;i++)v.reflectors.add(display(player,reflectorVisual,.56f));
+                for(int i=0;i<2;i++)v.barrels.add(display(player,cannonVisual,.71f));
+            }
+        }
+    }
+
+    private static Vector front(Location location) {
+        Vector d=location.getDirection().setY(0);
+        return d.lengthSquared()<1e-8?new Vector(0,0,1):d.normalize();
+    }
+
+    private static Location around(Location base,Vector front,Vector right,
+                                   double side,double height,double forward) {
+        return base.clone().add(right.clone().multiply(side))
+            .add(front.clone().multiply(forward)).add(0,height,0);
+    }
+
+    private void updateVisuals(Player player,Visuals v) {
+        Location base=player.getLocation();
+        Vector front=front(base),right=new Vector(front.getZ(),0,-front.getX());
+        if(ATOMIC.equals(v.kind)) {
+            Location position=around(base,front,right,-.59,1.03,.09);
+            position.setYaw(base.getYaw()-13);
+            position.setPitch(0);
+            v.shield.teleport(position);
+        } else if(SATELLITE.equals(v.kind)) {
+            double rate=1.0/ticks("satellite.open-ticks",22,5,80);
+            v.progress=Math.max(0,Math.min(1,v.progress+(v.opened?rate:-rate)));
+            double p=v.progress*v.progress*(3-2*v.progress);
+            for(int i=0;i<6;i++) {
+                int side=i<3?-1:1,row=i%3;
+                double lateral=side*(.25+.14*row+p*(.42+.12*row));
+                double up=1.32+row*.21+p*(.34+.20*row);
+                double backward=-.29-.22*p;
+                Location loc=around(base,front,right,lateral,up,backward);
+                loc.setYaw(base.getYaw()+side*(18+row*12)*((float)p));
+                loc.setPitch(0);
+                v.reflectors.get(i).teleport(loc);
+            }
+            for(int i=0;i<2;i++){
+                int side=i==0?-1:1;
+                Location loc=around(base,front,right,side*(.29+.29*p),
+                    1.38+.20*p,-.21+.39*p);
+                loc.setYaw(base.getYaw()+side*4);
+                loc.setPitch(0);
+                v.barrels.get(i).teleport(loc);
+            }
+            if(p>.01 && Bukkit.getCurrentTick()%5==0) {
+                Location at=around(base,front,right,0,1.83,-.45);
+                player.getWorld().spawnParticle(Particle.DUST,at,3,.28,.16,.1,0,
+                    new Particle.DustOptions(Color.fromRGB(241,193,63),1.25f));
+            }
+        }
+    }
+
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=false)
+    public void onInteract(PlayerInteractEvent event) {
+        if(event.getHand()!=EquipmentSlot.HAND)return;
+        Action action=event.getAction();
+        boolean right=action==Action.RIGHT_CLICK_AIR||action==Action.RIGHT_CLICK_BLOCK;
+        boolean left=action==Action.LEFT_CLICK_AIR||action==Action.LEFT_CLICK_BLOCK;
+        if(!right&&!left)return;
+        Player p=event.getPlayer();
+        String type=kind(p);
+        if(type.isEmpty())return;
+        event.setUseItemInHand(Event.Result.DENY);
+        event.setUseInteractedBlock(Event.Result.DENY);
+        event.setCancelled(true);
+        if(!enabled(type))return;
+        if(ATOMIC.equals(type)&&right)begin(p,ATOMIC);
+        else if(MACE.equals(type)&&right)slam(p);
+        else if(SATELLITE.equals(type)){
+            if(left||p.isSneaking())toggle(p);
+            else begin(p,SATELLITE);
+        }
+    }
+
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=false)
+    public void onSwing(PlayerArmSwingEvent event) {
+        if(event.getHand()!=EquipmentSlot.HAND)return;
+        Player p=event.getPlayer();
+        String type=kind(p);
+        if(type.isEmpty()||!enabled(type))return;
+        if(SATELLITE.equals(type))toggle(p);
+        else if(MACE.equals(type) && Bukkit.getCurrentTick()%3==0) {
+            Location tip=p.getEyeLocation().add(p.getEyeLocation()
+                .getDirection().multiply(1.5));
+            p.getWorld().spawnParticle(Particle.CRIT,tip,5,.32,.19,.32,.09);
+        }
+    }
+
+    private void toggle(Player p) {
+        long now=Bukkit.getCurrentTick();
+        UUID id=p.getUniqueId();
+        if(now<toggleDebounce.getOrDefault(id,0L))return;
+        toggleDebounce.put(id,now+6);
+        if(charging.containsKey(id)){
+            p.sendActionBar(Component.text("§c充填中は展開を変更できません"));
+            return;
+        }
+        ensureVisuals(p,SATELLITE);
+        Visuals v=visuals.get(id);
+        v.opened=!v.opened;
+        p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.85f,
+            v.opened?1.13f:.81f);
+        p.sendActionBar(Component.text(v.opened
+            ?"§eツインサテライトキャノン：リフレクター展開"
+            :"§7ツインサテライトキャノン：リフレクター収納"));
+    }
+
+    private void begin(Player p,String kind) {
+        UUID id=p.getUniqueId();
+        long now=Bukkit.getCurrentTick();
+        Map<UUID,Long> cd=kind.equals(ATOMIC)?cooldownsAtomic:cooldownsSatellite;
+        if(now<cd.getOrDefault(id,0L)){
+            p.sendActionBar(Component.text("§c冷却中 "+((cd.get(id)-now+19)/20)+"秒"));
+            return;
+        }
+        if(charging.containsKey(id))return;
+        if(kind.equals(SATELLITE)){
+            Visuals v=visuals.get(id);
+            if(v==null||!v.opened||v.progress<.95){
+                p.sendActionBar(Component.text("§7先に左クリックでリフレクターを展開してください"));
+                return;
+            }
+        }
+        String itemId=weaponSerial(p);
+        if(itemId==null)return;
+        charging.put(id,new Charge(kind,itemId,p.getWorld().getUID(),now));
+        p.getWorld().playSound(p.getLocation(),Sound.BLOCK_BEACON_ACTIVATE,1f,
+            kind.equals(ATOMIC)?.60f:1.20f);
+        p.sendActionBar(Component.text(kind.equals(ATOMIC)
+            ?"§cアトミック・バズーカ：発射準備"
+            :"§eツインサテライトキャノン：マイクロウェーブ充填"));
+    }
+
+    private void tick() {
+        long now=Bukkit.getCurrentTick();
+        for(UUID id:new ArrayList<>(visuals.keySet())) {
+            Player p=Bukkit.getPlayer(id);
+            if(p==null||!p.isOnline()||p.isDead()
+                ||!visuals.get(id).kind.equals(kind(p))
+                ||!enabled(visuals.get(id).kind))clear(id);
+        }
+        for(Player p:Bukkit.getOnlinePlayers()) {
+            String k=kind(p);
+            if(!k.isEmpty()&&!p.isDead()&&enabled(k)) {
+                if(!k.equals(MACE)) {
+                    ensureVisuals(p,k);
+                    updateVisuals(p,visuals.get(p.getUniqueId()));
+                }
+            }
+        }
+        for(var entry:new ArrayList<>(charging.entrySet())) {
+            UUID id=entry.getKey();
+            Charge c=entry.getValue();
+            Player p=Bukkit.getPlayer(id);
+            if(p==null||!p.isOnline()||p.isDead()
+                ||!c.kind.equals(kind(p))
+                ||!c.world.equals(p.getWorld().getUID())
+                ||!c.itemId.equals(weaponSerial(p))){
+                charging.remove(id);continue;
+            }
+            int duration=c.kind.equals(ATOMIC)
+                ?ticks("atomic.charge-ticks",55,10,160)
+                :ticks("satellite.charge-ticks",75,10,200);
+            long elapsed=now-c.started;
+            if(elapsed>=duration) {
+                charging.remove(id);
+                if(c.kind.equals(ATOMIC)){
+                    launchAtomic(p);
+                    cooldownsAtomic.put(id,now+
+                        ticks("atomic.cooldown-ticks",600,40,2400));
+                }else {
+                    fireSatellite(p);
+                    cooldownsSatellite.put(id,now+
+                        ticks("satellite.cooldown-ticks",360,40,2400));
+                }
+            }else if(elapsed%5==0){
+                int percent=(int)(100*Math.min(1,(double)elapsed/duration));
+                p.sendActionBar(Component.text("§e"+(c.kind.equals(ATOMIC)
+                    ?"核弾頭の起動":"サテライト充填")+" "+percent+"%"));
+                Location chargeAt=p.getEyeLocation().add(
+                    p.getEyeLocation().getDirection().multiply(1.2));
+                p.getWorld().spawnParticle(Particle.END_ROD,chargeAt,5,.22,.22,.22,.015);
+            }
+        }
+    }
+
+    private static boolean targetable(Entity entity,Player shooter) {
+        return entity instanceof LivingEntity living && entity!=shooter
+            && living.isValid()&&!living.isDead()
+            && !(entity instanceof Player other&&other.getGameMode()==GameMode.SPECTATOR);
+    }
+
+    private static Location shotAim(Player shooter,double range) {
+        Location eye=shooter.getEyeLocation();
+        Vector direction=eye.getDirection().normalize();
+        World w=shooter.getWorld();
+        RayTraceResult wall=w.rayTraceBlocks(eye,direction,range,
+            FluidCollisionMode.NEVER,true);
+        double distance=wall==null?range:Math.min(range,
+            eye.toVector().distance(wall.getHitPosition()));
+        RayTraceResult entity=w.rayTraceEntities(eye,direction,distance,.24,
+            e->targetable(e,shooter));
+        return eye.clone().add(direction.multiply(entity==null?distance:
+            Math.min(distance,eye.toVector().distance(entity.getHitPosition()))));
+    }
+
+    private void launchAtomic(Player p) {
+        World w=p.getWorld();
+        Location start=p.getEyeLocation();
+        Vector dir=start.getDirection().normalize();
+        Location destination=shotAim(p,number("atomic.range",48,8,80));
+        double length=destination.distance(start);
+        w.playSound(start,Sound.ENTITY_FIREWORK_ROCKET_LAUNCH,2f,.55f);
+        // The shell is a cosmetic projectile only. No TNT, world mutation or
+        // real explosive entity is spawned; damage is applied server-side once.
+        new org.bukkit.scheduler.BukkitRunnable() {
+            double travelled=0;
+            @Override public void run(){
+                if(!p.isOnline()||!w.equals(start.getWorld())){cancel();return;}
+                travelled=Math.min(length,travelled+2.7);
+                Location at=start.clone().add(dir.clone().multiply(travelled));
+                w.spawnParticle(Particle.FLAME,at,8,.13,.13,.13,.03);
+                w.spawnParticle(Particle.SMOKE,at,9,.14,.14,.14,.01);
+                w.spawnParticle(Particle.END_ROD,at,3,.07,.07,.07,.01);
+                if(travelled>=length-.001){
+                    cancel();
+                    atomicBlast(p,destination);
+                }
+            }
+        }.runTaskTimer(plugin,1L,1L);
+    }
+
+    private void atomicBlast(Player shooter,Location origin) {
+        World w=origin.getWorld();
+        double radius=number("atomic.radius",7.0,1.0,12.0);
+        double baseDamage=number("atomic.damage",24,0,60);
+        w.playSound(origin,Sound.ENTITY_GENERIC_EXPLODE,3f,.52f);
+        for(Entity e:w.getNearbyEntities(origin,radius,radius,radius)) {
+            if(!targetable(e,shooter))continue;
+            LivingEntity t=(LivingEntity)e;
+            double distance=t.getLocation().add(0,t.getHeight()*.5,0).distance(origin);
+            if(distance>radius)continue;
+            Vector dir=t.getEyeLocation().toVector().subtract(origin.toVector());
+            double len=dir.length();
+            if(len>1e-3) {
+                RayTraceResult block=w.rayTraceBlocks(origin.clone().add(0,.65,0),
+                    dir.normalize(),len,FluidCollisionMode.NEVER,true);
+                if(block!=null&&origin.toVector().distance(block.getHitPosition())+.3<len)
+                    continue;
+            }
+            double amount=baseDamage*(1-.74*(distance/radius));
+            if(amount>0)t.damage(amount,shooter);
+            Vector push=t.getLocation().toVector().subtract(origin.toVector());
+            if(push.lengthSquared()>1e-5){
+                push.normalize().multiply(Math.max(.1,1.2*(1-distance/radius)));
+                push.setY(.35);t.setVelocity(t.getVelocity().add(push));
+            }
+        }
+        // Bounded, short-lived animated mushroom cloud. No blocks are changed.
+        new org.bukkit.scheduler.BukkitRunnable(){
+            int frame=0;
+            @Override public void run(){
+                if(frame++>=14){cancel();return;}
+                double ring=(frame/14.0)*radius;
+                int count=34;
+                for(int i=0;i<count;i++){
+                    double theta=i*Math.PI*2/count;
+                    Location ringPoint=origin.clone().add(Math.cos(theta)*ring,
+                        .13+frame*.12,Math.sin(theta)*ring);
+                    w.spawnParticle(frame<5?Particle.FLAME:Particle.SMOKE,
+                        ringPoint,1,0,0,0,0);
+                }
+                Location stem=origin.clone().add(0,frame*.47,0);
+                w.spawnParticle(Particle.CLOUD,stem,19,.32,.32,.32,.045);
+                w.spawnParticle(Particle.SMOKE,stem,16,.60,.34,.60,.025);
+                if(frame>=6){
+                    Location crown=origin.clone().add(0,5.4,0);
+                    w.spawnParticle(Particle.CLOUD,crown,26,
+                        1.5+frame*.10,.30,1.5+frame*.10,.025);
+                }
+            }
+        }.runTaskTimer(plugin,0L,2L);
+    }
+
+    private void slam(Player p) {
+        long now=Bukkit.getCurrentTick();
+        UUID id=p.getUniqueId();
+        if(now<cooldownsMaceSlam.getOrDefault(id,0L))return;
+        cooldownsMaceSlam.put(id,now+ticks("mace.slam-cooldown-ticks",110,15,400));
+        Location center=p.getLocation().add(p.getLocation().getDirection()
+            .setY(0).normalize().multiply(1.8));
+        center.setY(Math.max(center.getY(),p.getLocation().getY())+.2);
+        World w=p.getWorld();
+        double radius=number("mace.slam-radius",4.0,1,8);
+        double damage=number("mace.slam-damage",9.0,0,28);
+        w.playSound(center,Sound.ENTITY_IRON_GOLEM_ATTACK,1.4f,.60f);
+        w.playSound(center,Sound.ENTITY_GENERIC_EXPLODE,.75f,.91f);
+        for(int wave=0;wave<3;wave++){
+            double ring=(wave+1)*radius/3;
+            for(int j=0;j<42;j++){
+                double angle=2*Math.PI*j/42;
+                Location pt=center.clone().add(Math.cos(angle)*ring,.15,Math.sin(angle)*ring);
+                w.spawnParticle(Particle.CRIT,pt,1,0,0,0,.05);
+                w.spawnParticle(Particle.DUST,pt,1,0,0,0,0,
+                    new Particle.DustOptions(Color.fromRGB(117,125,137),1.3f));
+            }
+        }
+        slamDamage.add(id);
+        try {
+            for(Entity entity:w.getNearbyEntities(center,radius,2.7,radius)) {
+                if(!targetable(entity,p))continue;
+                LivingEntity t=(LivingEntity)entity;
+                double distance=t.getLocation().distance(center);
+                if(distance>radius+.2)continue;
+                t.damage(damage*(1-.45*Math.min(1,distance/radius)),p);
+                Vector away=t.getLocation().toVector().subtract(center.toVector());
+                if(away.lengthSquared()>1e-6){
+                    away.normalize().multiply(.65);away.setY(.57);
+                    t.setVelocity(t.getVelocity().add(away));
+                }
+            }
+        }finally{slamDamage.remove(id);}
+    }
+
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
+    public void onMaceHit(EntityDamageByEntityEvent event) {
+        if(!(event.getDamager() instanceof Player p))return;
+        if(!MACE.equals(kind(p))||!enabled(MACE))return;
+        UUID id=p.getUniqueId();
+        if(slamDamage.contains(id))return;
+        long now=Bukkit.getCurrentTick();
+        if(now<cooldownsMaceHit.getOrDefault(id,0L)){
+            event.setCancelled(true);return;
+        }
+        cooldownsMaceHit.put(id,now+ticks("mace.hit-cooldown-ticks",11,2,40));
+        event.setDamage(number("mace.hit-damage",11,0,35));
+        if(event.getEntity() instanceof LivingEntity target){
+            Vector dir=target.getLocation().toVector().subtract(p.getLocation().toVector());
+            if(dir.lengthSquared()>1e-6){
+                dir.normalize().multiply(.52);dir.setY(.24);
+                Bukkit.getScheduler().runTask(plugin,
+                    () -> {if(target.isValid())target.setVelocity(target.getVelocity().add(dir));});
+            }
+            target.getWorld().spawnParticle(Particle.CRIT,
+                target.getLocation().add(0,target.getHeight()*.5,0),
+                16,.33,.32,.33,.12);
+        }
+    }
+
+    private void fireSatellite(Player p) {
+        Visuals v=visuals.get(p.getUniqueId());
+        if(v==null||!v.opened||v.progress<.95||v.barrels.size()!=2)return;
+        World w=p.getWorld();
+        double range=number("satellite.range",56,8,90);
+        Location aimed=shotAim(p,range);
+        double perBeam=number("satellite.beam-damage",18,0,60);
+        Map<UUID,LivingEntity> hit=new HashMap<>();
+        Map<UUID,Integer> counts=new HashMap<>();
+        Location[] start=new Location[2];
+        Vector[] direction=new Vector[2];
+        double[] length=new double[2];
+        for(int i=0;i<2;i++){
+            ItemDisplay barrel=v.barrels.get(i);
+            if(!barrel.isValid())continue;
+            Vector front=front(barrel.getLocation());
+            Location muzzle=barrel.getLocation().add(front.multiply(.68));
+            start[i]=muzzle;
+            direction[i]=aimed.toVector().subtract(muzzle.toVector()).normalize();
+            RayTraceResult wall=w.rayTraceBlocks(muzzle,direction[i],range,
+                FluidCollisionMode.NEVER,true);
+            double visible=wall==null?range:Math.min(range,
+                muzzle.toVector().distance(wall.getHitPosition()));
+            RayTraceResult trace=w.rayTraceEntities(muzzle,direction[i],visible,.38,
+                e->targetable(e,p));
+            length[i]=trace==null?visible:Math.min(visible,
+                muzzle.toVector().distance(trace.getHitPosition()));
+            if(trace!=null&&trace.getHitEntity() instanceof LivingEntity living){
+                hit.put(living.getUniqueId(),living);
+                counts.merge(living.getUniqueId(),1,Integer::sum);
+            }
+        }
+        for(var entry:hit.entrySet()){
+            LivingEntity target=entry.getValue();
+            if(target.isValid()&&!target.isDead())
+                target.damage(Math.min(2*perBeam,
+                    perBeam*counts.getOrDefault(entry.getKey(),0)),p);
+        }
+        w.playSound(p.getLocation(),Sound.ENTITY_GUARDIAN_ATTACK,2f,.48f);
+        new org.bukkit.scheduler.BukkitRunnable(){
+            int t=0;
+            @Override public void run(){
+                if(t++>=11){cancel();return;}
+                for(int i=0;i<2;i++){
+                    if(start[i]==null)continue;
+                    for(double step=0;step<length[i]&&step<90;step+=.85) {
+                        Location at=start[i].clone().add(
+                            direction[i].clone().multiply(step));
+                        w.spawnParticle(Particle.DUST,at,2,.055,.055,.055,0,
+                            new Particle.DustOptions(t%3==0
+                                ?Color.fromRGB(248,226,118)
+                                :Color.fromRGB(145,237,255),1.65f));
+                    }
+                    w.spawnParticle(Particle.END_ROD,start[i],8,.28,.23,.28,.04);
+                }
+            }
+        }.runTaskTimer(plugin,0L,1L);
+        p.sendActionBar(Component.text("§bツインサテライトキャノン：照射完了"));
+    }
+
+    private void clear(UUID playerId) {
+        charging.remove(playerId);
+        Visuals v=visuals.remove(playerId);
+        if(v==null)return;
+        if(v.shield!=null&&v.shield.isValid())v.shield.remove();
+        for(ItemDisplay d:v.reflectors)if(d.isValid())d.remove();
+        for(ItemDisplay d:v.barrels)if(d.isValid())d.remove();
+    }
+
+    boolean command(CommandSender sender,String[] args) {
+        if(args.length==2&&args[1].equalsIgnoreCase("status")){
+            if(!(sender instanceof Player p)){
+                sender.sendMessage("§7ゲーム内で確認してください");return true;
+            }
+            String kind=kind(p);
+            long now=Bukkit.getCurrentTick();
+            long until=ATOMIC.equals(kind)?cooldownsAtomic.getOrDefault(p.getUniqueId(),0L)
+                :SATELLITE.equals(kind)?cooldownsSatellite.getOrDefault(p.getUniqueId(),0L)
+                :cooldownsMaceSlam.getOrDefault(p.getUniqueId(),0L);
+            sender.sendMessage("§b新兵装 §7/ §f"+kind+
+                " §7/ クールダウン: §f"+Math.max(0,(until-now+19)/20)+"秒");
+            return true;
+        }
+        sender.sendMessage("§7配布: /funnel give <atomic|mace|satellite> [player]"
+            +" §7/ 状態: /funnel <atomic|mace|satellite> status");
+        return true;
+    }
+
+    @EventHandler public void onQuit(PlayerQuitEvent e){clear(e.getPlayer().getUniqueId());}
+    @EventHandler public void onDeath(PlayerDeathEvent e){clear(e.getEntity().getUniqueId());}
+    @EventHandler public void onWorld(PlayerChangedWorldEvent e){clear(e.getPlayer().getUniqueId());}
+    @EventHandler public void onHeld(PlayerItemHeldEvent e){clear(e.getPlayer().getUniqueId());}
+}
