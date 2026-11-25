@@ -236,7 +236,7 @@ heavy-weapons:
   satellite:
     enabled: true
     open-ticks: 22
-    charge-ticks: 75
+    charge-ticks: 240
     cooldown-ticks: 360
     range: 56.0
     beam-damage: 18.0

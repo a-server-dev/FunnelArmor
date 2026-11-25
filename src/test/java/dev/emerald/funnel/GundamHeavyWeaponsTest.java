@@ -99,7 +99,7 @@ class GundamHeavyWeaponsTest {
         assertTrue(code.contains("private void fireSatellite(Player p)"));
         assertTrue(code.contains("private void pileBunker(Player p)"));
         assertTrue(code.contains("private void restoreMace(Player player)"));
-        assertTrue(code.contains("new Charge(kind,itemId,p.getWorld().getUID(),now)"));
+        assertTrue(code.contains("new Charge(kind,itemId,p.getWorld().getUID(),"));
         assertTrue(code.contains("charging.remove(playerId)"));
         assertTrue(code.contains("v.reflectors.clear();v.barrels.clear();"));
         assertTrue(code.contains("v.reflectors.size()!=6 || v.barrels.size()!=2"));

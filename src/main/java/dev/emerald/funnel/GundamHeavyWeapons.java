@@ -27,6 +27,10 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -95,7 +99,9 @@ final class GundamHeavyWeapons implements Listener {
         double barrelPitch;
     }
 
-    private record Charge(String kind, String itemId, UUID world, long started) {}
+    private record Charge(String kind, String itemId, UUID world, HeavyChargeState state) {}
+    private final Map<UUID, Long> fireDebounce = new HashMap<>();
+    private final Map<UUID, Long> lastRightInput = new HashMap<>();
 
     GundamHeavyWeapons(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -125,7 +131,7 @@ final class GundamHeavyWeapons implements Listener {
                 meta.setItemModel(new NamespacedKey("funnel","gp02_atomic_bazooka"));
                 meta.lore(List.of(
                     Component.text("§7保持中: 耐熱シールドが左側へ展開"),
-                    Component.text("§e右クリック: チャージ後に大爆発を発射"),
+                    Component.text("§e右クリック: 装填開始 / 装填完了後に手動発射"),
                     Component.text("§8演出のみ地形を変更しません")));
             }
             case MACE -> {
@@ -143,7 +149,7 @@ final class GundamHeavyWeapons implements Listener {
                 meta.lore(List.of(
                     Component.text("§7保持中: 背面ユニットと6枚のリフレクター（手持ち非表示）"),
                     Component.text("§e左クリック / しゃがみ右クリック: 展開・収納"),
-                    Component.text("§b通常右クリック: 充填後に2門同時発射")));
+                    Component.text("§b通常右クリック: 充填開始・再開 / 完了後に最大3回手動発射")));
             }
         }
         meta.getPersistentDataContainer().set(kindKey,PersistentDataType.STRING,kind);
@@ -195,6 +201,8 @@ final class GundamHeavyWeapons implements Listener {
     void stop() {
         for(UUID owner:new ArrayList<>(visuals.keySet())) clear(owner);
         charging.clear();
+        fireDebounce.clear();
+        lastRightInput.clear();
         cooldownsAtomic.clear();
         cooldownsSatellite.clear();
         cooldownsMaceSlam.clear();
@@ -288,7 +296,8 @@ final class GundamHeavyWeapons implements Listener {
             Location pack=around(base,front,right,0,1.44,-.36);
             pack.setYaw(base.getYaw());pack.setPitch(0);v.shield.teleport(pack);
             Charge current=charging.get(player.getUniqueId());
-            boolean aiming=current!=null && SATELLITE.equals(current.kind);
+            boolean aiming=current!=null && SATELLITE.equals(current.kind)
+                && (current.state.active() || current.state.ready());
             // Double X really has 3 independently articulated radiator
             // petals on EACH side. The tip of each plate sweeps up/out/down
             // in a six-point fan rather than remaining vertical.
@@ -325,7 +334,7 @@ final class GundamHeavyWeapons implements Listener {
                 float aim=(float)v.barrelPitch;
                 pose(barrel,new Quaternionf().rotateX(aim),1.15f);
             }
-            if(p>.92 && current!=null && SATELLITE.equals(current.kind)
+            if(p>.92 && aiming
                     && Bukkit.getCurrentTick()%4==0) {
                 for(ItemDisplay panel:v.reflectors) {
                     Location glow=panel.getLocation().add(0,.12,.04);
@@ -386,29 +395,37 @@ final class GundamHeavyWeapons implements Listener {
         UUID id=p.getUniqueId();
         if(now<toggleDebounce.getOrDefault(id,0L))return;
         toggleDebounce.put(id,now+6);
-        if(charging.containsKey(id)){
-            p.sendActionBar(Component.text("§c充填中は展開を変更できません"));
-            return;
-        }
         ensureVisuals(p,SATELLITE);
         Visuals v=visuals.get(id);
         v.opened=!v.opened;
+        Charge c=charging.get(id);
+        if(!v.opened && c!=null && SATELLITE.equals(c.kind))c.state.pause();
         p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.85f,
             v.opened?1.13f:.81f);
         p.sendActionBar(Component.text(v.opened
             ?"§eツインサテライトキャノン：リフレクター展開"
-            :"§7ツインサテライトキャノン：リフレクター収納"));
+            :"§7ツインサテライトキャノン：収納・充填量保持"));
+    }
+
+    private int chargeDuration(String kind) {
+        if(ATOMIC.equals(kind))return ticks("atomic.charge-ticks",55,10,160);
+        // Migrate the old shipped 75-tick default even on existing servers.
+        int configured=plugin.getConfig().getInt("heavy-weapons.satellite.charge-ticks",240);
+        return configured==75?240:Math.max(100,Math.min(1200,configured));
     }
 
     private void begin(Player p,String kind) {
         UUID id=p.getUniqueId();
         long now=Bukkit.getCurrentTick();
+        Long previousInput=lastRightInput.put(id,now);
+        // The vanilla client repeats right-click while the button is held.
+        // A gap prevents that stream from firing as soon as charging completes.
+        boolean freshClick=previousInput==null||now-previousInput>5;
         Map<UUID,Long> cd=kind.equals(ATOMIC)?cooldownsAtomic:cooldownsSatellite;
         if(now<cd.getOrDefault(id,0L)){
             p.sendActionBar(Component.text("§c冷却中 "+((cd.get(id)-now+19)/20)+"秒"));
             return;
         }
-        if(charging.containsKey(id))return;
         if(kind.equals(SATELLITE)){
             Visuals v=visuals.get(id);
             if(v==null||!v.opened||v.progress<.95){
@@ -418,12 +435,60 @@ final class GundamHeavyWeapons implements Listener {
         }
         String itemId=weaponSerial(p);
         if(itemId==null)return;
-        charging.put(id,new Charge(kind,itemId,p.getWorld().getUID(),now));
+        Charge c=charging.get(id);
+        if(c==null||!c.kind.equals(kind)||!c.itemId.equals(itemId)
+                ||!c.world.equals(p.getWorld().getUID())){
+            c=new Charge(kind,itemId,p.getWorld().getUID(),
+                new HeavyChargeState(chargeDuration(kind),ATOMIC.equals(kind)?1:3));
+            charging.put(id,c);
+        }
+        if(c.state.ready()){
+            if(!freshClick||now<fireDebounce.getOrDefault(id,0L))return;
+            if(SATELLITE.equals(kind)){
+                Visuals v=visuals.get(id);
+                if(v==null||v.barrels.size()!=2||v.barrels.stream().anyMatch(d->!d.isValid()))return;
+                updateVisuals(p,v);
+                fireSatellite(p);
+            }else launchAtomic(p);
+            fireDebounce.put(id,now+20);
+            c.state.consume();
+            if(c.state.ready()){
+                p.sendActionBar(Component.text("§b照射完了：残り "+c.state.shots()+" / 3 発"));
+            }else{
+                charging.remove(id);
+                cd.put(id,now+(ATOMIC.equals(kind)
+                    ?ticks("atomic.cooldown-ticks",600,40,2400)
+                    :ticks("satellite.cooldown-ticks",360,40,2400)));
+            }
+            return;
+        }
+        if(c.state.active()||!freshClick)return;
+        c.state.resume();
         p.getWorld().playSound(p.getLocation(),Sound.BLOCK_BEACON_ACTIVATE,1f,
             kind.equals(ATOMIC)?.60f:1.20f);
         p.sendActionBar(Component.text(kind.equals(ATOMIC)
-            ?"§cアトミック・バズーカ：発射準備"
-            :"§eツインサテライトキャノン：マイクロウェーブ充填"));
+            ?"§c核弾頭装填中":"§eツインサテライトキャノン：マイクロウェーブ充填"));
+    }
+
+    private boolean satelliteCharging(Player p) {
+        Charge c=charging.get(p.getUniqueId());
+        Visuals v=visuals.get(p.getUniqueId());
+        return c!=null && SATELLITE.equals(c.kind) && c.state.active()
+            && SATELLITE.equals(kind(p)) && c.itemId.equals(weaponSerial(p))
+            && c.world.equals(p.getWorld().getUID()) && enabled(SATELLITE)
+            && v!=null && v.opened;
+    }
+
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
+    public void onChargeMove(PlayerMoveEvent e) {
+        if(e instanceof PlayerTeleportEvent || !satelliteCharging(e.getPlayer()))return;
+        Location to=e.getTo(),from=e.getFrom();
+        if(to==null)return;
+        if(from.getX()!=to.getX()||from.getY()!=to.getY()||from.getZ()!=to.getZ()){
+            Location locked=from.clone();
+            locked.setYaw(to.getYaw());locked.setPitch(to.getPitch());
+            e.setTo(locked);
+        }
     }
 
     private void tick() {
@@ -436,11 +501,9 @@ final class GundamHeavyWeapons implements Listener {
         }
         for(Player p:Bukkit.getOnlinePlayers()) {
             String k=kind(p);
-            if(!k.isEmpty()&&!p.isDead()&&enabled(k)) {
-                if(!k.equals(MACE)) {
-                    ensureVisuals(p,k);
-                    updateVisuals(p,visuals.get(p.getUniqueId()));
-                }
+            if(!k.isEmpty()&&!p.isDead()&&enabled(k)&&!k.equals(MACE)) {
+                ensureVisuals(p,k);
+                updateVisuals(p,visuals.get(p.getUniqueId()));
             }
         }
         for(var entry:new ArrayList<>(charging.entrySet())) {
@@ -450,28 +513,30 @@ final class GundamHeavyWeapons implements Listener {
             if(p==null||!p.isOnline()||p.isDead()
                 ||!c.kind.equals(kind(p))
                 ||!c.world.equals(p.getWorld().getUID())
-                ||!c.itemId.equals(weaponSerial(p))){
+                ||!c.itemId.equals(weaponSerial(p))||!enabled(c.kind)){
                 charging.remove(id);continue;
             }
-            int duration=c.kind.equals(ATOMIC)
-                ?ticks("atomic.charge-ticks",55,10,160)
-                :ticks("satellite.charge-ticks",75,10,200);
-            long elapsed=now-c.started;
-            if(elapsed>=duration) {
-                charging.remove(id);
-                if(c.kind.equals(ATOMIC)){
-                    launchAtomic(p);
-                    cooldownsAtomic.put(id,now+
-                        ticks("atomic.cooldown-ticks",600,40,2400));
-                }else {
-                    fireSatellite(p);
-                    cooldownsSatellite.put(id,now+
-                        ticks("satellite.cooldown-ticks",360,40,2400));
-                }
-            }else if(elapsed%5==0){
-                int percent=(int)(100*Math.min(1,(double)elapsed/duration));
-                p.sendActionBar(Component.text("§e"+(c.kind.equals(ATOMIC)
-                    ?"核弾頭の起動":"サテライト充填")+" "+percent+"%"));
+            if(c.state.ready()){
+                if(now%20==0)p.sendActionBar(Component.text(ATOMIC.equals(c.kind)
+                    ?"§a核弾頭装填完了：右クリックで発射"
+                    :"§a充填完了：右クリックで発射（残り "+c.state.shots()+" / 3 発）"));
+                continue;
+            }
+            if(!c.state.active())continue;
+            if(SATELLITE.equals(c.kind)){
+                if(!satelliteCharging(p)){c.state.pause();continue;}
+                // Slowness VII exceeds 100%; refresh short-lived effect only
+                // during charging so no indefinite debuff leaks after folding.
+                p.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,3,6,true,false,false));
+            }
+            if(c.state.advance()){
+                p.getWorld().playSound(p.getLocation(),Sound.BLOCK_BEACON_ACTIVATE,1.1f,1.5f);
+                p.sendActionBar(Component.text(ATOMIC.equals(c.kind)
+                    ?"§a核弾頭装填完了：右クリックで発射"
+                    :"§a充填完了：右クリックで発射（残り 3 / 3 発）"));
+            }else if(now%5==0){
+                p.sendActionBar(Component.text("§e"+(ATOMIC.equals(c.kind)
+                    ?"核弾頭装填中":"サテライト充填")+" "+c.state.percent()+"%"));
                 Location chargeAt=p.getEyeLocation().add(
                     p.getEyeLocation().getDirection().multiply(1.2));
                 p.getWorld().spawnParticle(Particle.END_ROD,chargeAt,5,.22,.22,.22,.015);
@@ -509,17 +574,25 @@ final class GundamHeavyWeapons implements Listener {
             .add(right.multiply(.24)).add(0,-.23,0);
         Vector dir=destination.toVector().subtract(start.toVector()).normalize();
         double length=destination.distance(start);
-        w.playSound(start,Sound.ENTITY_FIREWORK_ROCKET_LAUNCH,2f,.55f);
+        w.playSound(start,Sound.ENTITY_FIREWORK_ROCKET_LAUNCH,2.5f,.45f);
+        w.playSound(start,Sound.ENTITY_GENERIC_EXPLODE,1.8f,.55f);
+        w.playSound(start,Sound.BLOCK_PISTON_EXTEND,1.8f,.55f);
+        w.spawnParticle(Particle.FLASH,start,2,.08,.08,.08,0,Color.fromRGB(255,239,190));
+        w.spawnParticle(Particle.SMOKE,start,32,.28,.28,.28,.035);
+        w.spawnParticle(Particle.CLOUD,start,24,.22,.22,.22,.04);
+        w.spawnParticle(Particle.FLAME,start,18,.15,.15,.15,.035);
+        Vector recoil=front(p.getLocation()).multiply(-.28);
+        p.setVelocity(p.getVelocity().add(recoil));
         // The shell is a cosmetic projectile only. No TNT, world mutation or
         // real explosive entity is spawned; damage is applied server-side once.
         new org.bukkit.scheduler.BukkitRunnable() {
             double travelled=0;
             @Override public void run(){
-                if(!p.isOnline()||!w.equals(start.getWorld())){cancel();return;}
-                travelled=Math.min(length,travelled+2.7);
+                if(!p.isOnline()||!w.equals(p.getWorld())){cancel();return;}
+                travelled=Math.min(length,travelled+1.9);
                 Location at=start.clone().add(dir.clone().multiply(travelled));
                 w.spawnParticle(Particle.FLAME,at,8,.13,.13,.13,.03);
-                w.spawnParticle(Particle.SMOKE,at,9,.14,.14,.14,.01);
+                w.spawnParticle(Particle.SMOKE,at,16,.22,.22,.22,.025);
                 w.spawnParticle(Particle.END_ROD,at,3,.07,.07,.07,.01);
                 if(travelled>=length-.001){
                     cancel();
@@ -534,8 +607,12 @@ final class GundamHeavyWeapons implements Listener {
         double radius=number("atomic.radius",7.0,1.0,12.0);
         double baseDamage=number("atomic.damage",24,0,60);
         w.playSound(origin,Sound.ENTITY_GENERIC_EXPLODE,3f,.52f);
-        w.spawnParticle(Particle.EXPLOSION,origin,7,.85,.85,.85,.025);
-        w.spawnParticle(Particle.FLASH,origin,2,.50,.50,.50,0);
+        w.playSound(origin,Sound.BLOCK_BEACON_DEACTIVATE,2.6f,.5f);
+        w.spawnParticle(Particle.EXPLOSION,origin,14,1.15,1.15,1.15,.025);
+        w.spawnParticle(Particle.FLASH,origin,4,.65,.65,.65,0,Color.fromRGB(255,245,210));
+        w.spawnParticle(Particle.CLOUD,origin,60,1.4,.65,1.4,.06);
+        w.spawnParticle(Particle.SMOKE,origin,55,1.1,.8,1.1,.05);
+        w.spawnParticle(Particle.FLAME,origin,30,.85,.85,.85,.035);
         for(Entity e:w.getNearbyEntities(origin,radius,radius,radius)) {
             if(!targetable(e,shooter))continue;
             LivingEntity t=(LivingEntity)e;
@@ -561,8 +638,8 @@ final class GundamHeavyWeapons implements Listener {
         new org.bukkit.scheduler.BukkitRunnable(){
             int frame=0;
             @Override public void run(){
-                if(frame++>=14){cancel();return;}
-                double ring=(frame/14.0)*radius;
+                if(frame++>=22){cancel();return;}
+                double ring=(frame/22.0)*radius*1.35;
                 int count=34;
                 for(int i=0;i<count;i++){
                     double theta=i*Math.PI*2/count;
@@ -576,8 +653,9 @@ final class GundamHeavyWeapons implements Listener {
                 w.spawnParticle(Particle.SMOKE,stem,16,.60,.34,.60,.025);
                 if(frame>=6){
                     Location crown=origin.clone().add(0,5.4,0);
-                    w.spawnParticle(Particle.CLOUD,crown,26,
-                        1.5+frame*.10,.30,1.5+frame*.10,.025);
+                    w.spawnParticle(Particle.CLOUD,crown,40,
+                        1.5+frame*.10,.48,1.5+frame*.10,.035);
+                    w.spawnParticle(Particle.SMOKE,crown,20,1.4+frame*.08,.45,1.4+frame*.08,.03);
                 }
             }
         }.runTaskTimer(plugin,0L,2L);
@@ -776,16 +854,18 @@ final class GundamHeavyWeapons implements Listener {
         new org.bukkit.scheduler.BukkitRunnable(){
             int t=0;
             @Override public void run(){
-                if(t++>=11){cancel();return;}
+                if(t++>=15){cancel();return;}
                 for(int i=0;i<2;i++){
                     if(start[i]==null)continue;
-                    for(double step=0;step<length[i]&&step<90;step+=.85) {
+                    for(double step=0;step<length[i]&&step<90;step+=.50) {
                         Location at=start[i].clone().add(
                             direction[i].clone().multiply(step));
-                        w.spawnParticle(Particle.DUST,at,2,.055,.055,.055,0,
-                            new Particle.DustOptions(t%3==0
-                                ?Color.fromRGB(248,226,118)
-                                :Color.fromRGB(145,237,255),1.65f));
+                        w.spawnParticle(Particle.DUST,at,2,.025,.025,.025,0,
+                            new Particle.DustOptions(Color.fromRGB(220,250,255),2.7f));
+                        w.spawnParticle(Particle.DUST,at,4,.16,.16,.16,0,
+                            new Particle.DustOptions(Color.fromRGB(145,237,255),3.2f));
+                        w.spawnParticle(Particle.DUST,at,3,.29,.29,.29,0,
+                            new Particle.DustOptions(Color.fromRGB(248,226,118),2.5f));
                     }
                     w.spawnParticle(Particle.END_ROD,start[i],8,.28,.23,.28,.04);
                 }
@@ -796,6 +876,8 @@ final class GundamHeavyWeapons implements Listener {
 
     private void clear(UUID playerId) {
         charging.remove(playerId);
+        fireDebounce.remove(playerId);
+        lastRightInput.remove(playerId);
         Visuals v=visuals.remove(playerId);
         if(v==null)return;
         if(v.shield!=null&&v.shield.isValid())v.shield.remove();
