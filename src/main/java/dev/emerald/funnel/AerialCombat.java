@@ -229,7 +229,7 @@ final class AerialCombat implements Listener {
                     return true;
                 }
                 model = String.format(java.util.Locale.ROOT, "aerial_v2_bit_%02d", number);
-                label = "GUNDビット試作" + number;
+                label = "GUNDビット " + number;
                 scale = 1.8f;
             }
             removeBitFirstPreview(player.getUniqueId());

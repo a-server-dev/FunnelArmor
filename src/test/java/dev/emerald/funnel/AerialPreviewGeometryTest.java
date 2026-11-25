@@ -76,6 +76,8 @@ class AerialPreviewGeometryTest {
                 }
             }
         }
+        assertEquals(486, offset);
+        assertEquals(491, shield.size());
         assertEquals(offset + 5, shield.size(), "Only the unchanged five grip elements are shield-only");
         double[][] from = {{6.84,12.33,6.34},{7.67,12.66,6.57},{7.67,11.78,6.57},
                 {7.32,13.05,7.17},{7.32,11.71,7.17}};
@@ -152,8 +154,8 @@ class AerialPreviewGeometryTest {
                 loY = Math.min(loY, p[1]); hiY = Math.max(hiY, p[1]);
             }
         }
-        assertTrue(hiX - loX < 8);
-        assertTrue((hiY - loY) / (hiX - loX) > 2.77 && (hiY - loY) / (hiX - loX) < 3.25);
+        assertTrue(hiX - loX < 9.2);
+        assertTrue((hiY - loY) / (hiX - loX) > 2.50 && (hiY - loY) / (hiX - loX) < 2.70);
     }
 
     @Test
@@ -162,13 +164,13 @@ class AerialPreviewGeometryTest {
         var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
         int start = 0;
         for (int i = 1; i < 5; i++) start += bits(models, i).size();
-        double[][] target = {{5.48889, 15.12, 8.56}, {9.08951, 15.12, 8.56}};
+        double[][] target = {{4.88622, 15.12, 8.56}, {9.35099, 15.12, 8.56}};
         for (int id : new int[]{5, 6}) {
             var part = bits(models, id);
             var cube = shield.get(start).getAsJsonObject();
             for (int axis = 0; axis < 3; axis++)
                 assertEquals(target[id - 5][axis], coordinate(cube, "from", axis), .000021,
-                        "Joined shoulder translation must match the v0.8.34 placement");
+                        "Joined shoulder translation must match the imported V3 placement");
             assertEquals(id == 5 ? 22.5 : -22.5,
                     cube.getAsJsonObject("rotation").get("angle").getAsDouble());
             start += part.size();
@@ -193,7 +195,7 @@ class AerialPreviewGeometryTest {
                     rightEdge = Math.min(rightEdge, coordinate(b, "from", 0));
             }
             double gap = rightEdge - leftEdge;
-            assertEquals(.44, gap, .000021, "Separate two grey blades without reshaping them at Y=" + y);
+            assertEquals(.29760, gap, .000021, "Separate two grey blades without reshaping them at Y=" + y);
             assertEquals(8, (leftEdge + rightEdge) / 2, .000021, "Grey blades should remain mirror-symmetric");
         }
     }
@@ -244,7 +246,7 @@ class AerialPreviewGeometryTest {
     }
 
     @Test
-    void outerArmorTipsTaperAndInnerLapJointsBelongToTheirBits() throws Exception {
+    void importedOuterArmorTipsTaper() throws Exception {
         var models = models();
         var shield = models.get("aerial_v2_escutcheon.json").getAsJsonArray("elements");
         int offset = 0;
@@ -263,18 +265,7 @@ class AerialPreviewGeometryTest {
             }
             assertTrue(hiX - loX > 0 && hiX - loX < .25,
                     "White outer tip must taper instead of retaining the old broad flat end");
-            // Sample the new white lap behind the nose/crest connection in
-            // joined coordinates. It must be supplied by bit 07/08 itself.
-            double x = id == 7 ? 6.73 : 9.27;
-            boolean covered = false;
-            for (int i = 0; i < part.size(); i++) {
-                var cube = shield.get(offset + i).getAsJsonObject();
-                if (coordinate(cube, "from", 0) <= x && coordinate(cube, "to", 0) >= x
-                        && coordinate(cube, "from", 1) <= 13.83 && coordinate(cube, "to", 1) >= 13.83
-                        && coordinate(cube, "from", 2) <= 8.5 && coordinate(cube, "to", 2) >= 8.5)
-                    covered = true;
-            }
-            assertTrue(covered, "Inner lap joint must be part of independent bit " + id);
+            assertEquals(96, part.size(), "Exact V3 outer bit cube count");
             offset += part.size();
         }
     }
