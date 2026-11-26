@@ -206,8 +206,10 @@ brau-bro:
   # Eight beams fired together from four twin-muzzle pods, aimed by crosshair.
   fire-range: 30.0
   fire-cooldown-ticks: 20
-  fire-damage-per-beam: 1.5
-  max-burst-damage: 12.0
+  # Base HP damage: one target receives at most 0.5 per eight-beam volley.
+  # The code also clamps older server configurations to this limit.
+  fire-damage-per-beam: 0.5
+  max-burst-damage: 0.5
   beam-particle-step: 0.72
 
 # Three standalone handheld Gundam weapons. These options never change terrain.

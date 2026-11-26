@@ -95,10 +95,42 @@ class GundamHeavyWeaponDetailTest {
                     assertTrue(Math.min(x,z)<.35 && Math.max(x,z)>1.1,"Flat plate, not thick petal");
                 }
             }
-            assertEquals(8,rotated,"Four true diagonal forks and four swept guards");
+            assertEquals(13,rotated,"Four diagonal forks, four swept guards, four proximal bevels and one faceted collar");
             assertEquals(hi[0]-lo[0],hi[2]-lo[2],.0001,"Cross must not be flattened");
             assertTrue(hi[0]-lo[0]>6 && hi[0]-lo[0]<7 && hi[1]-lo[1]>45);
         }
+    }
+
+    @Test void maceRootArmorIsThickAndTapersBeforeTheExistingTeeth() throws Exception {
+        for(String id:List.of("barbatos_ultra_mace","barbatos_ultra_mace_pile")){
+            var m=model(id);
+            java.util.Map<String,JsonObject> parts=new java.util.HashMap<>();
+            for(var value:m.getAsJsonArray("elements")){
+                var part=value.getAsJsonObject();
+                parts.put(part.get("name").getAsString(),part);
+            }
+            assertEquals(2.44, extent(parts.get("Root coupling"),0),.00001);
+            assertEquals(2.70, extent(parts.get("Thick forged proximal head core"),2),.00001);
+            for(String direction:List.of("East","West","South","North")){
+                int thickness=direction.equals("East")||direction.equals("West")?2:0;
+                var root=parts.get(direction+" proximal thick armor plate");
+                var middle=parts.get(direction+" proximal middle armor plate");
+                var forward=parts.get(direction+" proximal forward armor plate");
+                assertEquals(1.38,extent(root,thickness),.00001);
+                assertTrue(extent(root,thickness)>extent(middle,thickness));
+                assertTrue(extent(middle,thickness)>extent(forward,thickness));
+                assertTrue(forward.getAsJsonArray("to").get(1).getAsDouble()<20);
+                assertEquals(.32,extent(parts.get(direction+" long continuous main plate"),thickness),.00001);
+            }
+            assertEquals(.88,extent(parts.get("Continuous forged shaft"),0),.00001);
+            assertEquals(1.16,extent(parts.get("Grip sleeve"),0),.00001);
+        }
+    }
+
+    private static double extent(JsonObject part,int axis){
+        assertNotNull(part);
+        return part.getAsJsonArray("to").get(axis).getAsDouble()
+            -part.getAsJsonArray("from").get(axis).getAsDouble();
     }
 
     private static double maximumY(String id) throws Exception {

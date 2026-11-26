@@ -26,8 +26,14 @@ final class BrauBroFirePattern {
         return Double.isFinite(blocks) ? Math.max(4, Math.min(48, blocks)) : 30;
     }
 
-    static double damage(double hearts) {
-        return Double.isFinite(hearts) ? Math.max(0, Math.min(8, hearts)) : 1.5;
+    static final double DAMAGE_CAP = 0.5;
+
+    static double damage(double hp) {
+        return Double.isFinite(hp) ? Math.max(0, Math.min(DAMAGE_CAP, hp)) : DAMAGE_CAP;
+    }
+
+    static double burstDamage(double perBeam, double maximum, int hits) {
+        return Math.min(damage(maximum), damage(perBeam) * Math.max(0, hits));
     }
 
     static double followStep(double separation, double maxDistance) {

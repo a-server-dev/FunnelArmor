@@ -282,7 +282,7 @@ final class BrauBroWaistCannons implements Listener {
 
     private double fireDamage() {
         return BrauBroFirePattern.damage(
-            plugin.getConfig().getDouble("brau-bro.fire-damage-per-beam", 1.5));
+            plugin.getConfig().getDouble("brau-bro.fire-damage-per-beam", 0.5));
     }
 
     /**
@@ -317,8 +317,8 @@ final class BrauBroWaistCannons implements Listener {
             : sightEntity.getHitPosition();
 
         double perBeam = fireDamage();
-        double maxBurstDamage = Math.max(perBeam, Math.min(24.0,
-            plugin.getConfig().getDouble("brau-bro.max-burst-damage", 12.0)));
+        double maxBurstDamage = BrauBroFirePattern.damage(
+            plugin.getConfig().getDouble("brau-bro.max-burst-damage", 0.5));
         double particleStep = Math.max(.35, Math.min(1.3,
             plugin.getConfig().getDouble("brau-bro.beam-particle-step", .72)));
         Particle.DustOptions mint = new Particle.DustOptions(
@@ -383,8 +383,8 @@ final class BrauBroWaistCannons implements Listener {
         for (Map.Entry<UUID, LivingEntity> victim : victims.entrySet()) {
             LivingEntity target = victim.getValue();
             if (!target.isValid() || target.isDead()) continue;
-            double damage = Math.min(maxBurstDamage,
-                perBeam * hitCounts.getOrDefault(victim.getKey(), 0));
+            double damage = BrauBroFirePattern.burstDamage(perBeam, maxBurstDamage,
+                hitCounts.getOrDefault(victim.getKey(), 0));
             if (damage > 0) target.damage(damage, player);
         }
         world.playSound(player.getLocation(),
