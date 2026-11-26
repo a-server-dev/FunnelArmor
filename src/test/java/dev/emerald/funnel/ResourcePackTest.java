@@ -438,8 +438,8 @@ class ResourcePackTest {
                 shoulderMin=Math.min(shoulderMin,cube.getAsJsonArray("from").get(0).getAsDouble());
                 shoulderMax=Math.max(shoulderMax,cube.getAsJsonArray("to").get(0).getAsDouble());
             }
-            assertTrue(shoulderMax-shoulderMin < 2.0,
-                    "Blue shoulder bit " + id + " should have a compact tapered width");
+            assertEquals(2.14971, shoulderMax-shoulderMin, .00002,
+                    "Blue shoulder bit " + id + " must retain the imported V3 width");
         }
         // Regression: the approved 0.8.24 outline is left untouched.
         for (int id : new int[]{4,5,6}) {
