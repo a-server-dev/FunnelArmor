@@ -1664,8 +1664,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             case "aerial" -> aerialCombat.giftItem();
             case "brau" -> brauBroWaistCannons.giftItem();
             case "buster" -> twinBusterCombat.giftItem();
-            case "gn", "gnv" -> gnSwordCombat.giftItem();
-            case "gn2" -> gnSwordIICombat.giftItem();
             case "saber", "hawk" -> meleeCombat.giftItem(type);
             case "atomic", "mace", "satellite" -> heavyWeapons.giftItem(type);
             default -> throw new IllegalArgumentException("Unknown equipment type: " + type);
@@ -1678,7 +1676,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("§b/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|atomic|mace|satellite|all> [player]"
+            sender.sendMessage("§b/funnel give <1|3|4|aerial|brau|buster|saber|hawk|atomic|mace|satellite|all> [player]"
                 + " §7| §b/funnel pack [player] §7| §b/funnel <装備名> status"
                 + " §7| §b/funnel formation <...> §7| §b/funnel reload §7| §b/funnel status");
             return true;
@@ -1696,12 +1694,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
                 if (args.length > 3) {
-                    sender.sendMessage("§c指定: /funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|atomic|mace|satellite|all> [player]");
+                    sender.sendMessage("§c指定: /funnel give <1|3|4|aerial|brau|buster|saber|hawk|atomic|mace|satellite|all> [player]");
                     return true;
                 }
                 String kind = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "1";
                 if (!FunnelGiftCatalog.supported(kind)) {
-                    sender.sendMessage("§c対象が不明です。/funnel give <1|3|4|aerial|brau|buster|gn|gn2|saber|hawk|atomic|mace|satellite|all> [player]");
+                    sender.sendMessage("§c対象が不明です。/funnel give <1|3|4|aerial|brau|buster|saber|hawk|atomic|mace|satellite|all> [player]");
                     return true;
                 }
                 Player target = args.length == 3 ? Bukkit.getPlayerExact(args[2])

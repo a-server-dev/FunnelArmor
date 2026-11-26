@@ -55,6 +55,24 @@ class GundamHeavyWeaponDetailTest {
             >model(id).getAsJsonArray("elements").size());
     }
 
+    @Test void maceHasFourRadialBladesWithSharpCrossSection() throws Exception {
+        for(String id:List.of("barbatos_ultra_mace","barbatos_ultra_mace_pile")){
+            var m=model(id);
+            for(String direction:List.of("East","West","North","South"))
+                assertTrue(hasPart(id,direction+" blade edge 0"),direction);
+            double[] lo={99,99,99},hi={-99,-99,-99};
+            for(var e:m.getAsJsonArray("elements")){
+                var cube=e.getAsJsonObject();
+                for(int a=0;a<3;a++){
+                    lo[a]=Math.min(lo[a],cube.getAsJsonArray("from").get(a).getAsDouble());
+                    hi[a]=Math.max(hi[a],cube.getAsJsonArray("to").get(a).getAsDouble());
+                }
+            }
+            assertEquals(hi[0]-lo[0],hi[2]-lo[2],.0001,"Cross must not be flattened");
+            assertTrue(hi[0]-lo[0]<6 && hi[1]-lo[1]>45);
+        }
+    }
+
     private static double maximumY(String id) throws Exception {
         double maximum=-99;
         for(var e:model(id).getAsJsonArray("elements"))maximum=Math.max(

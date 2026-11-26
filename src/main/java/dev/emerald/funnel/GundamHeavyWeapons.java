@@ -605,7 +605,7 @@ final class GundamHeavyWeapons implements Listener {
     private void atomicBlast(Player shooter,Location origin) {
         World w=origin.getWorld();
         double radius=number("atomic.radius",7.0,1.0,12.0);
-        double baseDamage=number("atomic.damage",24,0,60);
+        double baseDamage=number("atomic.damage",1.5,0,1.5);
         w.playSound(origin,Sound.ENTITY_GENERIC_EXPLODE,3f,.52f);
         w.playSound(origin,Sound.BLOCK_BEACON_DEACTIVATE,2.6f,.5f);
         w.spawnParticle(Particle.EXPLOSION,origin,14,1.15,1.15,1.15,.025);
@@ -626,7 +626,7 @@ final class GundamHeavyWeapons implements Listener {
                 if(block!=null&&origin.toVector().distance(block.getHitPosition())+.3<len)
                     continue;
             }
-            double amount=baseDamage*(1-.74*(distance/radius));
+            double amount=baseDamage;
             if(amount>0)t.damage(amount,shooter);
             Vector push=t.getLocation().toVector().subtract(origin.toVector());
             if(push.lengthSquared()>1e-5){
@@ -702,7 +702,7 @@ final class GundamHeavyWeapons implements Listener {
             RayTraceResult hit=world.rayTraceEntities(eye,ray,unobstructed,.45,
                 entity->targetable(entity,shooter));
             if(hit!=null&&hit.getHitEntity() instanceof LivingEntity victim) {
-                double damage=number("mace.pile-damage",17.0,0,48);
+                double damage=number("mace.pile-damage",1.5,0,1.5);
                 slamDamage.add(owner);
                 try {if(damage>0)victim.damage(damage,shooter);}
                 finally {slamDamage.remove(owner);}
@@ -752,7 +752,7 @@ final class GundamHeavyWeapons implements Listener {
         center.setY(Math.max(center.getY(),p.getLocation().getY())+.2);
         World w=p.getWorld();
         double radius=number("mace.slam-radius",4.0,1,8);
-        double damage=number("mace.slam-damage",9.0,0,28);
+        double damage=number("mace.slam-damage",1.5,0,1.5);
         w.playSound(center,Sound.ENTITY_IRON_GOLEM_ATTACK,1.4f,.60f);
         w.playSound(center,Sound.ENTITY_GENERIC_EXPLODE,.75f,.91f);
         for(int wave=0;wave<3;wave++){
@@ -772,7 +772,7 @@ final class GundamHeavyWeapons implements Listener {
                 LivingEntity t=(LivingEntity)entity;
                 double distance=t.getLocation().distance(center);
                 if(distance>radius+.2)continue;
-                t.damage(damage*(1-.45*Math.min(1,distance/radius)),p);
+                t.damage(damage,p);
                 Vector away=t.getLocation().toVector().subtract(center.toVector());
                 if(away.lengthSquared()>1e-6){
                     away.normalize().multiply(.65);away.setY(.57);
@@ -793,7 +793,7 @@ final class GundamHeavyWeapons implements Listener {
             event.setCancelled(true);return;
         }
         cooldownsMaceHit.put(id,now+ticks("mace.hit-cooldown-ticks",11,2,40));
-        event.setDamage(number("mace.hit-damage",11,0,35));
+        event.setDamage(number("mace.hit-damage",1.5,0,1.5));
         if(event.getEntity() instanceof LivingEntity target){
             Vector dir=target.getLocation().toVector().subtract(p.getLocation().toVector());
             if(dir.lengthSquared()>1e-6){
@@ -819,9 +819,8 @@ final class GundamHeavyWeapons implements Listener {
         World w=p.getWorld();
         double range=number("satellite.range",56,8,90);
         Location aimed=shotAim(p,range);
-        double perBeam=number("satellite.beam-damage",18,0,60);
+        double perBeam=number("satellite.beam-damage",1.5,0,1.5);
         Map<UUID,LivingEntity> hit=new HashMap<>();
-        Map<UUID,Integer> counts=new HashMap<>();
         Location[] start=new Location[2];
         Vector[] direction=new Vector[2];
         double[] length=new double[2];
@@ -841,14 +840,12 @@ final class GundamHeavyWeapons implements Listener {
                 muzzle.toVector().distance(trace.getHitPosition()));
             if(trace!=null&&trace.getHitEntity() instanceof LivingEntity living){
                 hit.put(living.getUniqueId(),living);
-                counts.merge(living.getUniqueId(),1,Integer::sum);
             }
         }
         for(var entry:hit.entrySet()){
             LivingEntity target=entry.getValue();
             if(target.isValid()&&!target.isDead())
-                target.damage(Math.min(2*perBeam,
-                    perBeam*counts.getOrDefault(entry.getKey(),0)),p);
+                target.damage(perBeam,p);
         }
         w.playSound(p.getLocation(),Sound.ENTITY_GUARDIAN_ATTACK,2f,.48f);
         new org.bukkit.scheduler.BukkitRunnable(){

@@ -166,7 +166,7 @@ final class GnSwordCombat implements Listener {
             }
             return true;
         }
-        sender.sendMessage("§b/funnel gn status §7| 配布: /funnel give gn [player]");
+        sender.sendMessage("§b/funnel gn status §7| 現在は配布停止中");
         return true;
     }
 

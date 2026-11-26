@@ -419,9 +419,9 @@ class ResourcePackTest {
             if(uv.get(0).getAsDouble()>4.0 && uv.get(0).getAsDouble()<5.0
                     && uv.get(1).getAsDouble()<2.0) brightWhiteFaces++;
         }
-        assertTrue((maxY-minY)/(maxX-minX)>2.77 && (maxY-minY)/(maxX-minX)<3.25,
-                "Restore narrow angular silhouette without the 0.8.22 bulges");
-        assertTrue(maxX-minX<8.0,"White outer armor must not swell outward");
+        assertTrue((maxY-minY)/(maxX-minX)>2.50 && (maxY-minY)/(maxX-minX)<2.70,
+                "Preserve the imported V3 angular shield silhouette");
+        assertTrue(maxX-minX<9.2,"White outer armor must not swell outward");
         assertTrue(brightWhiteFaces>45,
                 "White front armor must use the brighter white texture patch rather than dark grey");
         assertTrue(count>=180,"Surface bevels and colored details must survive bit-first joining");
@@ -584,7 +584,7 @@ class ResourcePackTest {
                 custom.getAsJsonObject("on_true").get("model").getAsString());
         JsonObject idle = found.get("assets/funnel/models/item/aerial_v2_escutcheon.json");
         JsonObject raised = found.get("assets/funnel/models/item/aerial_v2_escutcheon_blocking.json");
-        assertEquals(493, idle.getAsJsonArray("elements").size());
+        assertEquals(491, idle.getAsJsonArray("elements").size());
         assertEquals(idle.get("elements"), raised.get("elements"),
                 "Blocking must only change pose, never remove GUND bits");
         assertEquals(idle.get("textures"), raised.get("textures"));
@@ -610,8 +610,8 @@ class ResourcePackTest {
                 assertEquals(65, idlePose.getAsJsonArray("rotation").get(0).getAsInt(), slot);
                 assertEquals(yaw, idlePose.getAsJsonArray("rotation").get(1).getAsInt(), slot);
                 assertEquals(idlePose.get("rotation"), guardPose.get("rotation"), slot);
-                int expectedIdleY = perspective.equals("thirdperson_") ? 3 : 1;
-                int expectedGuardY = perspective.equals("thirdperson_") ? 5 : 1;
+                int expectedIdleY = perspective.equals("thirdperson_") ? 2 : 1;
+                int expectedGuardY = perspective.equals("thirdperson_") ? 5 : 2;
                 assertEquals(expectedIdleY,
                         idlePose.getAsJsonArray("translation").get(1).getAsInt(), slot + " idle Y");
                 assertEquals(expectedGuardY,

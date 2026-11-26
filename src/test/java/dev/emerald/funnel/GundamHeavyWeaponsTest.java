@@ -69,12 +69,12 @@ class GundamHeavyWeaponsTest {
     }
 
     @Test void allThreeAreIncludedInSharedGiveAllCatalogWithNoPerWeaponGive() {
-        assertEquals(13,FunnelGiftCatalog.ALL.size());
+        assertEquals(11,FunnelGiftCatalog.ALL.size());
         for(String type:List.of("atomic","mace","satellite")) {
             assertTrue(FunnelGiftCatalog.ALL.contains(type));
             assertTrue(FunnelGiftCatalog.OPTIONS.contains(type));
         }
-        assertEquals(13,new HashSet<>(FunnelGiftCatalog.ALL).size());
+        assertEquals(11,new HashSet<>(FunnelGiftCatalog.ALL).size());
     }
 
     @Test void atomicShieldAndSatelliteReflectorsAreSeparateVisualModels() throws Exception {
@@ -110,6 +110,15 @@ class GundamHeavyWeaponsTest {
         assertFalse(code.contains("setType(Material.AIR)"));
         assertFalse(code.contains("new TNTPrimed"));
         assertFalse(code.contains("spawnEntity("));
+    }
+
+    @Test void heavyDamageIsCappedEvenWithOlderServerConfig() throws Exception {
+        String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamHeavyWeapons.java"));
+        for(String path:List.of("atomic.damage","mace.hit-damage","mace.slam-damage","mace.pile-damage","satellite.beam-damage"))
+            assertTrue(code.contains("number(\""+path+"\",1.5,0,1.5)"),path);
+        assertTrue(code.contains("target.damage(perBeam,p)"),"Two barrels hit the same target only once per volley");
+        assertTrue(code.contains("double amount=baseDamage;"));
+        assertTrue(code.contains("t.damage(damage,p);"));
     }
 
     @Test void chargingAndControlsMatchThreeDistinctWeaponTypes() throws Exception {

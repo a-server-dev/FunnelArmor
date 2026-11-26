@@ -222,16 +222,16 @@ heavy-weapons:
     cooldown-ticks: 600
     range: 48.0
     radius: 7.0
-    damage: 24.0
+    damage: 1.5
   mace:
     enabled: true
-    hit-damage: 11.0
+    hit-damage: 1.5
     hit-cooldown-ticks: 11
-    slam-damage: 9.0
+    slam-damage: 1.5
     slam-radius: 4.0
     slam-cooldown-ticks: 110
     pile-range: 4.5
-    pile-damage: 17.0
+    pile-damage: 1.5
     pile-cooldown-ticks: 165
   satellite:
     enabled: true
@@ -239,4 +239,4 @@ heavy-weapons:
     charge-ticks: 240
     cooldown-ticks: 360
     range: 56.0
-    beam-damage: 18.0
+    beam-damage: 1.5
