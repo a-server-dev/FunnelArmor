@@ -41,6 +41,8 @@ final class GundamAdvancedWeapons implements Listener {
         final Set<UUID> hit=new HashSet<>();
         boolean opened,firing,pull,overheated;
         double progress,spin,spinAngle,heat;
+        FreedomMode freedomMode=FreedomMode.CLOSED;
+        double cannonProgress;
         final List<Casing> casings=new ArrayList<>();
         long lastRight=-100;
         long nextInput,nextToggle,nextShot,attackStart=-1;
@@ -79,7 +81,7 @@ final class GundamAdvancedWeapons implements Listener {
         m.lore(switch(type){
             case "epyon"->List.of(Component.text("§7左クリック: 展開 / 収納"),Component.text("§e右クリック: 薙ぎ払い / しゃがみ右クリック: 引き寄せ"));
             case "heavyarms"->List.of(Component.text("§e右クリック: 連射開始 / 停止"),Component.text("§7左クリック: 射撃停止 / 過熱時は冷却"));
-            default->List.of(Component.text("§7左クリック: ハイマット展開 / 収納"),Component.text("§e右クリック: ライフル / 展開時5門同時射撃"),Component.text("§bしゃがみ右クリック: マルチロックオン"));
+            default->List.of(Component.text("§7左クリック: 収納 / ハイマット"),Component.text("§bしゃがみ左クリック: ハイマット / フルバースト"),Component.text("§e右クリック: ライフル / フルバースト時5門同時射撃"),Component.text("§bフルバーストでしゃがみ右クリック: マルチロックオン"));
         });
         m.getPersistentDataContainer().set(kindKey,PersistentDataType.STRING,type);
         m.getPersistentDataContainer().set(serialKey,PersistentDataType.STRING,UUID.randomUUID().toString());
@@ -187,6 +189,13 @@ final class GundamAdvancedWeapons implements Listener {
         State s=ensure(p,k);long now=Bukkit.getCurrentTick();
         if(now<s.nextToggle||now<s.nextInput)return;s.nextToggle=now+6;
         if(k.equals("heavyarms")){s.firing=false;p.sendActionBar(Component.text("§7ガトリング：射撃停止"));return;}
+        if(k.equals("freedom")){
+            s.freedomMode=s.freedomMode.next(p.isSneaking());
+            p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.75f,
+                s.freedomMode==FreedomMode.CLOSED?.75f:1.15f);
+            p.sendActionBar(Component.text("§bフリーダム："+s.freedomMode.label()));
+            return;
+        }
         s.opened=!s.opened;s.attackStart=-1;s.hit.clear();
         p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.75f,s.opened?1.15f:.75f);
         p.sendActionBar(Component.text(s.opened?"§b兵装展開":"§7兵装収納"));
@@ -208,9 +217,12 @@ final class GundamAdvancedWeapons implements Listener {
             }
             case "freedom"->{
                 if(now<s.nextShot)return;
-                if(s.opened&&s.progress<.98){p.sendActionBar(Component.text("§7展開中"));return;}
-                s.nextShot=now+(s.opened?80:12);
-                freedomFire(p,s,p.isSneaking()&&s.opened);
+                boolean full=s.freedomMode.fullBurst();
+                if(full&&(s.progress<.98||s.cannonProgress<.98)){
+                    p.sendActionBar(Component.text("§7フルバースト展開中"));return;
+                }
+                s.nextShot=now+(full?80:12);
+                freedomFire(p,s,p.isSneaking()&&full);
             }
         }
     }
@@ -223,15 +235,25 @@ final class GundamAdvancedWeapons implements Listener {
         }
         for(Player p:Bukkit.getOnlinePlayers()){
             String k=kind(p);if(k.isEmpty()||p.isDead()||!enabled(k))continue;
-            State s=ensure(p,k);s.progress=approach(s.progress,s.opened?1:0,.07);
+            State s=ensure(p,k);
+            if(k.equals("freedom")){
+                s.progress=approach(s.progress,s.freedomMode.wingsOpen()?1:0,.07);
+                s.cannonProgress=approach(s.cannonProgress,
+                    s.freedomMode.fullBurst()&&s.progress>=.98?1:0,.085);
+            }else s.progress=approach(s.progress,s.opened?1:0,.07);
             switch(k){case "epyon"->rod(p,s,now);case "heavyarms"->gatling(p,s,now);case "freedom"->freedom(p,s);}
         }
     }
     private void rod(Player p,State s,long now){
         Vector f=front(p),r=right(f);
-        Location shield=at(p,f,r,.60,1.14,.12);shield.setPitch(0);
-        place(s.parts.get(0),shield,new Quaternionf(),.94f);
-        Location joint=at(p,f,r,.60,.36,.15);
+        // The authored red face was facing the player's rear. Flip the shield
+        // only, keeping its vertical socket at the bottom and the rod's world axes.
+        Location shield=at(p,f,r,.55,1.10,.20);shield.setPitch(0);
+        Quaternionf shieldRotation=new Quaternionf().rotateY((float)Math.PI);
+        shield.setYaw(p.getLocation().getYaw()-12f);
+        place(s.parts.get(0),shield,shieldRotation,.94f);
+        // Socket center is x=z=8, its lower edge is model y=-5.3.
+        Location joint=shield.clone().add(0,(-5.3-8)*.94/16,0);
         boolean attacking=s.attackStart>=0&&now-s.attackStart<18;
         if(!attacking)s.attackStart=-1;
         double t=attacking?(now-s.attackStart)/17.0:0;
@@ -314,26 +336,40 @@ final class GundamAdvancedWeapons implements Listener {
         if(now%10==0)p.sendActionBar(Component.text((s.overheated?"§c過熱 ":"§eHEAT ")+(int)s.heat+"%"+(s.firing?" §a連射中":"")));
     }
     private void freedom(Player p,State s){
-        Vector f=front(p),r=right(f),look=p.getEyeLocation().getDirection();double q=smooth(s.progress);
-        Location back=at(p,f,r,0,1.42,-.34);back.setPitch(0);
-        place(s.parts.get(0),back,new Quaternionf(),1.0f);
-        double[] spread={32,65,95,123,151};
+        Vector f=front(p),r=right(f),look=p.getEyeLocation().getDirection();
+        double q=smooth(s.progress),c=smooth(s.cannonProgress);
+        Location back=at(p,f,r,0,1.40,-.37);back.setPitch(0);
+        place(s.parts.get(0),back,new Quaternionf(),.95f);
+        // Five actual binders on each side, nested into a coherent wing rather
+        // than a uniform radial fan. Outer wing panels step back in depth.
+        double[] spread={23,42,61,94,122};
+        double[] lengths={1.26,1.19,1.07,.88,.76};
+        double[] closedAngles={165,169,173,177,181};
         for(int i=0;i<WINGS;i++){
             int side=i<5?-1:1,row=i%5;
-            Location root=at(p,f,r,side*(.30+.10*q),1.46-row*.035,-.42-row*.044);root.setPitch(0);
-            float roll=(float)Math.toRadians(-side*(170+(spread[row]-170)*q));
-            place(s.parts.get(1+i),root,new Quaternionf().rotateZ(roll),row%2==0?1.2f:1.04f);
+            double x=.30+(.12+row*.026)*q;
+            Location root=at(p,f,r,side*x,1.48-row*.026,-.44-row*.065);root.setPitch(0);
+            double openAngle=spread[row]+(row<3?3:-4)*c;
+            float roll=(float)Math.toRadians(-side*(closedAngles[row]+(openAngle-closedAngles[row])*q));
+            float sweep=(float)Math.toRadians(side*(4+row*2.2)*q);
+            place(s.parts.get(1+i),root,new Quaternionf().rotateY(sweep).rotateZ(roll),(float)lengths[row]);
         }
+        // HiMAT opens the wings only. Four heavy guns stay in their stowed
+        // position until FULL_BURST has been selected independently.
         for(int i=0;i<2;i++){
             int side=i==0?-1:1;
-            Location shoulder=at(p,f,r,side*(.35+.18*q),1.52+.18*q,-.32);
-            Vector shoulderDirection=new Vector(0,-1,0).multiply(1-q).add(look.clone().multiply(q));
+            Location shoulder=at(p,f,r,side*(.37+.14*c),1.53+.24*c,-.58+.05*c);
+            Vector shoulderDirection=new Vector(0,-1,0).multiply(1-c).add(look.clone().multiply(c));
+            if(shoulderDirection.lengthSquared()<1e-8)shoulderDirection=f.clone();
             aim(s.parts.get(11+i),shoulder,shoulderDirection,0,.94f);
-            Location hip=at(p,f,r,side*(.48+.18*q),.88,-.08);
-            Vector hipDirection=new Vector(0,-1,0).multiply(1-q).add(look.clone().multiply(q));
-            aim(s.parts.get(13+i),hip,hipDirection,0,.90f);
+            Location hip=at(p,f,r,side*(.44+.09*c),.79+.03*c,-.16);
+            Vector hipDirection=f.clone().multiply(-(1-c)).add(new Vector(0,-.26*(1-c),0)).add(look.clone().multiply(c));
+            if(hipDirection.lengthSquared()<1e-8)hipDirection=new Vector(0,-1,0);
+            // A shorter folded presentation avoids a full-length railgun
+            // protruding into the ground in the idle/HiMAT pose.
+            aim(s.parts.get(13+i),hip,hipDirection,0,(float)(.53+.37*c));
         }
-        Location hand=at(p,f,r,-.48,1.18,.33);
+        Location hand=at(p,f,r,-.43,1.08,.25);
         aim(s.parts.get(15),hand,look,0,.95f);
     }
     private Location aimPoint(Player p,double range){
@@ -358,7 +394,8 @@ final class GundamAdvancedWeapons implements Listener {
             locks.sort(Comparator.comparingDouble(l->l.getLocation().distanceSquared(p.getLocation())));
         }
         Set<UUID> hit=new HashSet<>();
-        int[] guns=s.opened?new int[]{11,12,13,14,15}:new int[]{15};
+        boolean full=s.freedomMode.fullBurst();
+        int[] guns=full?new int[]{11,12,13,14,15}:new int[]{15};
         for(int i=0;i<guns.length;i++){
             int index=guns[i];ItemDisplay gun=s.parts.get(index);
             double reach=index<=12?21*.94/16:index<=14?20.5*.90/16:18.5*.95/16;
@@ -369,9 +406,9 @@ final class GundamAdvancedWeapons implements Listener {
             if(d.lengthSquared()>.001){d.normalize();aim(gun,gun.getLocation(),d,0,index<=12?.94f:index<=14?.90f:.95f);
                 muzzle=gun.getLocation().add(d.clone().multiply(reach));}
             Color color=index<=12?Color.fromRGB(255,90,175):index<=14?Color.fromRGB(255,221,85):Color.fromRGB(110,255,125);
-            beam(p,muzzle,end,48,color,s.opened?1.8f:1.1f,true,hit,damage("freedom",1.5));
+            beam(p,muzzle,end,48,color,full?1.8f:1.1f,true,hit,damage("freedom",1.5));
         }
-        p.getWorld().playSound(p.getLocation(),Sound.ENTITY_GUARDIAN_ATTACK,1.4f,s.opened?.55f:1.15f);
+        p.getWorld().playSound(p.getLocation(),Sound.ENTITY_GUARDIAN_ATTACK,1.4f,full?.55f:1.15f);
         if(multi)p.sendActionBar(Component.text("§bマルチロックオン："+Math.min(5,locks.size())+"目標"));
     }
     private void beam(Player p,Location muzzle,Location endpoint,double range,Color color,float size,boolean glow,Set<UUID> hit,double damage){

@@ -1,1 +1,1323 @@
-{"meta":{"format_version":"4.10","model_format":"free","box_uv":false},"name":"freedom_wing_blue","resolution":{"width":64,"height":64},"elements":[{"name":"long structural spine","uuid":"ac332026-1126-4000-8000-000000100191","type":"cube","from":[7.35,7.3,7.15],"to":[8.65,23.2,8.85],"origin":[8,15.25,8],"faces":{"north":{"texture":0,"uv":[18,2,30,14]},"south":{"texture":0,"uv":[18,2,30,14]},"east":{"texture":0,"uv":[18,2,30,14]},"west":{"texture":0,"uv":[18,2,30,14]},"up":{"texture":0,"uv":[18,2,30,14]},"down":{"texture":0,"uv":[18,2,30,14]}}},{"name":"swept faceted armor 0","uuid":"ac332026-1126-4000-8000-000000100192","type":"cube","from":[4.8,8,7.4],"to":[11.2,9.26667,8.6],"origin":[8,8.63333,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 1","uuid":"ac332026-1126-4000-8000-000000100193","type":"cube","from":[5.04615,9.26667,7.4],"to":[10.95385,10.53333,8.6],"origin":[8,9.9,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 2","uuid":"ac332026-1126-4000-8000-000000100194","type":"cube","from":[5.29231,10.53333,7.4],"to":[10.70769,11.8,8.6],"origin":[8,11.16667,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 3","uuid":"ac332026-1126-4000-8000-000000100195","type":"cube","from":[5.53846,11.8,7.4],"to":[10.46154,13.06667,8.6],"origin":[8,12.43334,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 4","uuid":"ac332026-1126-4000-8000-000000100196","type":"cube","from":[5.78462,13.06667,7.4],"to":[10.21538,14.33333,8.6],"origin":[8,13.7,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 5","uuid":"ac332026-1126-4000-8000-000000100197","type":"cube","from":[6.03077,14.33333,7.4],"to":[9.96923,15.6,8.6],"origin":[8,14.96667,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 6","uuid":"ac332026-1126-4000-8000-000000100198","type":"cube","from":[6.27692,15.6,7.4],"to":[9.72308,16.86667,8.6],"origin":[8,16.23334,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 7","uuid":"ac332026-1126-4000-8000-000000100199","type":"cube","from":[6.52308,16.86667,7.4],"to":[9.47692,18.13333,8.6],"origin":[8,17.5,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 8","uuid":"ac332026-1126-4000-8000-000000100200","type":"cube","from":[6.76923,18.13333,7.4],"to":[9.23077,19.4,8.6],"origin":[8,18.76667,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 9","uuid":"ac332026-1126-4000-8000-000000100201","type":"cube","from":[7.01538,19.4,7.4],"to":[8.98462,20.66667,8.6],"origin":[8,20.03334,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 10","uuid":"ac332026-1126-4000-8000-000000100202","type":"cube","from":[7.26154,20.66667,7.4],"to":[8.73846,21.93333,8.6],"origin":[8,21.3,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"swept faceted armor 11","uuid":"ac332026-1126-4000-8000-000000100203","type":"cube","from":[7.50769,21.93333,7.4],"to":[8.49231,23.2,8.6],"origin":[8,22.56667,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}}},{"name":"long pointed edge -1","uuid":"ac332026-1126-4000-8000-000000100204","type":"cube","from":[5.564,8.5,7.72],"to":[6.084,22.2,8.28],"origin":[5.824,8.5,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[50,18,62,30]},"west":{"texture":0,"uv":[50,18,62,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}},"rotation":[0,0,-22.5]},{"name":"long pointed edge 1","uuid":"ac332026-1126-4000-8000-000000100205","type":"cube","from":[9.916,8.5,7.72],"to":[10.436,22.2,8.28],"origin":[10.176,8.5,8],"faces":{"north":{"texture":0,"uv":[50,18,62,30]},"south":{"texture":0,"uv":[50,18,62,30]},"east":{"texture":0,"uv":[50,18,62,30]},"west":{"texture":0,"uv":[50,18,62,30]},"up":{"texture":0,"uv":[50,18,62,30]},"down":{"texture":0,"uv":[50,18,62,30]}},"rotation":[0,0,22.5]},{"name":"armored root hinge","uuid":"ac332026-1126-4000-8000-000000100206","type":"cube","from":[6.25,6,6.8],"to":[9.75,9.4,9.2],"origin":[8,7.7,8],"faces":{"north":{"texture":0,"uv":[18,18,30,30]},"south":{"texture":0,"uv":[18,18,30,30]},"east":{"texture":0,"uv":[18,18,30,30]},"west":{"texture":0,"uv":[18,18,30,30]},"up":{"texture":0,"uv":[18,18,30,30]},"down":{"texture":0,"uv":[18,18,30,30]}}},{"name":"root navy joint","uuid":"ac332026-1126-4000-8000-000000100207","type":"cube","from":[6.7,5.8,7],"to":[9.3,7.2,9],"origin":[8,6.5,8],"faces":{"north":{"texture":0,"uv":[34,18,46,30]},"south":{"texture":0,"uv":[34,18,46,30]},"east":{"texture":0,"uv":[34,18,46,30]},"west":{"texture":0,"uv":[34,18,46,30]},"up":{"texture":0,"uv":[34,18,46,30]},"down":{"texture":0,"uv":[34,18,46,30]}}},{"name":"recessed panel line 0","uuid":"ac332026-1126-4000-8000-000000100208","type":"cube","from":[7,10,7.34],"to":[9,10.11,7.42],"origin":[8,10.055,7.38],"faces":{"north":{"texture":0,"uv":[18,2,30,14]},"south":{"texture":0,"uv":[18,2,30,14]},"east":{"texture":0,"uv":[18,2,30,14]},"west":{"texture":0,"uv":[18,2,30,14]},"up":{"texture":0,"uv":[18,2,30,14]},"down":{"texture":0,"uv":[18,2,30,14]}}},{"name":"recessed panel line 1","uuid":"ac332026-1126-4000-8000-000000100209","type":"cube","from":[7,12.2,7.34],"to":[9,12.31,7.42],"origin":[8,12.255,7.38],"faces":{"north":{"texture":0,"uv":[18,2,30,14]},"south":{"texture":0,"uv":[18,2,30,14]},"east":{"texture":0,"uv":[18,2,30,14]},"west":{"texture":0,"uv":[18,2,30,14]},"up":{"texture":0,"uv":[18,2,30,14]},"down":{"texture":0,"uv":[18,2,30,14]}}},{"name":"recessed panel line 2","uuid":"ac332026-1126-4000-8000-000000100210","type":"cube","from":[7,14.4,7.34],"to":[9,14.51,7.42],"origin":[8,14.455,7.38],"faces":{"north":{"texture":0,"uv":[18,2,30,14]},"south":{"texture":0,"uv":[18,2,30,14]},"east":{"texture":0,"uv":[18,2,30,14]},"west":{"texture":0,"uv":[18,2,30,14]},"up":{"texture":0,"uv":[18,2,30,14]},"down":{"texture":0,"uv":[18,2,30,14]}}},{"name":"recessed panel line 3","uuid":"ac332026-1126-4000-8000-000000100211","type":"cube","from":[7,16.6,7.34],"to":[9,16.71,7.42],"origin":[8,16.655,7.38],"faces":{"north":{"texture":0,"uv":[18,2,30,14]},"south":{"texture":0,"uv":[18,2,30,14]},"east":{"texture":0,"uv":[18,2,30,14]},"west":{"texture":0,"uv":[18,2,30,14]},"up":{"texture":0,"uv":[18,2,30,14]},"down":{"texture":0,"uv":[18,2,30,14]}}},{"name":"recessed panel line 4","uuid":"ac332026-1126-4000-8000-000000100212","type":"cube","from":[7,18.8,7.34],"to":[9,18.91,7.42],"origin":[8,18.855,7.38],"faces":{"north":{"texture":0,"uv":[18,2,30,14]},"south":{"texture":0,"uv":[18,2,30,14]},"east":{"texture":0,"uv":[18,2,30,14]},"west":{"texture":0,"uv":[18,2,30,14]},"up":{"texture":0,"uv":[18,2,30,14]},"down":{"texture":0,"uv":[18,2,30,14]}}},{"name":"white identification marking","uuid":"ac332026-1126-4000-8000-000000100213","type":"cube","from":[7.1,13.7,7.23],"to":[7.55,15.1,7.38],"origin":[7.325,14.4,7.305],"faces":{"north":{"texture":0,"uv":[18,18,30,30]},"south":{"texture":0,"uv":[18,18,30,30]},"east":{"texture":0,"uv":[18,18,30,30]},"west":{"texture":0,"uv":[18,18,30,30]},"up":{"texture":0,"uv":[18,18,30,30]},"down":{"texture":0,"uv":[18,18,30,30]}}}],"outliner":[{"name":"freedom_wing_blue","uuid":"ac332026-1126-4000-8000-000000100190","origin":[8,8,8],"rotation":[0,0,0],"children":["ac332026-1126-4000-8000-000000100191","ac332026-1126-4000-8000-000000100192","ac332026-1126-4000-8000-000000100193","ac332026-1126-4000-8000-000000100194","ac332026-1126-4000-8000-000000100195","ac332026-1126-4000-8000-000000100196","ac332026-1126-4000-8000-000000100197","ac332026-1126-4000-8000-000000100198","ac332026-1126-4000-8000-000000100199","ac332026-1126-4000-8000-000000100200","ac332026-1126-4000-8000-000000100201","ac332026-1126-4000-8000-000000100202","ac332026-1126-4000-8000-000000100203","ac332026-1126-4000-8000-000000100204","ac332026-1126-4000-8000-000000100205","ac332026-1126-4000-8000-000000100206","ac332026-1126-4000-8000-000000100207","ac332026-1126-4000-8000-000000100208","ac332026-1126-4000-8000-000000100209","ac332026-1126-4000-8000-000000100210","ac332026-1126-4000-8000-000000100211","ac332026-1126-4000-8000-000000100212","ac332026-1126-4000-8000-000000100213"]}],"textures":[{"name":"heavy_weapon_palette.png","folder":"","namespace":"","id":"0","particle":false,"render_mode":"default","visible":true,"internal":false,"saved":false,"uuid":"caca2026-1121-4000-8000-000000000001","source":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA00lEQVR42u3aMQ4BURQF0BlRkSi0kzCmUbGBsQOJJdiBLdBJFHoL0dCLDegJ0dBgA6xh8krn9vfn5eRVPy/NisE3CaTb7kTqSdbPQ/1RWYb6teTPAwAAAAAAAAAAAAAAAAAA/jHpbncI/Qf08iw0wGa9D/Uv17MNAAAAAAAAAAAAAAAAAAAAAKql/n59Qg80G7H7gOnkEepvi6ENAAAAAAAAAAAAAAAAAAAAAKolHS9nofuA0/EeGqB1e4b6q/nCBgAAAAAAAAAAAAAAAAAAAADV8gPxORkd0YlLagAAAABJRU5ErkJggg=="}],"display":{"gui":{"rotation":[24,210,0],"translation":[0,0,0],"scale":[0.77,0.77,0.77]},"ground":{"rotation":[0,0,0],"translation":[0,2,0],"scale":[0.46,0.46,0.46]},"fixed":{"rotation":[0,180,0],"translation":[0,0,0],"scale":[1,1,1]},"firstperson_righthand":{"rotation":[0,0,0],"translation":[0,-16,0],"scale":[0.001,0.001,0.001]},"firstperson_lefthand":{"rotation":[0,0,0],"translation":[0,-16,0],"scale":[0.001,0.001,0.001]},"thirdperson_righthand":{"rotation":[0,0,0],"translation":[0,-16,0],"scale":[0.001,0.001,0.001]},"thirdperson_lefthand":{"rotation":[0,0,0],"translation":[0,-16,0],"scale":[0.001,0.001,0.001]}}}
+{
+  "meta": {
+    "format_version": "4.10",
+    "model_format": "free",
+    "box_uv": false
+  },
+  "name": "freedom_wing_blue",
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {
+      "name": "root mechanical hinge",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100000",
+      "from": [
+        6.25,
+        5.8,
+        6.75
+      ],
+      "to": [
+        9.75,
+        9.2,
+        9.25
+      ],
+      "origin": [
+        8,
+        7.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        }
+      }
+    },
+    {
+      "name": "navy hinge sleeve",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100001",
+      "from": [
+        6.05,
+        7.5,
+        7
+      ],
+      "to": [
+        9.95,
+        10.05,
+        9
+      ],
+      "origin": [
+        8,
+        8.775,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "broad uninterrupted armor",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100002",
+      "from": [
+        5.05,
+        9,
+        7.38
+      ],
+      "to": [
+        10.95,
+        17.6,
+        8.62
+      ],
+      "origin": [
+        8,
+        13.3,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "shoulder taper",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100003",
+      "from": [
+        5.5515,
+        8.2,
+        7.42
+      ],
+      "to": [
+        10.4485,
+        9,
+        8.58
+      ],
+      "origin": [
+        8,
+        8.6,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "contiguous tip taper 0",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100004",
+      "from": [
+        5.463,
+        17.6,
+        7.43
+      ],
+      "to": [
+        10.536999999999999,
+        19.4,
+        8.57
+      ],
+      "origin": [
+        8,
+        18.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "contiguous tip taper 1",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100005",
+      "from": [
+        6.0235,
+        19.4,
+        7.43
+      ],
+      "to": [
+        9.9765,
+        21,
+        8.57
+      ],
+      "origin": [
+        8,
+        20.2,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "contiguous tip taper 2",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100006",
+      "from": [
+        6.702,
+        21,
+        7.43
+      ],
+      "to": [
+        9.298,
+        22.2,
+        8.57
+      ],
+      "origin": [
+        8,
+        21.6,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "contiguous tip taper 3",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100007",
+      "from": [
+        7.3215,
+        22.2,
+        7.43
+      ],
+      "to": [
+        8.6785,
+        23.2,
+        8.57
+      ],
+      "origin": [
+        8,
+        22.7,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            50,
+            18,
+            62,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "integrated contrasting root panel",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100008",
+      "from": [
+        5.27,
+        9.3,
+        7.27
+      ],
+      "to": [
+        5.96,
+        17.2,
+        7.4
+      ],
+      "origin": [
+        5.615,
+        13.25,
+        7.335
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "reverse contrasting root panel",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100009",
+      "from": [
+        5.27,
+        9.3,
+        8.6
+      ],
+      "to": [
+        5.96,
+        17.2,
+        8.73
+      ],
+      "origin": [
+        5.615,
+        13.25,
+        8.665
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            34,
+            18,
+            46,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "central dark panel seam",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100010",
+      "from": [
+        7.85,
+        10,
+        7.31
+      ],
+      "to": [
+        8,
+        17.2,
+        7.39
+      ],
+      "origin": [
+        7.925,
+        13.6,
+        7.35
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        }
+      }
+    },
+    {
+      "name": "reverse central dark panel seam",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100011",
+      "from": [
+        7.85,
+        10,
+        8.61
+      ],
+      "to": [
+        8,
+        17.2,
+        8.69
+      ],
+      "origin": [
+        7.925,
+        13.6,
+        8.649999999999999
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            18,
+            2,
+            30,
+            14
+          ]
+        }
+      }
+    },
+    {
+      "name": "short identification marking",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100012",
+      "from": [
+        8.1,
+        11,
+        7.26
+      ],
+      "to": [
+        8.54,
+        12.1,
+        7.4
+      ],
+      "origin": [
+        8.32,
+        11.55,
+        7.33
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "reverse short identification marking",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100013",
+      "from": [
+        8.1,
+        11,
+        8.6
+      ],
+      "to": [
+        8.54,
+        12.1,
+        8.74
+      ],
+      "origin": [
+        8.32,
+        11.55,
+        8.67
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            18,
+            18,
+            30,
+            30
+          ]
+        }
+      }
+    },
+    {
+      "name": "short root casing",
+      "type": "cube",
+      "uuid": "ac342026-1126-4000-8000-000000100014",
+      "from": [
+        6.8,
+        6.3,
+        6.7
+      ],
+      "to": [
+        9.2,
+        7.6,
+        7.1
+      ],
+      "origin": [
+        8,
+        6.949999999999999,
+        6.9
+      ],
+      "faces": {
+        "north": {
+          "texture": 0,
+          "uv": [
+            34,
+            2,
+            46,
+            14
+          ]
+        },
+        "south": {
+          "texture": 0,
+          "uv": [
+            34,
+            2,
+            46,
+            14
+          ]
+        },
+        "east": {
+          "texture": 0,
+          "uv": [
+            34,
+            2,
+            46,
+            14
+          ]
+        },
+        "west": {
+          "texture": 0,
+          "uv": [
+            34,
+            2,
+            46,
+            14
+          ]
+        },
+        "up": {
+          "texture": 0,
+          "uv": [
+            34,
+            2,
+            46,
+            14
+          ]
+        },
+        "down": {
+          "texture": 0,
+          "uv": [
+            34,
+            2,
+            46,
+            14
+          ]
+        }
+      }
+    }
+  ],
+  "outliner": [
+    {
+      "name": "freedom_wing_blue",
+      "uuid": "ac332026-1126-4000-8000-000000100190",
+      "origin": [
+        8,
+        8,
+        8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "children": [
+        "ac342026-1126-4000-8000-000000100000",
+        "ac342026-1126-4000-8000-000000100001",
+        "ac342026-1126-4000-8000-000000100002",
+        "ac342026-1126-4000-8000-000000100003",
+        "ac342026-1126-4000-8000-000000100004",
+        "ac342026-1126-4000-8000-000000100005",
+        "ac342026-1126-4000-8000-000000100006",
+        "ac342026-1126-4000-8000-000000100007",
+        "ac342026-1126-4000-8000-000000100008",
+        "ac342026-1126-4000-8000-000000100009",
+        "ac342026-1126-4000-8000-000000100010",
+        "ac342026-1126-4000-8000-000000100011",
+        "ac342026-1126-4000-8000-000000100012",
+        "ac342026-1126-4000-8000-000000100013",
+        "ac342026-1126-4000-8000-000000100014"
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "name": "heavy_weapon_palette.png",
+      "folder": "",
+      "namespace": "",
+      "id": "0",
+      "particle": false,
+      "render_mode": "default",
+      "visible": true,
+      "internal": false,
+      "saved": false,
+      "uuid": "caca2026-1121-4000-8000-000000000001",
+      "source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA00lEQVR42u3aMQ4BURQF0BlRkSi0kzCmUbGBsQOJJdiBLdBJFHoL0dCLDegJ0dBgA6xh8krn9vfn5eRVPy/NisE3CaTb7kTqSdbPQ/1RWYb6teTPAwAAAAAAAAAAAAAAAAAA/jHpbncI/Qf08iw0wGa9D/Uv17MNAAAAAAAAAAAAAAAAAAAAAKql/n59Qg80G7H7gOnkEepvi6ENAAAAAAAAAAAAAAAAAAAAAKolHS9nofuA0/EeGqB1e4b6q/nCBgAAAAAAAAAAAAAAAAAAAADV8gPxORkd0YlLagAAAABJRU5ErkJggg=="
+    }
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        24,
+        210,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.77,
+        0.77,
+        0.77
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        0.46,
+        0.46,
+        0.46
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        -16,
+        0
+      ],
+      "scale": [
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        -16,
+        0
+      ],
+      "scale": [
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        -16,
+        0
+      ],
+      "scale": [
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        -16,
+        0
+      ],
+      "scale": [
+        0.001,
+        0.001,
+        0.001
+      ]
+    }
+  }
+}
