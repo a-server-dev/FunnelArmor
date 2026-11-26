@@ -81,7 +81,9 @@ class GundamAdvancedWeaponsTest {
             assertEquals(8,(lo.get(0).getAsDouble()+hi.get(0).getAsDouble())/2,.00001);
             centers.add((lo.get(1).getAsDouble()+hi.get(1).getAsDouble())/2);
         }
-        assertEquals(List.of(5.4,10.6),centers);
+        assertEquals(2,centers.size());
+        assertEquals(5.4,centers.get(0),.00001);
+        assertEquals(10.6,centers.get(1),.00001);
         int ticks=0;for(int i=0;i<15;i++)ticks+=HeavyarmsCadence.interval(i);
         assertEquals(20,ticks);
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
