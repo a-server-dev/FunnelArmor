@@ -10,3 +10,6 @@ Commands: /funnel give epyon|heavyarms|freedom [player]. All included in give al
 
 ## v0.34.0 refinement
 Freedom now has separate CLOSED / HIMAT / FULL_BURST states. Left click toggles stowed/HiMAT (or stows full burst); sneak-left switches HiMAT/full burst; sneak-left while closed first opens HiMAT. Right click fires the rifle in closed/HiMAT; only fully deployed full burst enables five guns and sneak-right multi-lock. Broad flat wing panels replace the detached edge spikes. Epyon shield is rotated 180 degrees, and the rod starts at the actual bottom socket. Existing item IDs, damage and cooldowns are unchanged.
+
+## v0.35.0
+Freedom: narrower angular wing armor with integrated diagonal tips; mode and combat unchanged. Heavyarms: vertical twin receivers, scale 1.18, hold right mouse to fire/release to stop using native active-item state, no left-click stop, 15 volleys/s at 20 TPS (1/1/2 tick cadence); heat per volley reduced to 2 to retain the previous overheat time. Existing held weapons migrate automatically; damage, range and effects remain unchanged.

@@ -1,6 +1,10 @@
 package dev.emerald.funnel;
 
 import io.papermc.paper.event.player.PlayerArmSwingEvent;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Consumable;
+import io.papermc.paper.datacomponent.item.UseEffects;
+import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.command.CommandSender;
@@ -45,6 +49,7 @@ final class GundamAdvancedWeapons implements Listener {
         double cannonProgress;
         final List<Casing> casings=new ArrayList<>();
         long lastRight=-100;
+        int gatlingPhase;
         long nextInput,nextToggle,nextShot,attackStart=-1;
         State(String kind,String serial,UUID world){this.kind=kind;this.serial=serial;this.world=world;}
     }
@@ -80,12 +85,45 @@ final class GundamAdvancedWeapons implements Listener {
         }));
         m.lore(switch(type){
             case "epyon"->List.of(Component.text("§7左クリック: 展開 / 収納"),Component.text("§e右クリック: 薙ぎ払い / しゃがみ右クリック: 引き寄せ"));
-            case "heavyarms"->List.of(Component.text("§e右クリック: 連射開始 / 停止"),Component.text("§7左クリック: 射撃停止 / 過熱時は冷却"));
+            case "heavyarms"->heavyarmsLore();
             default->List.of(Component.text("§7左クリック: 収納 / ハイマット"),Component.text("§bしゃがみ左クリック: ハイマット / フルバースト"),Component.text("§e右クリック: ライフル / フルバースト時5門同時射撃"),Component.text("§bフルバーストでしゃがみ右クリック: マルチロックオン"));
         });
         m.getPersistentDataContainer().set(kindKey,PersistentDataType.STRING,type);
         m.getPersistentDataContainer().set(serialKey,PersistentDataType.STRING,UUID.randomUUID().toString());
-        item.setItemMeta(m);return item;
+        item.setItemMeta(m);
+        if(type.equals("heavyarms"))prepareHeavyarms(item);
+        return item;
+    }
+    private static List<Component> heavyarmsLore(){
+        return List.of(Component.text("§e右クリック長押し: 連射 / 離すと停止"),
+            Component.text("§7過熱時は冷却"));
+    }
+    private void prepareHeavyarms(ItemStack item){
+        ItemMeta m=item.getItemMeta();m.lore(heavyarmsLore());item.setItemMeta(m);
+        item.setData(DataComponentTypes.CONSUMABLE,Consumable.consumable()
+            .consumeSeconds(3600f).animation(ItemUseAnimation.NONE).hasConsumeParticles(false)
+            .sound(net.kyori.adventure.key.Key.key("minecraft:intentionally_empty")));
+        item.setData(DataComponentTypes.USE_EFFECTS,UseEffects.useEffects()
+            .speedMultiplier(1f).canSprint(true).interactVibrations(false));
+    }
+    private void migrateHeavyarms(Player p){
+        ItemStack item=p.getInventory().getItemInMainHand();
+        if(!item.hasData(DataComponentTypes.CONSUMABLE)||!item.hasData(DataComponentTypes.USE_EFFECTS)){
+            prepareHeavyarms(item);p.getInventory().setItemInMainHand(item);
+        }
+    }
+    private boolean holdingTrigger(Player p,State s){
+        if(!p.hasActiveItem()||p.getActiveItemHand()!=EquipmentSlot.HAND)return false;
+        ItemStack item=p.getActiveItem();
+        if(!item.hasItemMeta())return false;
+        return s.serial.equals(item.getItemMeta().getPersistentDataContainer()
+            .get(serialKey,PersistentDataType.STRING));
+    }
+    @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=false)
+    public void onConsumeTrigger(PlayerItemConsumeEvent e){
+        ItemStack item=e.getItem();
+        if(item.hasItemMeta()&&"heavyarms".equals(item.getItemMeta()
+            .getPersistentDataContainer().get(kindKey,PersistentDataType.STRING)))e.setCancelled(true);
     }
     private String value(Player p,NamespacedKey key){
         ItemStack i=p.getInventory().getItemInMainHand();
@@ -176,6 +214,15 @@ final class GundamAdvancedWeapons implements Listener {
         Action a=e.getAction();boolean left=a==Action.LEFT_CLICK_AIR||a==Action.LEFT_CLICK_BLOCK;
         boolean right=a==Action.RIGHT_CLICK_AIR||a==Action.RIGHT_CLICK_BLOCK;
         if(!left&&!right)return;
+        if(k.equals("heavyarms")&&right&&enabled(k)){
+            // Allow the vanilla use-item state, not block interaction. The
+            // actual release packet clears hasActiveItem on the server.
+            migrateHeavyarms(p);
+            e.setCancelled(false);
+            e.setUseInteractedBlock(Event.Result.DENY);
+            e.setUseItemInHand(Event.Result.ALLOW);
+            return;
+        }
         e.setUseItemInHand(Event.Result.DENY);e.setUseInteractedBlock(Event.Result.DENY);e.setCancelled(true);
         if(!enabled(k))return;
         if(left)left(p,k);else use(p,k);
@@ -186,9 +233,9 @@ final class GundamAdvancedWeapons implements Listener {
         String k=kind(e.getPlayer());if(!k.isEmpty()&&enabled(k))left(e.getPlayer(),k);
     }
     private void left(Player p,String k){
+        if(k.equals("heavyarms"))return;
         State s=ensure(p,k);long now=Bukkit.getCurrentTick();
         if(now<s.nextToggle||now<s.nextInput)return;s.nextToggle=now+6;
-        if(k.equals("heavyarms")){s.firing=false;p.sendActionBar(Component.text("§7ガトリング：射撃停止"));return;}
         if(k.equals("freedom")){
             s.freedomMode=s.freedomMode.next(p.isSneaking());
             p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.75f,
@@ -210,11 +257,6 @@ final class GundamAdvancedWeapons implements Listener {
                 if(now<s.nextShot)return;s.nextShot=now+26;s.attackStart=now;s.hit.clear();s.pull=p.isSneaking();
                 p.getWorld().playSound(p.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.2f,.65f);
             }
-            case "heavyarms"->{
-                if(s.overheated){p.sendActionBar(Component.text("§c過熱：冷却中"));return;}
-                s.firing=!s.firing;
-                p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.6f,s.firing?1.5f:.8f);
-            }
             case "freedom"->{
                 if(now<s.nextShot)return;
                 boolean full=s.freedomMode.fullBurst();
@@ -235,6 +277,7 @@ final class GundamAdvancedWeapons implements Listener {
         }
         for(Player p:Bukkit.getOnlinePlayers()){
             String k=kind(p);if(k.isEmpty()||p.isDead()||!enabled(k))continue;
+            if(k.equals("heavyarms"))migrateHeavyarms(p);
             State s=ensure(p,k);
             if(k.equals("freedom")){
                 s.progress=approach(s.progress,s.freedomMode.wingsOpen()?1:0,.07);
@@ -296,6 +339,14 @@ final class GundamAdvancedWeapons implements Listener {
     }
     private void gatling(Player p,State s,long now){
         Vector f=front(p),r=right(f),look=p.getEyeLocation().getDirection();
+        boolean held=holdingTrigger(p,s);
+        if(held&&p.getActiveItemRemainingTime()<200)p.setActiveItemRemainingTime(72000);
+        boolean wasFiring=s.firing;
+        s.firing=held&&!s.overheated;
+        if(s.firing&&!wasFiring){
+            s.gatlingPhase=0;
+            p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.6f,1.5f);
+        }
         s.spin=approach(s.spin,s.firing&&!s.overheated?1:0,.10);
         s.spinAngle=(s.spinAngle+.78*s.spin)%(Math.PI*2);
         for(ListIterator<Casing> it=s.casings.listIterator();it.hasNext();){
@@ -307,20 +358,22 @@ final class GundamAdvancedWeapons implements Listener {
         if(!s.firing||s.overheated)s.heat=Math.max(0,s.heat-1.6);
         if(s.overheated&&s.heat<=25){s.overheated=false;p.sendActionBar(Component.text("§a冷却完了"));}
         Location[] muzzles=new Location[4];
-        float scale=.93f;
+        float scale=1.18f;
+        Vector up=look.clone().crossProduct(r).normalize();
         for(int i=0;i<2;i++){
             int side=i==0?-1:1;Location body=at(p,f,r,side*.67,1.15,.24);
             aim(s.parts.get(i),body,look,0,scale);
             for(int j=0;j<2;j++){
                 int n=i*2+j;
-                Vector lateral=right(f).multiply((j==0?-1:1)*2.6*scale/16);
-                Location root=body.clone().add(lateral).add(look.clone().multiply(3.0*scale/16));
+                Vector vertical=up.clone().multiply((j==0?-1:1)*2.6*scale/16);
+                Location root=body.clone().add(vertical).add(look.clone().multiply(3.0*scale/16));
                 aim(s.parts.get(2+n),root,look,s.spinAngle,scale);
                 muzzles[n]=root.clone().add(look.clone().multiply(18.92*scale/16));
             }
         }
         if(s.firing&&!s.overheated&&s.spin>=.95&&now>=s.nextShot){
-            s.nextShot=now+4;s.heat=Math.min(HEAT_LIMIT,s.heat+6);
+            s.nextShot=now+HeavyarmsCadence.interval(s.gatlingPhase++);
+            s.heat=Math.min(HEAT_LIMIT,s.heat+2);
             Set<UUID> hits=new HashSet<>();
             Location endpoint=aimPoint(p,36);
             for(int i=0;i<2;i++){

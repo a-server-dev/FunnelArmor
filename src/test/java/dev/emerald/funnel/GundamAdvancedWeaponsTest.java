@@ -50,22 +50,47 @@ class GundamAdvancedWeaponsTest {
         assertEquals(himat,full.next(true));
         assertEquals(closed,full.next(false));
     }
-    @Test void wingsHaveNoDetachedEdgeSpikesAndWideMainPanels() throws Exception{
+    @Test void wingsHaveNarrowArmorAndIntegratedDiagonalTips() throws Exception{
         for(String id:List.of("freedom_wing_blue","freedom_wing_navy")){
             var model=JsonParser.parseString(Files.readString(Path.of("models",id+".bbmodel"))).getAsJsonObject();
-            boolean wide=false;
+            int edges=0;boolean narrow=false;
             for(var value:model.getAsJsonArray("elements")){
                 var part=value.getAsJsonObject();
                 var name=part.get("name").getAsString();
                 assertFalse(name.startsWith("long pointed edge"),"Old detached edge");
-                if(name.equals("broad uninterrupted armor")){
-                    wide=true;
-                    assertTrue(part.getAsJsonArray("to").get(0).getAsDouble()-part.getAsJsonArray("from").get(0).getAsDouble()>=4.5);
-                    assertTrue(part.getAsJsonArray("to").get(1).getAsDouble()-part.getAsJsonArray("from").get(1).getAsDouble()>=8);
+                if(name.equals("slender continuous armor")){
+                    narrow=true;
+                    double width=part.getAsJsonArray("to").get(0).getAsDouble()-part.getAsJsonArray("from").get(0).getAsDouble();
+                    assertTrue(width>=3 && width<4);
+                }
+                if(name.startsWith("integrated diagonal tip edge")){
+                    edges++;
+                    assertEquals(22.5,Math.abs(part.getAsJsonArray("rotation").get(2).getAsDouble()));
                 }
             }
-            assertTrue(wide);
+            assertTrue(narrow);assertEquals(2,edges);
         }
+    }
+    @Test void gatlingReceiversAreVerticalAndCadenceIsThreeTimesFaster() throws Exception{
+        var model=JsonParser.parseString(Files.readString(Path.of("models","heavyarms_gatling_body.bbmodel"))).getAsJsonObject();
+        var centers=new java.util.ArrayList<Double>();
+        for(var value:model.getAsJsonArray("elements")){
+            var part=value.getAsJsonObject();
+            if(!part.get("name").getAsString().equals("octagonal dark receiver square"))continue;
+            var lo=part.getAsJsonArray("from");var hi=part.getAsJsonArray("to");
+            assertEquals(8,(lo.get(0).getAsDouble()+hi.get(0).getAsDouble())/2,.00001);
+            centers.add((lo.get(1).getAsDouble()+hi.get(1).getAsDouble())/2);
+        }
+        assertEquals(List.of(5.4,10.6),centers);
+        int ticks=0;for(int i=0;i<15;i++)ticks+=HeavyarmsCadence.interval(i);
+        assertEquals(20,ticks);
+        String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
+        assertTrue(code.contains("p.hasActiveItem()"));
+        assertTrue(code.contains("DataComponentTypes.CONSUMABLE"));
+        assertTrue(code.contains("boolean held=holdingTrigger(p,s)"));
+        assertTrue(code.contains("if(k.equals(\"heavyarms\"))return;"));
+        assertTrue(code.contains("float scale=1.18f;"));
+        assertFalse(code.contains("s.firing=!s.firing"));
     }
     @Test void combatUsesPhysicalSegmentsFourRotorsTenWingsAndFiveGuns() throws Exception{
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
