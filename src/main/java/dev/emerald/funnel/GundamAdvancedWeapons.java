@@ -49,7 +49,7 @@ final class GundamAdvancedWeapons implements Listener {
         double cannonProgress;
         final List<Casing> casings=new ArrayList<>();
         long lastRight=-100;
-        int gatlingPhase;
+        int gatlingPhase, gatlingVisualIndex;
         long nextInput,nextToggle,nextShot,attackStart=-1;
         State(String kind,String serial,UUID world){this.kind=kind;this.serial=serial;this.world=world;}
     }
@@ -352,7 +352,7 @@ final class GundamAdvancedWeapons implements Listener {
         for(ListIterator<Casing> it=s.casings.listIterator();it.hasNext();){
             Casing c=it.next();if(c.life()<=0){it.remove();continue;}
             Location l=c.location().clone().add(c.velocity());
-            p.getWorld().spawnParticle(Particle.DUST,l,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(193,145,62),.65f));
+            if(c.life()%2==0)p.getWorld().spawnParticle(Particle.DUST,l,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(193,145,62),.30f));
             it.set(new Casing(l,c.velocity().clone().add(new Vector(0,-.045,0)),c.life()-1));
         }
         if(!s.firing||s.overheated)s.heat=Math.max(0,s.heat-1.6);
@@ -376,16 +376,21 @@ final class GundamAdvancedWeapons implements Listener {
             s.heat=Math.min(HEAT_LIMIT,s.heat+2);
             Set<UUID> hits=new HashSet<>();
             Location endpoint=aimPoint(p,36);
-            for(int i=0;i<2;i++){
-                int side=i==0?-1:1;
+            // All four rays still deal damage on every volley. Only one
+            // rotating muzzle draws a sparse tracer every other volley.
+            int visual=Math.floorMod(s.gatlingVisualIndex++,8);
+            if(visual%2==0){
+                int side=visual%4==0?-1:1;
                 Location port=at(p,f,r,side*.86,1.2,.18);
-                s.casings.add(new Casing(port,r.clone().multiply(side*.18).add(new Vector(0,.13,0)),8));
+                s.casings.add(new Casing(port,r.clone().multiply(side*.18).add(new Vector(0,.13,0)),4));
             }
-            for(Location muzzle:muzzles)beam(p,muzzle,endpoint,36,Color.fromRGB(255,208,90),.62f,false,hits,damage("heavyarms",.5));
+            for(int i=0;i<muzzles.length;i++)
+                beam(p,muzzles[i],endpoint,36,Color.fromRGB(255,208,90),.28f,false,
+                    hits,damage("heavyarms",.5),visual%2==0&&i==visual/2);
             p.getWorld().playSound(p.getLocation(),Sound.ENTITY_FIREWORK_ROCKET_BLAST,.65f,1.35f);
             if(s.heat>=HEAT_LIMIT){s.overheated=true;s.firing=false;p.getWorld().playSound(p.getLocation(),Sound.BLOCK_FIRE_EXTINGUISH,.9f,.8f);}
         }
-        if(s.spin>.15&&now%4==0)for(Location muzzle:muzzles)p.getWorld().spawnParticle(Particle.SMOKE,muzzle,2,.04,.04,.04,.01);
+        // No muzzle smoke or large flashes: preserve the player's sightline.
         if(now%10==0)p.sendActionBar(Component.text((s.overheated?"§c過熱 ":"§eHEAT ")+(int)s.heat+"%"+(s.firing?" §a連射中":"")));
     }
     private void freedom(Player p,State s){
@@ -459,12 +464,12 @@ final class GundamAdvancedWeapons implements Listener {
             if(d.lengthSquared()>.001){d.normalize();aim(gun,gun.getLocation(),d,0,index<=12?.94f:index<=14?.90f:.95f);
                 muzzle=gun.getLocation().add(d.clone().multiply(reach));}
             Color color=index<=12?Color.fromRGB(255,90,175):index<=14?Color.fromRGB(255,221,85):Color.fromRGB(110,255,125);
-            beam(p,muzzle,end,48,color,full?1.8f:1.1f,true,hit,damage("freedom",1.5));
+            beam(p,muzzle,end,48,color,full?1.8f:1.1f,true,hit,damage("freedom",1.5),true);
         }
         p.getWorld().playSound(p.getLocation(),Sound.ENTITY_GUARDIAN_ATTACK,1.4f,full?.55f:1.15f);
         if(multi)p.sendActionBar(Component.text("§bマルチロックオン："+Math.min(5,locks.size())+"目標"));
     }
-    private void beam(Player p,Location muzzle,Location endpoint,double range,Color color,float size,boolean glow,Set<UUID> hit,double damage){
+    private void beam(Player p,Location muzzle,Location endpoint,double range,Color color,float size,boolean glow,Set<UUID> hit,double damage,boolean render){
         World w=p.getWorld();Vector d=endpoint.toVector().subtract(muzzle.toVector());
         if(d.lengthSquared()<.001)d=p.getEyeLocation().getDirection();d.normalize();
         RayTraceResult wall=w.rayTraceBlocks(muzzle,d,range,FluidCollisionMode.NEVER,true);
@@ -474,8 +479,17 @@ final class GundamAdvancedWeapons implements Listener {
             if(contact!=null){length=muzzle.toVector().distance(contact.getHitPosition());
                 if(contact.getHitEntity() instanceof LivingEntity l&&hit.add(l.getUniqueId()))hurt(p,l,damage);}
         }
+        // Rendering is independent of collision and damage.
+        if(!render)return;
         Particle.DustOptions dust=new Particle.DustOptions(color,size);
-        for(double x=0;x<=length;x+=glow?.48:1.15){
+        if(!glow){
+            // Skip the first four blocks and draw at most six small tracer
+            // particles. No camera-obscuring muzzle flash or impact cloud.
+            for(double x=4;x<=length;x+=6)
+                w.spawnParticle(Particle.DUST,muzzle.clone().add(d.clone().multiply(x)),1,0,0,0,0,dust);
+            return;
+        }
+        for(double x=0;x<=length;x+=.48){
             Location point=muzzle.clone().add(d.clone().multiply(x));
             w.spawnParticle(Particle.DUST,point,glow?3:1,.035,.035,.035,0,dust);
             if(glow)w.spawnParticle(Particle.DUST,point,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(245,250,255),size*.6f));

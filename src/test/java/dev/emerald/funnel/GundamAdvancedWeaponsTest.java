@@ -94,6 +94,18 @@ class GundamAdvancedWeaponsTest {
         assertTrue(code.contains("float scale=1.18f;"));
         assertFalse(code.contains("s.firing=!s.firing"));
     }
+    @Test void heavyarmsSparseTracersDoNotReduceHitRayCount() throws Exception{
+        String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
+        assertTrue(code.contains("for(int i=0;i<muzzles.length;i++)"));
+        assertTrue(code.contains("visual%2==0&&i==visual/2"));
+        assertTrue(code.contains("for(double x=4;x<=length;x+=6)"));
+        assertTrue(code.contains("damage(\"heavyarms\",.5)"));
+        int start=code.indexOf("private void beam(");
+        String beam=code.substring(start,code.indexOf("boolean command(",start));
+        assertTrue(beam.indexOf("hurt(p,l,damage)")<beam.indexOf("if(!render)return"));
+        assertTrue(beam.indexOf("if(!glow)")<beam.indexOf("Particle.FLASH"));
+        assertFalse(code.substring(code.indexOf("private void gatling("),code.indexOf("private void freedom(")).contains("Particle.SMOKE"));
+    }
     @Test void combatUsesPhysicalSegmentsFourRotorsTenWingsAndFiveGuns() throws Exception{
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
         assertTrue(code.contains("ROD_LINKS=14, ROTORS=4, WINGS=10"));

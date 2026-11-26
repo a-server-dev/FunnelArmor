@@ -13,3 +13,6 @@ Freedom now has separate CLOSED / HIMAT / FULL_BURST states. Left click toggles 
 
 ## v0.35.0
 Freedom: narrower angular wing armor with integrated diagonal tips; mode and combat unchanged. Heavyarms: vertical twin receivers, scale 1.18, hold right mouse to fire/release to stop using native active-item state, no left-click stop, 15 volleys/s at 20 TPS (1/1/2 tick cadence); heat per volley reduced to 2 to retain the previous overheat time. Existing held weapons migrate automatically; damage, range and effects remain unchanged.
+
+## v0.36.0
+Heavyarms only: all four hit rays and 15 volleys/s retained, but one alternating muzzle shows a sparse tracer every other volley (4-block start, 6-block spacing). No muzzle flash or smoke; reduced casing particles. Freedom and Epyon effects are unchanged.
