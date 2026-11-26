@@ -16,8 +16,8 @@ class FunnelCommandAccessTest {
     }
 
     @Test void catalogHasElevenUniqueNonLegacyEquipmentKinds() {
-        assertEquals(11, FunnelGiftCatalog.ALL.size());
-        assertEquals(11, new HashSet<>(FunnelGiftCatalog.ALL).size());
+        assertEquals(14, FunnelGiftCatalog.ALL.size());
+        assertEquals(14, new HashSet<>(FunnelGiftCatalog.ALL).size());
         assertTrue(FunnelGiftCatalog.OPTIONS.containsAll(FunnelGiftCatalog.ALL));
         assertTrue(FunnelGiftCatalog.supported("all"));
         for (String kind : java.util.List.of("gn", "gn2", "gnv")) {

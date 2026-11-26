@@ -242,3 +242,15 @@ heavy-weapons:
     cooldown-ticks: 360
     range: 56.0
     beam-damage: 1.5
+
+# Three independent weapons, 0.5/1.5 HP caps per target per attack.
+advanced-weapons:
+  epyon:
+    enabled: true
+    damage: 1.5
+  heavyarms:
+    enabled: true
+    damage: 0.5
+  freedom:
+    enabled: true
+    damage: 1.5

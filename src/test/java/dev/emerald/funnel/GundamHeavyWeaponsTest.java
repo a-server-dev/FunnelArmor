@@ -69,12 +69,12 @@ class GundamHeavyWeaponsTest {
     }
 
     @Test void allThreeAreIncludedInSharedGiveAllCatalogWithNoPerWeaponGive() {
-        assertEquals(11,FunnelGiftCatalog.ALL.size());
+        assertEquals(14,FunnelGiftCatalog.ALL.size());
         for(String type:List.of("atomic","mace","satellite")) {
             assertTrue(FunnelGiftCatalog.ALL.contains(type));
             assertTrue(FunnelGiftCatalog.OPTIONS.contains(type));
         }
-        assertEquals(11,new HashSet<>(FunnelGiftCatalog.ALL).size());
+        assertEquals(14,new HashSet<>(FunnelGiftCatalog.ALL).size());
     }
 
     @Test void atomicShieldAndSatelliteReflectorsAreSeparateVisualModels() throws Exception {
