@@ -55,21 +55,49 @@ class GundamHeavyWeaponDetailTest {
             >model(id).getAsJsonArray("elements").size());
     }
 
-    @Test void maceHasFourRadialBladesWithSharpCrossSection() throws Exception {
+    @Test void maceHasFourFlatRadialBladesAndIndependentTeeth() throws Exception {
         for(String id:List.of("barbatos_ultra_mace","barbatos_ultra_mace_pile")){
             var m=model(id);
-            for(String direction:List.of("East","West","North","South"))
-                assertTrue(hasPart(id,direction+" blade edge 0"),direction);
+            var packed=JsonParser.parseString(Files.readString(Path.of(
+                "resourcepack/assets/funnel/models/item",id+".json"))).getAsJsonObject();
+            assertTrue(m.getAsJsonArray("elements").size()<150,"Avoid rounded stepped profile");
+            for(String direction:List.of("East","West","North","South")){
+                for(String part:List.of("long continuous main plate","long straight cutting edge",
+                        "fork diagonal outer edge","root guard outer swept edge",
+                        "root guard outer tip","tooth 1 flat face","tooth 2 flat face"))
+                    assertTrue(hasPart(id,direction+" "+part),direction+" "+part);
+            }
             double[] lo={99,99,99},hi={-99,-99,-99};
-            for(var e:m.getAsJsonArray("elements")){
-                var cube=e.getAsJsonObject();
+            int rotated=0;
+            for(int i=0;i<m.getAsJsonArray("elements").size();i++){
+                var cube=m.getAsJsonArray("elements").get(i).getAsJsonObject();
+                var client=packed.getAsJsonArray("elements").get(i).getAsJsonObject();
                 for(int a=0;a<3;a++){
                     lo[a]=Math.min(lo[a],cube.getAsJsonArray("from").get(a).getAsDouble());
                     hi[a]=Math.max(hi[a],cube.getAsJsonArray("to").get(a).getAsDouble());
                 }
+                if(cube.has("rotation")){
+                    rotated++;
+                    var rot=client.getAsJsonObject("rotation");
+                    assertNotNull(rot);
+                    assertEquals(cube.get("origin"),rot.get("origin"));
+                    int axis=List.of("x","y","z").indexOf(rot.get("axis").getAsString());
+                    assertTrue(axis>=0);
+                    double angle=rot.get("angle").getAsDouble();
+                    assertTrue(Math.abs(angle)==22.5 || Math.abs(angle)==45);
+                    assertEquals(angle,cube.getAsJsonArray("rotation").get(axis).getAsDouble(),.000001);
+                }
+                if(cube.get("name").getAsString().endsWith("long continuous main plate")){
+                    assertTrue(cube.getAsJsonArray("to").get(1).getAsDouble()
+                         -cube.getAsJsonArray("from").get(1).getAsDouble()>13);
+                    double x=cube.getAsJsonArray("to").get(0).getAsDouble()-cube.getAsJsonArray("from").get(0).getAsDouble();
+                    double z=cube.getAsJsonArray("to").get(2).getAsDouble()-cube.getAsJsonArray("from").get(2).getAsDouble();
+                    assertTrue(Math.min(x,z)<.35 && Math.max(x,z)>1.1,"Flat plate, not thick petal");
+                }
             }
+            assertEquals(8,rotated,"Four true diagonal forks and four swept guards");
             assertEquals(hi[0]-lo[0],hi[2]-lo[2],.0001,"Cross must not be flattened");
-            assertTrue(hi[0]-lo[0]<6 && hi[1]-lo[1]>45);
+            assertTrue(hi[0]-lo[0]>6 && hi[0]-lo[0]<7 && hi[1]-lo[1]>45);
         }
     }
 
