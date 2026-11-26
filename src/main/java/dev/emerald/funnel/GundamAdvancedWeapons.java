@@ -32,6 +32,8 @@ final class GundamAdvancedWeapons implements Listener {
     static final int ROD_LINKS=14, ROTORS=4, WINGS=10;
     static final int HEAT_LIMIT=100;
     private final JavaPlugin plugin;
+    private final EpyonOffhand epyonOffhand;
+    private final NamespacedKey epyonSwordModel=new NamespacedKey("funnel","epyon_beam_sword");
     private final NamespacedKey kindKey, serialKey, marker;
     private final Map<UUID,State> active=new HashMap<>();
     private final Map<String,ItemStack> models=new HashMap<>();
@@ -58,6 +60,7 @@ final class GundamAdvancedWeapons implements Listener {
 
     GundamAdvancedWeapons(JavaPlugin plugin){
         this.plugin=plugin;
+        this.epyonOffhand=new EpyonOffhand(plugin);
         kindKey=new NamespacedKey(plugin,"advanced_weapon");
         serialKey=new NamespacedKey(plugin,"advanced_weapon_serial");
         marker=new NamespacedKey(plugin,"advanced_weapon_display");
@@ -73,18 +76,18 @@ final class GundamAdvancedWeapons implements Listener {
     ItemStack giftItem(String type){
         if(!TYPES.contains(type))throw new IllegalArgumentException(type);
         ItemStack item=model(switch(type){
-            case "epyon"->"epyon_shield";
+            case "epyon"->"epyon_beam_sword";
             case "heavyarms"->"heavyarms_gatling_body";
             default->"freedom_lupus_rifle";
         }).clone();
         ItemMeta m=item.getItemMeta();
         m.displayName(Component.text(switch(type){
-            case "epyon"->"§cガンダムエピオン ヒートロッド";
+            case "epyon"->"§cガンダムエピオン ビームソード";
             case "heavyarms"->"§9ヘビーアームズ改EW ダブルガトリング";
             default->"§bフリーダム ハイマットフルバースト";
         }));
         m.lore(switch(type){
-            case "epyon"->List.of(Component.text("§7左クリック: 展開 / 収納"),Component.text("§e右クリック: 薙ぎ払い / しゃがみ右クリック: 引き寄せ"));
+            case "epyon"->epyonLore();
             case "heavyarms"->heavyarmsLore();
             default->List.of(Component.text("§7左クリック: 収納 / ハイマット"),Component.text("§bしゃがみ左クリック: ハイマット / フルバースト"),Component.text("§e右クリック: ライフル / フルバースト時5門同時射撃"),Component.text("§bフルバーストでしゃがみ右クリック: マルチロックオン"));
         });
@@ -93,6 +96,20 @@ final class GundamAdvancedWeapons implements Listener {
         item.setItemMeta(m);
         if(type.equals("heavyarms"))prepareHeavyarms(item);
         return item;
+    }
+    private static List<Component> epyonLore(){
+        return List.of(Component.text("§a左クリック: ビームソード攻撃"),
+            Component.text("§eしゃがみ右クリック: 盾装着 / 収納"),
+            Component.text("§7盾装着中の右クリック: ヒートロッド攻撃"));
+    }
+    private void migrateEpyon(Player p){
+        ItemStack item=p.getInventory().getItemInMainHand();
+        ItemMeta meta=item.getItemMeta();
+        if(epyonSwordModel.equals(meta.getItemModel()))return;
+        meta.setItemModel(epyonSwordModel);
+        meta.displayName(Component.text("§cガンダムエピオン ビームソード"));
+        meta.lore(epyonLore());item.setItemMeta(meta);
+        p.getInventory().setItemInMainHand(item);
     }
     private static List<Component> heavyarmsLore(){
         return List.of(Component.text("§e右クリック長押し: 連射 / 離すと停止"),
@@ -141,12 +158,17 @@ final class GundamAdvancedWeapons implements Listener {
         for(World w:Bukkit.getWorlds())for(ItemDisplay d:w.getEntitiesByClass(ItemDisplay.class))
             if(d.getPersistentDataContainer().has(marker,PersistentDataType.BYTE))d.remove();
         Bukkit.getPluginManager().registerEvents(this,plugin);
+        Bukkit.getPluginManager().registerEvents(epyonOffhand,plugin);
+        for(Player p:Bukkit.getOnlinePlayers())epyonOffhand.restore(p);
         task=Bukkit.getScheduler().runTaskTimer(plugin,this::tick,1,1);
     }
-    void stop(){if(task!=null)task.cancel();for(UUID id:new ArrayList<>(active.keySet()))clear(id);applyingDamage.clear();}
+    void stop(){if(task!=null)task.cancel();for(UUID id:new ArrayList<>(active.keySet()))clear(id);for(Player p:Bukkit.getOnlinePlayers())epyonOffhand.restore(p);applyingDamage.clear();}
     private void clear(UUID id){
         State s=active.remove(id);
-        if(s!=null)for(ItemDisplay d:s.parts)if(d.isValid())d.remove();
+        if(s!=null){
+            for(ItemDisplay d:s.parts)if(d.isValid())d.remove();
+            if(s.kind.equals("epyon")){Player p=Bukkit.getPlayer(id);if(p!=null)epyonOffhand.restore(p);}
+        }
     }
     private ItemDisplay spawn(Player p,String id){
         return p.getWorld().spawn(p.getLocation(),ItemDisplay.class,d->{
@@ -165,7 +187,6 @@ final class GundamAdvancedWeapons implements Listener {
         s=new State(k,serial,p.getWorld().getUID());active.put(id,s);
         switch(k){
             case "epyon"->{
-                s.parts.add(spawn(p,"epyon_shield"));
                 for(int i=0;i<ROD_LINKS;i++)s.parts.add(spawn(p,i==ROD_LINKS-1?"epyon_rod_tip":"epyon_rod_link"));
             }
             case "heavyarms"->{
@@ -209,10 +230,16 @@ final class GundamAdvancedWeapons implements Listener {
 
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=false)
     public void onInteract(PlayerInteractEvent e){
-        if(e.getHand()!=EquipmentSlot.HAND)return;
         Player p=e.getPlayer();String k=kind(p);if(k.isEmpty())return;
         Action a=e.getAction();boolean left=a==Action.LEFT_CLICK_AIR||a==Action.LEFT_CLICK_BLOCK;
         boolean right=a==Action.RIGHT_CLICK_AIR||a==Action.RIGHT_CLICK_BLOCK;
+        if(e.getHand()!=EquipmentSlot.HAND){
+            if(k.equals("epyon")&&right&&epyonOffhand.equipped(p)){
+                e.setUseItemInHand(Event.Result.DENY);e.setUseInteractedBlock(Event.Result.DENY);e.setCancelled(true);
+                if(enabled(k))use(p,k);
+            }
+            return;
+        }
         if(!left&&!right)return;
         if(k.equals("heavyarms")&&right&&enabled(k)){
             // Allow the vanilla use-item state, not block interaction. The
@@ -236,6 +263,7 @@ final class GundamAdvancedWeapons implements Listener {
         if(k.equals("heavyarms"))return;
         State s=ensure(p,k);long now=Bukkit.getCurrentTick();
         if(now<s.nextToggle||now<s.nextInput)return;s.nextToggle=now+6;
+        if(k.equals("epyon")){swordAttack(p);return;}
         if(k.equals("freedom")){
             s.freedomMode=s.freedomMode.next(p.isSneaking());
             p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.75f,
@@ -243,9 +271,24 @@ final class GundamAdvancedWeapons implements Listener {
             p.sendActionBar(Component.text("§bフリーダム："+s.freedomMode.label()));
             return;
         }
-        s.opened=!s.opened;s.attackStart=-1;s.hit.clear();
-        p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.75f,s.opened?1.15f:.75f);
-        p.sendActionBar(Component.text(s.opened?"§b兵装展開":"§7兵装収納"));
+    }
+    private void swordAttack(Player p){
+        Location eye=p.getEyeLocation();Vector d=eye.getDirection();
+        Set<UUID> hit=new HashSet<>();
+        // A modest arc of five rays, occluded by blocks. The same victim is
+        // hit at most once, even when several rays intersect it.
+        for(int i=-2;i<=2;i++){
+            Vector ray=d.clone().rotateAroundY(Math.toRadians(i*12));
+            RayTraceResult wall=p.getWorld().rayTraceBlocks(eye,ray,3.4,FluidCollisionMode.NEVER,true);
+            double range=wall==null?3.4:eye.toVector().distance(wall.getHitPosition());
+            if(range<=.01)continue;
+            RayTraceResult contact=p.getWorld().rayTraceEntities(eye,ray,range,.25,e->targetable(e,p));
+            if(contact!=null&&contact.getHitEntity() instanceof LivingEntity target&&hit.add(target.getUniqueId()))
+                hurt(p,target,damage("epyon",1.5));
+        }
+        p.getWorld().playSound(p.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,.9f,1.5f);
+        Location effect=eye.clone().add(d.clone().multiply(1.6)).subtract(0,.35,0);
+        p.getWorld().spawnParticle(Particle.SWEEP_ATTACK,effect,1,0,0,0,0);
     }
     private void use(Player p,String k){
         State s=ensure(p,k);long now=Bukkit.getCurrentTick();
@@ -253,8 +296,17 @@ final class GundamAdvancedWeapons implements Listener {
         if(now<s.nextInput||now-previous<=5)return;s.nextInput=now+6;s.nextToggle=now+6;
         switch(k){
             case "epyon"->{
-                if(!s.opened||s.progress<.95){p.sendActionBar(Component.text("§7先にヒートロッドを展開してください"));return;}
-                if(now<s.nextShot)return;s.nextShot=now+26;s.attackStart=now;s.hit.clear();s.pull=p.isSneaking();
+                if(p.isSneaking()){
+                    if(epyonOffhand.equipped(p)){
+                        epyonOffhand.restore(p);s.attackStart=-1;s.hit.clear();
+                        p.sendActionBar(Component.text("§7エピオンシールド収納"));
+                    }else if(epyonOffhand.equip(p)){
+                        p.sendActionBar(Component.text("§cエピオンシールド装着"));
+                    }
+                    return;
+                }
+                if(!epyonOffhand.equipped(p)){p.sendActionBar(Component.text("§7しゃがみ右クリックで盾を装着してください"));return;}
+                if(now<s.nextShot)return;s.nextShot=now+26;s.attackStart=now;s.hit.clear();s.pull=false;
                 p.getWorld().playSound(p.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.2f,.65f);
             }
             case "freedom"->{
@@ -276,8 +328,11 @@ final class GundamAdvancedWeapons implements Listener {
                 ||!s.world.equals(p.getWorld().getUID())||!s.serial.equals(value(p,serialKey)))clear(id);
         }
         for(Player p:Bukkit.getOnlinePlayers()){
-            String k=kind(p);if(k.isEmpty()||p.isDead()||!enabled(k))continue;
+            String k=kind(p);
+            if(!k.equals("epyon")||!enabled(k)||!epyonOffhand.equipped(p))epyonOffhand.recoverIfNeeded(p);
+            if(k.isEmpty()||p.isDead()||!enabled(k))continue;
             if(k.equals("heavyarms"))migrateHeavyarms(p);
+            if(k.equals("epyon"))migrateEpyon(p);
             State s=ensure(p,k);
             if(k.equals("freedom")){
                 s.progress=approach(s.progress,s.freedomMode.wingsOpen()?1:0,.07);
@@ -289,20 +344,17 @@ final class GundamAdvancedWeapons implements Listener {
     }
     private void rod(Player p,State s,long now){
         Vector f=front(p),r=right(f);
-        // The authored red face was facing the player's rear. Flip the shield
-        // only, keeping its vertical socket at the bottom and the rod's world axes.
-        Location shield=at(p,f,r,.55,1.10,.20);shield.setPitch(0);
-        Quaternionf shieldRotation=new Quaternionf().rotateY((float)Math.PI);
-        shield.setYaw(p.getLocation().getYaw()-12f);
-        place(s.parts.get(0),shield,shieldRotation,.94f);
-        // Socket center is x=z=8, its lower edge is model y=-5.3.
-        Location joint=shield.clone().add(0,(-5.3-8)*.94/16,0);
-        boolean attacking=s.attackStart>=0&&now-s.attackStart<18;
-        if(!attacking)s.attackStart=-1;
-        double t=attacking?(now-s.attackStart)/17.0:0;
+        // The shield is now a real offhand item. No duplicate shield display.
+        double side=p.getMainHand()==org.bukkit.inventory.MainHand.RIGHT?1:-1;
+        Location joint=at(p,f,r,side*.48,.39,.20);
+        boolean equipped=epyonOffhand.equipped(p);
+        long elapsed=s.attackStart<0?999:now-s.attackStart;
+        boolean attacking=equipped&&elapsed>=0&&elapsed<18;
+        if(!equipped||elapsed>=24)s.attackStart=-1;
+        double t=attacking?elapsed/17.0:1;
         Vector look=p.getEyeLocation().getDirection();
         Vector aimRight=right(f);
-        double deployed=smooth(s.progress);
+        double deployed=equipped&&elapsed<24?smooth(Math.min(1,Math.min((elapsed+1)/4.0,(24-elapsed)/6.0))):0;
         boolean blocked=false;
         for(int i=0;i<ROD_LINKS;i++){
             double u=(i+.5)/ROD_LINKS;
@@ -332,8 +384,8 @@ final class GundamAdvancedWeapons implements Listener {
             }
             Location mid=joint.clone().add(end.toVector().subtract(joint.toVector()).multiply(.5));
             float scale=blocked||deployed<.025?(float).001:(float)deployed;
-            aim(s.parts.get(i+1),mid,tangent,0,scale);
-            if(attacking&&!blocked&&i%2==0)p.getWorld().spawnParticle(Particle.DUST,mid,2,.03,.03,.03,0,new Particle.DustOptions(Color.fromRGB(240,95,42),.9f));
+            aim(s.parts.get(i),mid,tangent,0,scale);
+            if(attacking&&!blocked&&i%4==0&&now%2==0)p.getWorld().spawnParticle(Particle.DUST,mid,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(240,95,42),.55f));
             joint=end;
         }
     }
@@ -504,10 +556,13 @@ final class GundamAdvancedWeapons implements Listener {
     }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void onVanillaHit(EntityDamageByEntityEvent e){
-        if(e.getDamager() instanceof Player p&&!kind(p).isEmpty()&&!applyingDamage.contains(p.getUniqueId()))e.setCancelled(true);
+        if(e.getDamager() instanceof Player p&&!kind(p).isEmpty()&&!applyingDamage.contains(p.getUniqueId())){
+            e.setCancelled(true);
+            if(kind(p).equals("epyon")&&enabled("epyon"))left(p,"epyon");
+        }
     }
-    @EventHandler public void onQuit(PlayerQuitEvent e){clear(e.getPlayer().getUniqueId());}
-    @EventHandler public void onDeath(PlayerDeathEvent e){clear(e.getEntity().getUniqueId());}
+    @EventHandler public void onQuit(PlayerQuitEvent e){epyonOffhand.restore(e.getPlayer());clear(e.getPlayer().getUniqueId());}
+    @EventHandler public void onDeath(PlayerDeathEvent e){epyonOffhand.onDeath(e);clear(e.getEntity().getUniqueId());}
     @EventHandler public void onWorld(PlayerChangedWorldEvent e){clear(e.getPlayer().getUniqueId());}
     @EventHandler public void onHeld(PlayerItemHeldEvent e){clear(e.getPlayer().getUniqueId());}
 }

@@ -6,8 +6,8 @@ import java.nio.file.Path;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 class GundamAdvancedWeaponsTest {
-    @Test void allElevenModelsHaveMatchingEditableAndPackedCubes() throws Exception {
-        for(String id:List.of("epyon_shield","epyon_rod_link","epyon_rod_tip","heavyarms_gatling_body","heavyarms_gatling_rotor","freedom_backpack","freedom_wing_blue","freedom_wing_navy","freedom_balaena","freedom_railgun","freedom_lupus_rifle")){
+    @Test void allTwelveModelsHaveMatchingEditableAndPackedCubes() throws Exception {
+        for(String id:List.of("epyon_shield","epyon_beam_sword","epyon_rod_link","epyon_rod_tip","heavyarms_gatling_body","heavyarms_gatling_rotor","freedom_backpack","freedom_wing_blue","freedom_wing_navy","freedom_balaena","freedom_railgun","freedom_lupus_rifle")){
             var source=JsonParser.parseString(Files.readString(Path.of("models",id+".bbmodel"))).getAsJsonObject();
             var game=JsonParser.parseString(Files.readString(Path.of("resourcepack/assets/funnel/models/item",id+".json"))).getAsJsonObject();
             var item=JsonParser.parseString(Files.readString(Path.of("resourcepack/assets/funnel/items",id+".json"))).getAsJsonObject();
@@ -106,6 +106,21 @@ class GundamAdvancedWeaponsTest {
         assertTrue(beam.indexOf("if(!glow)")<beam.indexOf("Particle.FLASH"));
         assertFalse(code.substring(code.indexOf("private void gatling("),code.indexOf("private void freedom(")).contains("Particle.SMOKE"));
     }
+    @Test void epyonUsesActualShieldAndPersistentOffhandEscrow() throws Exception{
+        String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/EpyonOffhand.java"));
+        assertTrue(code.contains("new ItemStack(Material.SHIELD)"));
+        assertTrue(code.contains("original.serializeAsBytes()"));
+        assertTrue(code.contains("ItemStack.deserializeBytes(bytes)"));
+        assertTrue(code.contains("PersistentDataType.BYTE_ARRAY"));
+        assertTrue(code.contains("if(slot<0)return"));
+        assertTrue(code.contains("e.getDrops().removeIf(this::temporary)"));
+        assertTrue(code.contains("ClickType.SWAP_OFFHAND"));
+        String combat=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
+        assertTrue(combat.contains("swordAttack(p)"));
+        assertTrue(combat.contains("if(p.isSneaking())"));
+        assertTrue(combat.contains("epyonOffhand.restore(p)"));
+        assertTrue(combat.contains("if(!epyonOffhand.equipped(p))"));
+    }
     @Test void combatUsesPhysicalSegmentsFourRotorsTenWingsAndFiveGuns() throws Exception{
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
         assertTrue(code.contains("ROD_LINKS=14, ROTORS=4, WINGS=10"));
@@ -113,8 +128,8 @@ class GundamAdvancedWeaponsTest {
         assertTrue(code.contains("rayTraceBlocks"));
         assertTrue(code.contains("s.freedomMode.fullBurst()"));
         assertTrue(code.contains("s.cannonProgress<.98"));
-        assertTrue(code.contains("new Quaternionf().rotateY((float)Math.PI)"));
-        assertTrue(code.contains("(-5.3-8)*.94/16"));
+        assertTrue(code.contains("epyonOffhand.equip(p)"));
+        assertFalse(code.contains("s.parts.add(spawn(p,\"epyon_shield\"))"));
         assertTrue(code.contains("rayTraceEntities"));
         assertTrue(code.contains("hit.add(l.getUniqueId())"));
         assertTrue(code.contains("s.overheated=true"));

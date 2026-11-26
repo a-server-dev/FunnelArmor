@@ -16,3 +16,6 @@ Freedom: narrower angular wing armor with integrated diagonal tips; mode and com
 
 ## v0.36.0
 Heavyarms only: all four hit rays and 15 volleys/s retained, but one alternating muzzle shows a sparse tracer every other volley (4-block start, 6-block spacing). No muzzle flash or smoke; reduced casing particles. Freedom and Epyon effects are unchanged.
+
+## v0.37.0
+Epyon is one gift: green beam sword held by default; left click sword attack (1.5 HP cap), sneak-right equips/stows a real unbreakable vanilla shield with custom model; right click swings the heat rod only while equipped. The rod retracts after each attack. Original offhand ItemStack is serialized in player PDC; restores on stow, weapon change, logout/reload/world change and handles death according to keepInventory. Temporary shield cannot be transferred. Previous Epyon items migrate on hold. The roster remains 14.
