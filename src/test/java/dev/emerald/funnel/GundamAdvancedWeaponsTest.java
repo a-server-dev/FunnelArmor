@@ -50,26 +50,45 @@ class GundamAdvancedWeaponsTest {
         assertEquals(himat,full.next(true));
         assertEquals(closed,full.next(false));
     }
-    @Test void wingsHaveNarrowArmorAndIntegratedDiagonalTips() throws Exception{
+    @Test void wingsHaveLongAngularArmorAndBrightIntegratedPanels() throws Exception{
         for(String id:List.of("freedom_wing_blue","freedom_wing_navy")){
             var model=JsonParser.parseString(Files.readString(Path.of("models",id+".bbmodel"))).getAsJsonObject();
-            int edges=0;boolean narrow=false;
+            int edges=0,blue=0;double tip=0;
             for(var value:model.getAsJsonArray("elements")){
-                var part=value.getAsJsonObject();
-                var name=part.get("name").getAsString();
-                assertFalse(name.startsWith("long pointed edge"),"Old detached edge");
-                if(name.equals("slender continuous armor")){
-                    narrow=true;
-                    double width=part.getAsJsonArray("to").get(0).getAsDouble()-part.getAsJsonArray("from").get(0).getAsDouble();
-                    assertTrue(width>=3 && width<4);
-                }
+                var part=value.getAsJsonObject();var name=part.get("name").getAsString();
+                assertFalse(name.startsWith("long pointed edge"));
                 if(name.startsWith("integrated diagonal tip edge")){
                     edges++;
-                    assertEquals(22.5,Math.abs(part.getAsJsonArray("rotation").get(2).getAsDouble()));
+                    assertEquals(22.5,Math.abs(part.getAsJsonArray("rotation").get(2).getAsDouble()),.00001);
                 }
+                if(name.startsWith("blue armor face"))blue++;
+                tip=Math.max(tip,part.getAsJsonArray("to").get(1).getAsDouble());
             }
-            assertTrue(narrow);assertEquals(2,edges);
+            assertEquals(2,edges);assertTrue(blue>=8);assertTrue(tip>=29.5);
+            var game=JsonParser.parseString(Files.readString(Path.of("resourcepack/assets/funnel/models/item",id+".json"))).getAsJsonObject();
+            assertEquals("funnel:item/freedom_wing_palette",game.getAsJsonObject("textures").get("0").getAsString());
         }
+        var palette=javax.imageio.ImageIO.read(Path.of("resourcepack/assets/funnel/textures/item/freedom_wing_palette.png").toFile());
+        assertNotNull(palette);assertEquals(64,palette.getWidth());assertEquals(64,palette.getHeight());
+        assertEquals(0x387de7,palette.getRGB(40,24)&0xffffff);
+    }
+    @Test void freedomOpenWingsFormWideLayeredSilhouetteAndStowAboveGround(){
+        double maxX=0,maxY=0,lastY=10,lastZ=-10;
+        for(int i=0;i<5;i++){
+            var open=FreedomWingLayout.pose(i,1,0);
+            var full=FreedomWingLayout.pose(i,1,1);
+            var closed=FreedomWingLayout.pose(i,0,0);
+            double length=(i%2==0?31.0:30.0)-8;
+            double radius=length*full.scale()/16;
+            maxX=Math.max(maxX,full.x()+radius*Math.sin(Math.toRadians(full.roll()))*Math.cos(Math.toRadians(full.sweep())));
+            maxY=Math.max(maxY,full.y()+radius*Math.cos(Math.toRadians(full.roll())));
+            assertTrue(open.y()<lastY);assertTrue(open.z()>lastZ);
+            lastY=open.y();lastZ=open.z();
+            assertTrue(closed.y()+length*closed.scale()/16*Math.cos(Math.toRadians(closed.roll()))>.15);
+        }
+        assertTrue(maxX>2.6,"over five blocks wide");
+        assertTrue(maxY>3.0,"upper wing clears head");
+        assertTrue(FreedomWingLayout.pose(0,1,0).scale()>FreedomWingLayout.pose(4,1,0).scale());
     }
     @Test void gatlingReceiversAreVerticalAndCadenceIsThreeTimesFaster() throws Exception{
         var model=JsonParser.parseString(Files.readString(Path.of("models","heavyarms_gatling_body.bbmodel"))).getAsJsonObject();

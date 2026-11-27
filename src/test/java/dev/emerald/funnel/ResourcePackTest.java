@@ -93,6 +93,7 @@ class ResourcePackTest {
             assertTrue(entries.contains("assets/funnel/items/barbatos_ultra_mace_pile.json"));
             assertTrue(entries.contains("assets/funnel/models/item/barbatos_ultra_mace_pile.json"));
             assertTrue(entries.contains("assets/funnel/textures/item/heavy_weapon_palette.png"));
+            assertTrue(entries.contains("assets/funnel/textures/item/freedom_wing_palette.png"));
             assertTrue(entries.contains("assets/funnel/textures/item/gn_sword_v.png"));
             for (int i = 0; i <= 4; i++) {
                 String id = "beam_saber_" + i;
@@ -304,7 +305,7 @@ class ResourcePackTest {
                         }
                         if (entry.getName().matches(
                                 "assets/funnel/models/item/(epyon_(shield|beam_sword|rod_link|rod_tip)|heavyarms_gatling_(body|rotor)|freedom_(backpack|wing_blue|wing_navy|balaena|railgun|lupus_rifle))\\.json")) {
-                            assertEquals(entry.getName().endsWith("/epyon_beam_sword.json")?"funnel:item/epyon_beam_sword":"funnel:item/heavy_weapon_palette",
+                            assertEquals(entry.getName().endsWith("/epyon_beam_sword.json")?"funnel:item/epyon_beam_sword":entry.getName().contains("/freedom_wing_")?"funnel:item/freedom_wing_palette":"funnel:item/heavy_weapon_palette",
                                 model.getAsJsonObject("textures").get("0").getAsString());
                             assertTrue(model.getAsJsonArray("elements").size() >= 12, entry.getName());
                             for (var element : model.getAsJsonArray("elements")) {

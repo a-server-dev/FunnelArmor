@@ -19,3 +19,6 @@ Heavyarms only: all four hit rays and 15 volleys/s retained, but one alternating
 
 ## v0.37.0
 Epyon is one gift: green beam sword held by default; left click sword attack (1.5 HP cap), sneak-right equips/stows a real unbreakable vanilla shield with custom model; right click swings the heat rod only while equipped. The rod retracts after each attack. Original offhand ItemStack is serialized in player PDC; restores on stow, weapon change, logout/reload/world change and handles death according to keepInventory. Temporary shield cannot be transferred. Previous Epyon items migrate on hold. The roster remains 14.
+
+## v0.38.0
+Freedom rebuilt against the approved front-view design: ten elongated angular dark/bright-blue armor binders, individually layered hinge positions, approximately 5.5–6 block deployed span, compact stow, lower backpack with linked wing roots, larger and higher shoulder cannon deployment, forward hip guns and hand-height rifle. Muzzle offsets use the new display scales. Mode controls, firing behavior, damage and all other weapons remain unchanged. Geometry and projection tested; in-game visual verification still required.

@@ -445,42 +445,39 @@ final class GundamAdvancedWeapons implements Listener {
         // No muzzle smoke or large flashes: preserve the player's sightline.
         if(now%10==0)p.sendActionBar(Component.text((s.overheated?"§c過熱 ":"§eHEAT ")+(int)s.heat+"%"+(s.firing?" §a連射中":"")));
     }
+    private static final float FREEDOM_SHOULDER_SCALE=1.16f, FREEDOM_HIP_SCALE=1.12f, FREEDOM_RIFLE_SCALE=.95f;
     private void freedom(Player p,State s){
         Vector f=front(p),r=right(f),look=p.getEyeLocation().getDirection();
         double q=smooth(s.progress),c=smooth(s.cannonProgress);
-        Location back=at(p,f,r,0,1.40,-.37);back.setPitch(0);
-        place(s.parts.get(0),back,new Quaternionf(),.95f);
-        // Five actual binders on each side, nested into a coherent wing rather
-        // than a uniform radial fan. Outer wing panels step back in depth.
-        double[] spread={23,42,61,94,122};
-        double[] lengths={1.26,1.19,1.07,.88,.76};
-        double[] closedAngles={165,169,173,177,181};
+        Location back=at(p,f,r,0,1.36,-.36);back.setPitch(0);
+        place(s.parts.get(0),back,new Quaternionf(),.86f);
         for(int i=0;i<WINGS;i++){
             int side=i<5?-1:1,row=i%5;
-            double x=.30+(.12+row*.026)*q;
-            Location root=at(p,f,r,side*x,1.48-row*.026,-.44-row*.065);root.setPitch(0);
-            double openAngle=spread[row]+(row<3?3:-4)*c;
-            float roll=(float)Math.toRadians(-side*(closedAngles[row]+(openAngle-closedAngles[row])*q));
-            float sweep=(float)Math.toRadians(side*(4+row*2.2)*q);
-            place(s.parts.get(1+i),root,new Quaternionf().rotateY(sweep).rotateZ(roll),(float)lengths[row]);
+            FreedomWingLayout.Pose pose=FreedomWingLayout.pose(row,q,c);
+            Location root=at(p,f,r,side*pose.x(),pose.y(),pose.z());root.setPitch(0);
+            float roll=(float)Math.toRadians(-side*pose.roll());
+            float sweep=(float)Math.toRadians(side*pose.sweep());
+            place(s.parts.get(1+i),root,new Quaternionf().rotateY(sweep).rotateZ(roll),(float)pose.scale());
         }
-        // HiMAT opens the wings only. Four heavy guns stay in their stowed
-        // position until FULL_BURST has been selected independently.
+        // HiMAT keeps the heavy guns folded; full burst visibly clears the
+        // shoulders and hips. The actual muzzle/scale are shared with firing.
         for(int i=0;i<2;i++){
             int side=i==0?-1:1;
-            Location shoulder=at(p,f,r,side*(.37+.14*c),1.53+.24*c,-.58+.05*c);
-            Vector shoulderDirection=new Vector(0,-1,0).multiply(1-c).add(look.clone().multiply(c));
+            Location shoulder=at(p,f,r,side*(.38+.32*c),1.57+.49*c,-.57+.17*c);
+            Vector shoulderDirection=new Vector(0,-1,0).multiply(1-c).add(look.clone().add(new Vector(0,.22,0)).normalize().multiply(c));
             if(shoulderDirection.lengthSquared()<1e-8)shoulderDirection=f.clone();
-            aim(s.parts.get(11+i),shoulder,shoulderDirection,0,.94f);
-            Location hip=at(p,f,r,side*(.44+.09*c),.79+.03*c,-.16);
+            aim(s.parts.get(11+i),shoulder,shoulderDirection,0,(float)(.84+(FREEDOM_SHOULDER_SCALE-.84)*c));
+            Location hip=at(p,f,r,side*(.44+.19*c),.78+.05*c,-.20+.49*c);
             Vector hipDirection=f.clone().multiply(-(1-c)).add(new Vector(0,-.26*(1-c),0)).add(look.clone().multiply(c));
             if(hipDirection.lengthSquared()<1e-8)hipDirection=new Vector(0,-1,0);
-            // A shorter folded presentation avoids a full-length railgun
-            // protruding into the ground in the idle/HiMAT pose.
-            aim(s.parts.get(13+i),hip,hipDirection,0,(float)(.53+.37*c));
+            aim(s.parts.get(13+i),hip,hipDirection,0,(float)(.53+(FREEDOM_HIP_SCALE-.53)*c));
         }
-        Location hand=at(p,f,r,-.43,1.08,.25);
-        aim(s.parts.get(15),hand,look,0,.95f);
+        // Keep the rifle grip at the right hand, not floating at shoulder height.
+        double handSide=p.getMainHand()==org.bukkit.inventory.MainHand.RIGHT?-1:1;
+        Location hand=at(p,f,r,handSide*.43,.96,.34);
+        Vector rifleDirection=look.clone().add(new Vector(0,-.38*(1-c),0));
+        if(rifleDirection.lengthSquared()<1e-8)rifleDirection=f.clone();
+        aim(s.parts.get(15),hand,rifleDirection,0,FREEDOM_RIFLE_SCALE);
     }
     private Location aimPoint(Player p,double range){
         Location eye=p.getEyeLocation();Vector d=eye.getDirection();
@@ -508,12 +505,13 @@ final class GundamAdvancedWeapons implements Listener {
         int[] guns=full?new int[]{11,12,13,14,15}:new int[]{15};
         for(int i=0;i<guns.length;i++){
             int index=guns[i];ItemDisplay gun=s.parts.get(index);
-            double reach=index<=12?21*.94/16:index<=14?20.5*.90/16:18.5*.95/16;
+            float gunScale=index<=12?FREEDOM_SHOULDER_SCALE:index<=14?FREEDOM_HIP_SCALE:FREEDOM_RIFLE_SCALE;
+            double reach=(index<=12?21:index<=14?20.5:18.5)*gunScale/16;
             Location muzzle=gun.getLocation().add(look.clone().multiply(reach));
             Location end=locks.isEmpty()?focus:locks.get(i%locks.size()).getEyeLocation();
             // Aim each articulated gun at its selected target before firing.
             Vector d=end.toVector().subtract(gun.getLocation().toVector());
-            if(d.lengthSquared()>.001){d.normalize();aim(gun,gun.getLocation(),d,0,index<=12?.94f:index<=14?.90f:.95f);
+            if(d.lengthSquared()>.001){d.normalize();aim(gun,gun.getLocation(),d,0,gunScale);
                 muzzle=gun.getLocation().add(d.clone().multiply(reach));}
             Color color=index<=12?Color.fromRGB(255,90,175):index<=14?Color.fromRGB(255,221,85):Color.fromRGB(110,255,125);
             beam(p,muzzle,end,48,color,full?1.8f:1.1f,true,hit,damage("freedom",1.5),true);
