@@ -446,7 +446,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 Component.text("§7射程32 / ダメージ0.5HP")));
         stack.setItemMeta(meta);
         player.getInventory().setItemInMainHand(stack);
-        // player.sendActionBar(Component.text("§b[FunnelArmor] 展開：" + mode.displayName()));
         // player.sendMessage("§bファンネル展開モード: §f" + mode.displayName());
     }
     private int displayedVariant(ItemDisplay display) {
@@ -523,9 +522,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         boolean deployed = FinBarrierToggleState.toggle(finBarrierGuards, id);
         if (deployed) finBarrierHealth.put(id, new BarrierDurability.State(0, 0));
         else finBarrierHealth.remove(id);
-        player.sendActionBar(Component.text(deployed
-                ? "§bフィン・ファンネル：バリア展開"
-                : "§7フィン・ファンネル：バリア収納"));
         updateFinBarrierDisplays(player, finBarrierProgress.getOrDefault(id, 0.0));
     }
     private Location finBarrierLocation(Player player, int i, double progress) {
@@ -800,7 +796,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (shieldGuards.contains(player.getUniqueId())) {
             shieldGuards.remove(player.getUniqueId());
             shieldHealth.remove(player.getUniqueId());
-            // player.sendActionBar(Component.text("§7シールド防御：収納中"));
             // player.sendMessage("§7シールドファンネルを収納します。");
         } else {
             shieldGuards.add(player.getUniqueId());
@@ -808,7 +803,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             shieldProgress.putIfAbsent(player.getUniqueId(), 0.0);
             // Spawn behind the shoulders, then glide forward over several ticks.
             updateShieldDisplays(player, shieldProgress.get(player.getUniqueId()));
-            // player.sendActionBar(Component.text("§bシールド防御：展開中"));
             // player.sendMessage("§b3枚のシールドファンネルを前方に展開します。");
         }
     }
@@ -1057,7 +1051,6 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             if (distance < best) { best = distance; closest = mob; }
         }
         if (closest == null) {
-            player.sendActionBar(Component.text("§7キュベレイ・ビット: 8ブロック以内にモブがいません"));
             return;
         }
         long seed = id.getMostSignificantBits()

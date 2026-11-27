@@ -193,7 +193,6 @@ final class GnSwordIICombat implements Listener {
             } else {
                 player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_CONTRACT, .5f, 1.3f);
             }
-            player.sendActionBar(Component.text("§bGNソードII: " + next.name));
             return;
         }
         if (time < actionCooldown.getOrDefault(id, 0L)
@@ -207,7 +206,7 @@ final class GnSwordIICombat implements Listener {
             actionCooldown.put(id, end);
         } catch (RuntimeException ex) {
             plugin.getLogger().log(Level.SEVERE, "GN Sword II attack failed for " + player.getName(), ex);
-            player.sendActionBar(Component.text("§cGNソードII攻撃エラー（コンソールを確認）"));
+            player.sendMessage(Component.text("§cGNソードII攻撃エラー（コンソールを確認）"));
         }
     }
 

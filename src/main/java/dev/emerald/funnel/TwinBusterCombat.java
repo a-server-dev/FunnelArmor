@@ -251,8 +251,6 @@ final class TwinBusterCombat implements Listener {
             syncLeftHand(player);
             modeCooldowns.put(id, TwinBusterTiming.until(now, cfg("mode-switch-ticks", 10)));
             player.getWorld().playSound(player.getLocation(), Sound.BLOCK_PISTON_EXTEND, .6f, 1.25f);
-            player.sendActionBar(Component.text(next == Mode.DUAL
-                    ? "§bバスターライフル：分離" : "§bツインバスターライフル：連結"));
             return;
         }
         if (!TwinBusterTiming.ready(now, modeCooldowns.getOrDefault(id, 0L))) return;
@@ -304,13 +302,11 @@ final class TwinBusterCombat implements Listener {
         cooldowns.put(id, TwinBusterTiming.until(now, cfg("dual-interval-ticks", 10)));
         try {
             fireDualSide(player, side);
-            player.sendActionBar(Component.text(side == Side.LEFT
-                    ? "§b左ライフル 発射" : "§b右ライフル 発射"));
             return true;
         } catch (RuntimeException ex) {
             plugin.getLogger().log(java.util.logging.Level.SEVERE,
                     "Twin Buster " + side + " firing failed for " + player.getName(), ex);
-            player.sendActionBar(Component.text("§c射撃処理エラー（ログを確認）"));
+            player.sendMessage(Component.text("§c射撃処理エラー（ログを確認）"));
             return false;
         }
     }
@@ -328,8 +324,6 @@ final class TwinBusterCombat implements Listener {
                     || mode(player.getInventory().getItemInMainHand()) != Mode.COMBINED
                     || !charge.weaponId().equals(weaponId(player.getInventory().getItemInMainHand()))) {
                 charging.remove(id);
-                if (player != null && player.isOnline())
-                    player.sendActionBar(Component.text("§cチャージ中断：武器が変更されました"));
                 continue;
             }
             int ticks = cfg("charge-ticks", 30);
@@ -342,7 +336,7 @@ final class TwinBusterCombat implements Listener {
                 } catch (RuntimeException ex) {
                     plugin.getLogger().log(java.util.logging.Level.SEVERE,
                             "Twin Buster combined firing failed for " + player.getName(), ex);
-                    player.sendActionBar(Component.text("§c連結射撃エラー（ログを確認）"));
+                    player.sendMessage(Component.text("§c連結射撃エラー（ログを確認）"));
                 }
             } else if (now % 2 == 0) {
                 Location muzzle = player.getEyeLocation().add(
@@ -399,7 +393,6 @@ final class TwinBusterCombat implements Listener {
                 new HashSet<>(), true);
         world.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.5f, .68f);
         world.playSound(muzzle, Sound.ENTITY_GUARDIAN_ATTACK, 1.3f, .58f);
-        player.sendActionBar(Component.text("§bツインバスターライフル：発射！"));
     }
 
     /** Multi-layer luminous beam; visuals do not change the monster hit radius. */

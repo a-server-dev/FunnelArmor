@@ -402,9 +402,6 @@ final class GundamHeavyWeapons implements Listener {
         if(!v.opened && c!=null && SATELLITE.equals(c.kind))c.state.pause();
         p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.85f,
             v.opened?1.13f:.81f);
-        p.sendActionBar(Component.text(v.opened
-            ?"§eツインサテライトキャノン：リフレクター展開"
-            :"§7ツインサテライトキャノン：収納・充填量保持"));
     }
 
     private int chargeDuration(String kind) {
@@ -429,7 +426,6 @@ final class GundamHeavyWeapons implements Listener {
         if(kind.equals(SATELLITE)){
             Visuals v=visuals.get(id);
             if(v==null||!v.opened||v.progress<.95){
-                p.sendActionBar(Component.text("§7先に左クリックでリフレクターを展開してください"));
                 return;
             }
         }
@@ -452,9 +448,7 @@ final class GundamHeavyWeapons implements Listener {
             }else launchAtomic(p);
             fireDebounce.put(id,now+20);
             c.state.consume();
-            if(c.state.ready()){
-                p.sendActionBar(Component.text("§b照射完了：残り "+c.state.shots()+" / 3 発"));
-            }else{
+            if(!c.state.ready()){
                 charging.remove(id);
                 cd.put(id,now+(ATOMIC.equals(kind)
                     ?ticks("atomic.cooldown-ticks",600,40,2400)
@@ -518,8 +512,8 @@ final class GundamHeavyWeapons implements Listener {
             }
             if(c.state.ready()){
                 if(now%20==0)p.sendActionBar(Component.text(ATOMIC.equals(c.kind)
-                    ?"§a核弾頭装填完了：右クリックで発射"
-                    :"§a充填完了：右クリックで発射（残り "+c.state.shots()+" / 3 発）"));
+                    ?"§a核弾頭装填完了"
+                    :"§a充填完了（残り "+c.state.shots()+" / 3 発）"));
                 continue;
             }
             if(!c.state.active())continue;
@@ -532,8 +526,8 @@ final class GundamHeavyWeapons implements Listener {
             if(c.state.advance()){
                 p.getWorld().playSound(p.getLocation(),Sound.BLOCK_BEACON_ACTIVATE,1.1f,1.5f);
                 p.sendActionBar(Component.text(ATOMIC.equals(c.kind)
-                    ?"§a核弾頭装填完了：右クリックで発射"
-                    :"§a充填完了：右クリックで発射（残り 3 / 3 発）"));
+                    ?"§a核弾頭装填完了"
+                    :"§a充填完了（残り 3 / 3 発）"));
             }else if(now%5==0){
                 p.sendActionBar(Component.text("§e"+(ATOMIC.equals(c.kind)
                     ?"核弾頭装填中":"サテライト充填")+" "+c.state.percent()+"%"));
@@ -683,7 +677,6 @@ final class GundamHeavyWeapons implements Listener {
         World world=p.getWorld();
         UUID worldId=world.getUID();
         world.playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,1.4f,.52f);
-        p.sendActionBar(Component.text("§7超大型メイス：パイルバンカー射出！"));
         Bukkit.getScheduler().runTaskLater(plugin,() -> {
             Player shooter=Bukkit.getPlayer(owner);
             if(shooter==null||!shooter.isOnline())return;
@@ -868,7 +861,6 @@ final class GundamHeavyWeapons implements Listener {
                 }
             }
         }.runTaskTimer(plugin,0L,1L);
-        p.sendActionBar(Component.text("§bツインサテライトキャノン：照射完了"));
     }
 
     private void clear(UUID playerId) {

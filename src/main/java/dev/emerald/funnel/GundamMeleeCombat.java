@@ -212,14 +212,12 @@ final class GundamMeleeCombat implements Listener {
             transitions.put(owner, new Transition(id(item), extending, time));
             player.getWorld().playSound(player.getLocation(),
                     Sound.BLOCK_BEACON_ACTIVATE, .38f, extending ? 1.8f : .8f);
-            player.sendActionBar(Component.text(extending ? "§dビームサーベル 展開中…" : "§7ビームサーベル 収納中…"));
         } else if (axe && enabled("heat-hawk")) {
             boolean next = !heated(item);
             setHawkState(item, next);
             player.getInventory().setItemInMainHand(item);
             player.getWorld().playSound(player.getLocation(),
                     Sound.BLOCK_FIRE_AMBIENT, .5f, next ? .95f : .7f);
-            player.sendActionBar(Component.text(next ? "§6ヒートホーク：加熱開始" : "§7ヒートホーク：加熱停止"));
         }
     }
 
@@ -248,8 +246,6 @@ final class GundamMeleeCombat implements Listener {
                     }
                     if (progress >= 4) {
                         transitions.remove(owner);
-                        player.sendActionBar(Component.text(transition.extending()
-                                ? "§dビームサーベル 展開完了" : "§7ビームサーベル 収納完了"));
                     }
                 }
             }

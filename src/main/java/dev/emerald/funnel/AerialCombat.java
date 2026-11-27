@@ -358,7 +358,6 @@ final class AerialCombat implements Listener {
             if (tick - previous.lastToggle < 5) return;
             previous.lastToggle = tick;
             retractShield(player,previous);
-            player.sendActionBar(Component.text("§7エスカッシャン収納"));
             return;
         }
         boolean mainHand = e.getHand() == EquipmentSlot.HAND;
@@ -374,18 +373,14 @@ final class AerialCombat implements Listener {
                 st.lastToggle = tick;
                 if (st.mode == Mode.SHIELD) {
                     retractShield(player,st);
-                    player.sendActionBar(Component.text("§7エスカッシャン収納"));
                 } else if (tick < st.shieldCooldown) {
                     player.sendActionBar(Component.text("§c盾クールダウン: " + (st.shieldCooldown-tick) + "t"));
-                } else if (!off(player)) {
-                    player.sendActionBar(Component.text("§cGUNDビットをオフハンドに持ってください"));
-                } else {
+                } else if (off(player)) {
                     if (st.mode == Mode.RIFLE) endRifle(player, st);
                     changeMode(player, st, Mode.SHIELD);
                     st.health = new BarrierDurability.State(0,0);
                     ItemStack shield = shieldItem();
                     player.getInventory().setItemInOffHand(shield);
-                    player.sendActionBar(Component.text("§bエスカッシャン展開：右クリック長押しで防御"));
                 }
             }
             case RIFLE_TOGGLE -> {
@@ -393,7 +388,6 @@ final class AerialCombat implements Listener {
                 st.lastToggle = tick;
                 if (st.mode == Mode.RIFLE) {
                     endRifle(player,st);
-                    player.sendActionBar(Component.text("§7ライフル収納・冷却開始"));
                 } else if (tick < st.rifleCooldown) {
                     player.sendActionBar(Component.text("§cライフル冷却中: " + (st.rifleCooldown-tick) + "t"));
                 } else {
@@ -403,7 +397,6 @@ final class AerialCombat implements Listener {
                     st.rifleChargeUntil = -1;
                     st.rifleNextShot = -1;
                     player.getInventory().setItemInMainHand(rifleItem());
-                    player.sendActionBar(Component.text("§bGUNDビットライフルを装備：右クリックで射撃"));
                 }
             }
             case RIFLE_FIRE -> {
@@ -421,9 +414,6 @@ final class AerialCombat implements Listener {
                     player.swingMainHand();
                     if (st.rifleShots <= 0) {
                         endRifle(player,st);
-                        player.sendActionBar(Component.text("§e5発射撃終了・冷却開始"));
-                    } else {
-                        player.sendActionBar(Component.text("§bGUNDライフル: 残弾 " + st.rifleShots));
                     }
                 }
             }
@@ -646,9 +636,7 @@ final class AerialCombat implements Listener {
         int hits = intCfg("shield-max-hits",5,1);
         double hp = dblCfg("shield-max-absorbed-damage",20,0.1);
         if (st.health.broken(hits,hp)) breakShield(p,st);
-        else p.sendActionBar(Component.text("§bエスカッシャン §7" + st.health.hits()
-                + "/" + hits + " 回 / " + String.format(java.util.Locale.ROOT,"%.1f",st.health.totalDamage())
-                + "/" + hp + " HP"));
+
     }
 
     private boolean shieldReady(Player p, State st) {
@@ -721,7 +709,7 @@ final class AerialCombat implements Listener {
                 if (st.rifleChargeUntil >= 0 && tick >= st.rifleChargeUntil) {
                     st.rifleChargeUntil = -1;
                     st.rifleNextShot = tick;
-                    p.sendActionBar(Component.text("§bチャージ完了！ 右クリックで5発まで手動射撃"));
+                    p.sendActionBar(Component.text("§bチャージ完了"));
                 }
 
             }

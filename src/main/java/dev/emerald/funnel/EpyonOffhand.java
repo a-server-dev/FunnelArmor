@@ -35,7 +35,7 @@ final class EpyonOffhand implements Listener {
         if(equipped(p))return true;
         if(saved(p)!=null){
             restore(p);
-            if(saved(p)!=null){p.sendActionBar(Component.text("§c退避アイテムの復元に空きが必要です"));return false;}
+            if(saved(p)!=null){p.sendMessage(Component.text("§c退避アイテムの復元に空きが必要です"));return false;}
         }
         ItemStack original=p.getInventory().getItemInOffHand();
         if(temporary(original)){p.getInventory().setItemInOffHand(new ItemStack(Material.AIR));original=new ItemStack(Material.AIR);}

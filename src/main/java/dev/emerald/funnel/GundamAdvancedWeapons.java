@@ -268,7 +268,6 @@ final class GundamAdvancedWeapons implements Listener {
             s.freedomMode=s.freedomMode.next(p.isSneaking());
             p.getWorld().playSound(p.getLocation(),Sound.BLOCK_PISTON_EXTEND,.75f,
                 s.freedomMode==FreedomMode.CLOSED?.75f:1.15f);
-            p.sendActionBar(Component.text("§bフリーダム："+s.freedomMode.label()));
             return;
         }
     }
@@ -299,13 +298,12 @@ final class GundamAdvancedWeapons implements Listener {
                 if(p.isSneaking()){
                     if(epyonOffhand.equipped(p)){
                         epyonOffhand.restore(p);s.attackStart=-1;s.hit.clear();
-                        p.sendActionBar(Component.text("§7エピオンシールド収納"));
-                    }else if(epyonOffhand.equip(p)){
-                        p.sendActionBar(Component.text("§cエピオンシールド装着"));
+                    }else{
+                        epyonOffhand.equip(p);
                     }
                     return;
                 }
-                if(!epyonOffhand.equipped(p)){p.sendActionBar(Component.text("§7しゃがみ右クリックで盾を装着してください"));return;}
+                if(!epyonOffhand.equipped(p))return;
                 if(now<s.nextShot)return;s.nextShot=now+26;s.attackStart=now;s.hit.clear();s.pull=false;
                 p.getWorld().playSound(p.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.2f,.65f);
             }
@@ -313,7 +311,7 @@ final class GundamAdvancedWeapons implements Listener {
                 if(now<s.nextShot)return;
                 boolean full=s.freedomMode.fullBurst();
                 if(full&&(s.progress<.98||s.cannonProgress<.98)){
-                    p.sendActionBar(Component.text("§7フルバースト展開中"));return;
+                    return;
                 }
                 s.nextShot=now+(full?80:12);
                 freedomFire(p,s,p.isSneaking()&&full);
@@ -408,7 +406,7 @@ final class GundamAdvancedWeapons implements Listener {
             it.set(new Casing(l,c.velocity().clone().add(new Vector(0,-.045,0)),c.life()-1));
         }
         if(!s.firing||s.overheated)s.heat=Math.max(0,s.heat-1.6);
-        if(s.overheated&&s.heat<=25){s.overheated=false;p.sendActionBar(Component.text("§a冷却完了"));}
+        if(s.overheated&&s.heat<=25){s.overheated=false;}
         Location[] muzzles=new Location[4];
         float scale=1.18f;
         Vector up=look.clone().crossProduct(r).normalize();
@@ -440,7 +438,7 @@ final class GundamAdvancedWeapons implements Listener {
             if(s.heat>=HEAT_LIMIT){s.overheated=true;s.firing=false;p.getWorld().playSound(p.getLocation(),Sound.BLOCK_FIRE_EXTINGUISH,.9f,.8f);}
         }
         if(s.spin>.15&&now%4==0)for(Location muzzle:muzzles)p.getWorld().spawnParticle(Particle.SMOKE,muzzle,2,.04,.04,.04,.01);
-        if(now%10==0)p.sendActionBar(Component.text((s.overheated?"§c過熱 ":"§eHEAT ")+(int)s.heat+"%"+(s.firing?" §a連射中":"")));
+        if(s.overheated&&now%10==0)p.sendActionBar(Component.text("§c冷却中: HEAT "+(int)s.heat+"%"));
     }
     private static final float FREEDOM_SHOULDER_SCALE=1.16f, FREEDOM_HIP_SCALE=1.12f, FREEDOM_RIFLE_SCALE=.95f;
     private void freedom(Player p,State s){
@@ -514,7 +512,6 @@ final class GundamAdvancedWeapons implements Listener {
             beam(p,muzzle,end,48,color,full?1.8f:1.1f,true,hit,damage("freedom",1.5),true);
         }
         p.getWorld().playSound(p.getLocation(),Sound.ENTITY_GUARDIAN_ATTACK,1.4f,full?.55f:1.15f);
-        if(multi)p.sendActionBar(Component.text("§bマルチロックオン："+Math.min(5,locks.size())+"目標"));
     }
     private void beam(Player p,Location muzzle,Location endpoint,double range,Color color,float size,boolean glow,Set<UUID> hit,double damage,boolean render){
         World w=p.getWorld();Vector d=endpoint.toVector().subtract(muzzle.toVector());

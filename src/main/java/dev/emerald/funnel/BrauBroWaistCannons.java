@@ -237,9 +237,6 @@ final class BrauBroWaistCannons implements Listener {
         player.getWorld().playSound(player.getLocation(),
             state.extended ? Sound.BLOCK_PISTON_EXTEND : Sound.BLOCK_PISTON_CONTRACT,
             .64f, state.extended ? 1.26f : .92f);
-        player.sendActionBar(Component.text(state.extended
-            ? "§dブラウ・ブロ §f有線メガ粒子砲4基：射出"
-            : "§dブラウ・ブロ §f有線メガ粒子砲4基：帰還"));
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
@@ -295,7 +292,6 @@ final class BrauBroWaistCannons implements Listener {
         State state = active.get(player.getUniqueId());
         if (state == null || !state.extended || state.pods.size() != 4
                 || state.positions[0] == null) {
-            player.sendActionBar(Component.text("§7先にブラウ・ブロ砲塔を射出してください"));
             return;
         }
         long tick = Bukkit.getCurrentTick();

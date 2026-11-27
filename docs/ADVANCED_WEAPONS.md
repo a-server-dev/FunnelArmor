@@ -28,3 +28,6 @@ Epyon shield: reverse the first- and third-person held-model Y rotations by 180 
 
 ## v0.40.0
 Freedom uses five separately sculpted wing profiles per side (upper sword, upper-middle armored binder, horizontal main blade, lower tapered wing, short auxiliary wing), not repeated scaled geometry. Existing mode, weapon and deployment layout retained, with lower-wing scale compensation for shorter profiles. Heavyarms restores 50% original tracer density (2.30 block spacing vs 1.15), small dust muzzle flash, original smoke and casing count/lifetime; impact sparks remain disabled. Combat and all other weapons unchanged.
+
+## v0.41.0
+Action bars are limited to cooldown and charging states (including charge-ready status). Firing, deployment, storage, mode switches, shield durability, ammunition/fire announcements and other routine notices are silent. Heavyarms displays heat only during overheat cooldown. Critical errors and offhand escrow warnings move to chat. Weapon behavior, sounds, particles, and models remain unchanged.
