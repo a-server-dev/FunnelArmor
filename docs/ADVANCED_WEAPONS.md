@@ -22,3 +22,6 @@ Epyon is one gift: green beam sword held by default; left click sword attack (1.
 
 ## v0.38.0
 Freedom rebuilt against the approved front-view design: ten elongated angular dark/bright-blue armor binders, individually layered hinge positions, approximately 5.5–6 block deployed span, compact stow, lower backpack with linked wing roots, larger and higher shoulder cannon deployment, forward hip guns and hand-height rifle. Muzzle offsets use the new display scales. Mode controls, firing behavior, damage and all other weapons remain unchanged. Geometry and projection tested; in-game visual verification still required.
+
+## v0.39.0
+Epyon shield: reverse the first- and third-person held-model Y rotations by 180 degrees for both hands, preserving all geometry, offsets, scale, and GUI/ground/fixed transforms. No combat or inventory changes. Blockbench and resource-pack display transforms stay identical.

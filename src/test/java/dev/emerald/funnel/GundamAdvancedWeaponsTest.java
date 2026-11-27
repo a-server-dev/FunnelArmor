@@ -125,6 +125,21 @@ class GundamAdvancedWeaponsTest {
         assertTrue(beam.indexOf("if(!glow)")<beam.indexOf("Particle.FLASH"));
         assertFalse(code.substring(code.indexOf("private void gatling("),code.indexOf("private void freedom(")).contains("Particle.SMOKE"));
     }
+    @Test void epyonShieldHandTransformsFaceForward() throws Exception{
+        var source=JsonParser.parseString(Files.readString(Path.of("models","epyon_shield.bbmodel"))).getAsJsonObject();
+        var pack=JsonParser.parseString(Files.readString(Path.of("resourcepack/assets/funnel/models/item","epyon_shield.json"))).getAsJsonObject();
+        var display=pack.getAsJsonObject("display");
+        assertEquals(source.getAsJsonObject("display"),display);
+        for(String mode:List.of("firstperson","thirdperson")){
+            for(String hand:List.of("left","right")){
+                var rotation=display.getAsJsonObject(mode+"_"+hand+"hand").getAsJsonArray("rotation");
+                assertEquals(65,rotation.get(0).getAsInt());
+                assertEquals(hand.equals("left")?-15:15,rotation.get(1).getAsInt());
+                assertEquals(0,rotation.get(2).getAsInt());
+            }
+        }
+        assertEquals(180,display.getAsJsonObject("fixed").getAsJsonArray("rotation").get(1).getAsInt());
+    }
     @Test void epyonUsesActualShieldAndPersistentOffhandEscrow() throws Exception{
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/EpyonOffhand.java"));
         assertTrue(code.contains("new ItemStack(Material.SHIELD)"));
