@@ -51,7 +51,7 @@ final class GundamAdvancedWeapons implements Listener {
         double cannonProgress;
         final List<Casing> casings=new ArrayList<>();
         long lastRight=-100;
-        int gatlingPhase, gatlingVisualIndex;
+        int gatlingPhase;
         long nextInput,nextToggle,nextShot,attackStart=-1;
         State(String kind,String serial,UUID world){this.kind=kind;this.serial=serial;this.world=world;}
     }
@@ -195,7 +195,7 @@ final class GundamAdvancedWeapons implements Listener {
             }
             case "freedom"->{
                 s.parts.add(spawn(p,"freedom_backpack"));
-                for(int i=0;i<WINGS;i++)s.parts.add(spawn(p,i%5%2==0?"freedom_wing_navy":"freedom_wing_blue"));
+                for(int i=0;i<WINGS;i++)s.parts.add(spawn(p,FreedomWingLayout.model(i%5)));
                 for(int i=0;i<2;i++)s.parts.add(spawn(p,"freedom_balaena"));
                 for(int i=0;i<2;i++)s.parts.add(spawn(p,"freedom_railgun"));
                 s.parts.add(spawn(p,"freedom_lupus_rifle"));
@@ -404,7 +404,7 @@ final class GundamAdvancedWeapons implements Listener {
         for(ListIterator<Casing> it=s.casings.listIterator();it.hasNext();){
             Casing c=it.next();if(c.life()<=0){it.remove();continue;}
             Location l=c.location().clone().add(c.velocity());
-            if(c.life()%2==0)p.getWorld().spawnParticle(Particle.DUST,l,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(193,145,62),.30f));
+            p.getWorld().spawnParticle(Particle.DUST,l,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(193,145,62),.65f));
             it.set(new Casing(l,c.velocity().clone().add(new Vector(0,-.045,0)),c.life()-1));
         }
         if(!s.firing||s.overheated)s.heat=Math.max(0,s.heat-1.6);
@@ -428,21 +428,18 @@ final class GundamAdvancedWeapons implements Listener {
             s.heat=Math.min(HEAT_LIMIT,s.heat+2);
             Set<UUID> hits=new HashSet<>();
             Location endpoint=aimPoint(p,36);
-            // All four rays still deal damage on every volley. Only one
-            // rotating muzzle draws a sparse tracer every other volley.
-            int visual=Math.floorMod(s.gatlingVisualIndex++,8);
-            if(visual%2==0){
-                int side=visual%4==0?-1:1;
+            for(int i=0;i<2;i++){
+                int side=i==0?-1:1;
                 Location port=at(p,f,r,side*.86,1.2,.18);
-                s.casings.add(new Casing(port,r.clone().multiply(side*.18).add(new Vector(0,.13,0)),4));
+                s.casings.add(new Casing(port,r.clone().multiply(side*.18).add(new Vector(0,.13,0)),8));
             }
-            for(int i=0;i<muzzles.length;i++)
-                beam(p,muzzles[i],endpoint,36,Color.fromRGB(255,208,90),.28f,false,
-                    hits,damage("heavyarms",.5),visual%2==0&&i==visual/2);
+            for(Location muzzle:muzzles)
+                beam(p,muzzle,endpoint,36,Color.fromRGB(255,208,90),.62f,false,
+                    hits,damage("heavyarms",.5),true);
             p.getWorld().playSound(p.getLocation(),Sound.ENTITY_FIREWORK_ROCKET_BLAST,.65f,1.35f);
             if(s.heat>=HEAT_LIMIT){s.overheated=true;s.firing=false;p.getWorld().playSound(p.getLocation(),Sound.BLOCK_FIRE_EXTINGUISH,.9f,.8f);}
         }
-        // No muzzle smoke or large flashes: preserve the player's sightline.
+        if(s.spin>.15&&now%4==0)for(Location muzzle:muzzles)p.getWorld().spawnParticle(Particle.SMOKE,muzzle,2,.04,.04,.04,.01);
         if(now%10==0)p.sendActionBar(Component.text((s.overheated?"§c過熱 ":"§eHEAT ")+(int)s.heat+"%"+(s.firing?" §a連射中":"")));
     }
     private static final float FREEDOM_SHOULDER_SCALE=1.16f, FREEDOM_HIP_SCALE=1.12f, FREEDOM_RIFLE_SCALE=.95f;
@@ -533,10 +530,13 @@ final class GundamAdvancedWeapons implements Listener {
         if(!render)return;
         Particle.DustOptions dust=new Particle.DustOptions(color,size);
         if(!glow){
-            // Skip the first four blocks and draw at most six small tracer
-            // particles. No camera-obscuring muzzle flash or impact cloud.
-            for(double x=4;x<=length;x+=6)
-                w.spawnParticle(Particle.DUST,muzzle.clone().add(d.clone().multiply(x)),1,0,0,0,0,dust);
+            // Restore half the original tracer density (2.30 vs 1.15 block
+            // spacing). Use small size-controlled bright dust for the muzzle
+            // flash; vanilla FLASH itself has no size setting.
+            for(double x=0;x<=length;x+=2.30)
+                w.spawnParticle(Particle.DUST,muzzle.clone().add(d.clone().multiply(x)),1,.035,.035,.035,0,dust);
+            w.spawnParticle(Particle.DUST,muzzle,2,.025,.025,.025,0,
+                new Particle.DustOptions(Color.fromRGB(255,248,196),.75f));
             return;
         }
         for(double x=0;x<=length;x+=.48){

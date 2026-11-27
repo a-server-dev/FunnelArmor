@@ -304,7 +304,7 @@ class ResourcePackTest {
                             continue;
                         }
                         if (entry.getName().matches(
-                                "assets/funnel/models/item/(epyon_(shield|beam_sword|rod_link|rod_tip)|heavyarms_gatling_(body|rotor)|freedom_(backpack|wing_blue|wing_navy|balaena|railgun|lupus_rifle))\\.json")) {
+                                "assets/funnel/models/item/(epyon_(shield|beam_sword|rod_link|rod_tip)|heavyarms_gatling_(body|rotor)|freedom_(backpack|wing_blue|wing_navy|wing_middle|wing_lower|wing_auxiliary|balaena|railgun|lupus_rifle))\\.json")) {
                             assertEquals(entry.getName().endsWith("/epyon_beam_sword.json")?"funnel:item/epyon_beam_sword":entry.getName().contains("/freedom_wing_")?"funnel:item/freedom_wing_palette":"funnel:item/heavy_weapon_palette",
                                 model.getAsJsonObject("textures").get("0").getAsString());
                             assertTrue(model.getAsJsonArray("elements").size() >= 12, entry.getName());
@@ -345,8 +345,8 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(50, checked,
-                    "38 existing validated models + 12 advanced weapon models");
+            assertEquals(53, checked,
+                    "38 existing validated models + 15 advanced weapon models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
         }

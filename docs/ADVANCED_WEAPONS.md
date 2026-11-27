@@ -25,3 +25,6 @@ Freedom rebuilt against the approved front-view design: ten elongated angular da
 
 ## v0.39.0
 Epyon shield: reverse the first- and third-person held-model Y rotations by 180 degrees for both hands, preserving all geometry, offsets, scale, and GUI/ground/fixed transforms. No combat or inventory changes. Blockbench and resource-pack display transforms stay identical.
+
+## v0.40.0
+Freedom uses five separately sculpted wing profiles per side (upper sword, upper-middle armored binder, horizontal main blade, lower tapered wing, short auxiliary wing), not repeated scaled geometry. Existing mode, weapon and deployment layout retained, with lower-wing scale compensation for shorter profiles. Heavyarms restores 50% original tracer density (2.30 block spacing vs 1.15), small dust muzzle flash, original smoke and casing count/lifetime; impact sparks remain disabled. Combat and all other weapons unchanged.

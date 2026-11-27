@@ -6,8 +6,8 @@ import java.nio.file.Path;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 class GundamAdvancedWeaponsTest {
-    @Test void allTwelveModelsHaveMatchingEditableAndPackedCubes() throws Exception {
-        for(String id:List.of("epyon_shield","epyon_beam_sword","epyon_rod_link","epyon_rod_tip","heavyarms_gatling_body","heavyarms_gatling_rotor","freedom_backpack","freedom_wing_blue","freedom_wing_navy","freedom_balaena","freedom_railgun","freedom_lupus_rifle")){
+    @Test void allFifteenModelsHaveMatchingEditableAndPackedCubes() throws Exception {
+        for(String id:List.of("epyon_shield","epyon_beam_sword","epyon_rod_link","epyon_rod_tip","heavyarms_gatling_body","heavyarms_gatling_rotor","freedom_backpack","freedom_wing_blue","freedom_wing_navy","freedom_wing_middle","freedom_wing_lower","freedom_wing_auxiliary","freedom_balaena","freedom_railgun","freedom_lupus_rifle")){
             var source=JsonParser.parseString(Files.readString(Path.of("models",id+".bbmodel"))).getAsJsonObject();
             var game=JsonParser.parseString(Files.readString(Path.of("resourcepack/assets/funnel/models/item",id+".json"))).getAsJsonObject();
             var item=JsonParser.parseString(Files.readString(Path.of("resourcepack/assets/funnel/items",id+".json"))).getAsJsonObject();
@@ -50,23 +50,26 @@ class GundamAdvancedWeaponsTest {
         assertEquals(himat,full.next(true));
         assertEquals(closed,full.next(false));
     }
-    @Test void wingsHaveLongAngularArmorAndBrightIntegratedPanels() throws Exception{
-        for(String id:List.of("freedom_wing_blue","freedom_wing_navy")){
-            var model=JsonParser.parseString(Files.readString(Path.of("models",id+".bbmodel"))).getAsJsonObject();
-            int edges=0,blue=0;double tip=0;
-            for(var value:model.getAsJsonArray("elements")){
-                var part=value.getAsJsonObject();var name=part.get("name").getAsString();
-                assertFalse(name.startsWith("long pointed edge"));
-                if(name.startsWith("integrated diagonal tip edge")){
-                    edges++;
-                    assertEquals(22.5,Math.abs(part.getAsJsonArray("rotation").get(2).getAsDouble()),.00001);
-                }
-                if(name.startsWith("blue armor face"))blue++;
-                tip=Math.max(tip,part.getAsJsonArray("to").get(1).getAsDouble());
-            }
-            assertEquals(2,edges);assertTrue(blue>=8);assertTrue(tip>=29.5);
+    @Test void freedomUsesFiveDistinctWingGeometriesPerSide() throws Exception{
+        var models=new java.util.HashSet<String>();
+        var geometries=new java.util.HashSet<String>();
+        for(int row=0;row<5;row++){
+            String id=FreedomWingLayout.model(row);
+            assertTrue(models.add(id));
+            var source=JsonParser.parseString(Files.readString(Path.of("models",id+".bbmodel"))).getAsJsonObject();
             var game=JsonParser.parseString(Files.readString(Path.of("resourcepack/assets/funnel/models/item",id+".json"))).getAsJsonObject();
             assertEquals("funnel:item/freedom_wing_palette",game.getAsJsonObject("textures").get("0").getAsString());
+            var outline=new StringBuilder();
+            double tip=0;
+            for(var value:source.getAsJsonArray("elements")){
+                var part=value.getAsJsonObject();
+                if(part.get("name").getAsString().startsWith("navy silhouette")){
+                    outline.append(part.get("from")).append(part.get("to"));
+                    tip=Math.max(tip,part.getAsJsonArray("to").get(1).getAsDouble());
+                }
+            }
+            assertTrue(geometries.add(outline.toString()),id+" reuses another wing profile");
+            assertEquals(new double[]{31,30,31,28,23}[row],tip,.00001);
         }
         var palette=javax.imageio.ImageIO.read(Path.of("resourcepack/assets/funnel/textures/item/freedom_wing_palette.png").toFile());
         assertNotNull(palette);assertEquals(64,palette.getWidth());assertEquals(64,palette.getHeight());
@@ -78,7 +81,7 @@ class GundamAdvancedWeaponsTest {
             var open=FreedomWingLayout.pose(i,1,0);
             var full=FreedomWingLayout.pose(i,1,1);
             var closed=FreedomWingLayout.pose(i,0,0);
-            double length=(i%2==0?31.0:30.0)-8;
+            double length=new double[]{31,30,31,28,23}[i]-8;
             double radius=length*full.scale()/16;
             maxX=Math.max(maxX,full.x()+radius*Math.sin(Math.toRadians(full.roll()))*Math.cos(Math.toRadians(full.sweep())));
             maxY=Math.max(maxY,full.y()+radius*Math.cos(Math.toRadians(full.roll())));
@@ -113,17 +116,21 @@ class GundamAdvancedWeaponsTest {
         assertTrue(code.contains("float scale=1.18f;"));
         assertFalse(code.contains("s.firing=!s.firing"));
     }
-    @Test void heavyarmsSparseTracersDoNotReduceHitRayCount() throws Exception{
+    @Test void heavyarmsRestoresHalfTracersAndMuzzleEffectsWithoutChangingDamage() throws Exception{
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamAdvancedWeapons.java"));
-        assertTrue(code.contains("for(int i=0;i<muzzles.length;i++)"));
-        assertTrue(code.contains("visual%2==0&&i==visual/2"));
-        assertTrue(code.contains("for(double x=4;x<=length;x+=6)"));
-        assertTrue(code.contains("damage(\"heavyarms\",.5)"));
-        int start=code.indexOf("private void beam(");
-        String beam=code.substring(start,code.indexOf("boolean command(",start));
+        String gatling=code.substring(code.indexOf("private void gatling("),code.indexOf("private void freedom("));
+        assertTrue(gatling.contains("for(Location muzzle:muzzles)"));
+        assertTrue(gatling.contains("hits,damage(\"heavyarms\",.5),true"));
+        assertTrue(gatling.contains("Particle.SMOKE,muzzle,2"));
+        assertTrue(gatling.contains("Color.fromRGB(193,145,62),.65f"));
+        assertTrue(gatling.contains("new Vector(0,.13,0)),8"));
+        String beam=code.substring(code.indexOf("private void beam("),code.indexOf("boolean command("));
+        assertTrue(beam.contains("for(double x=0;x<=length;x+=2.30)"));
+        assertTrue(beam.contains("Color.fromRGB(255,248,196),.75f"));
         assertTrue(beam.indexOf("hurt(p,l,damage)")<beam.indexOf("if(!render)return"));
         assertTrue(beam.indexOf("if(!glow)")<beam.indexOf("Particle.FLASH"));
-        assertFalse(code.substring(code.indexOf("private void gatling("),code.indexOf("private void freedom(")).contains("Particle.SMOKE"));
+        assertEquals(16,(int)Math.floor(36/2.30)+1);
+        assertEquals(32,(int)Math.floor(36/1.15)+1);
     }
     @Test void epyonShieldHandTransformsFaceForward() throws Exception{
         var source=JsonParser.parseString(Files.readString(Path.of("models","epyon_shield.bbmodel"))).getAsJsonObject();

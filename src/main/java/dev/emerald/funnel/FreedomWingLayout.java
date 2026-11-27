@@ -4,13 +4,15 @@ package dev.emerald.funnel;
 final class FreedomWingLayout {
     private FreedomWingLayout(){}
     record Pose(double x,double y,double z,double roll,double sweep,double scale){}
+    private static final String[] MODELS={"freedom_wing_navy","freedom_wing_blue","freedom_wing_middle","freedom_wing_lower","freedom_wing_auxiliary"};
+    static String model(int row){return MODELS[row];}
     private static final double[] X={.49,.60,.65,.57,.45};
     private static final double[] Y={1.51,1.39,1.23,1.12,1.04};
     private static final double[] Z={-.63,-.55,-.48,-.41,-.36};
     private static final double[] OPEN={50,68,86,105,122};
     private static final double[] FULL={52,70,88,107,124};
     private static final double[] CLOSED={164,169,174,179,184};
-    private static final double[] SCALE={1.91,1.78,1.57,1.49,1.15};
+    private static final double[] SCALE={1.91,1.78,1.57,1.64,1.36};
     private static final double[] STOW={.84,.82,.79,.75,.69};
     static Pose pose(int row,double q,double c){
         q=Math.max(0,Math.min(1,q));c=Math.max(0,Math.min(1,c));
