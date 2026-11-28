@@ -36,6 +36,10 @@ final class GundamAdvancedWeapons implements Listener {
     private final NamespacedKey epyonSwordModel=new NamespacedKey("funnel","epyon_beam_sword");
     private final NamespacedKey kindKey, serialKey, marker;
     private final Map<UUID,State> active=new HashMap<>();
+    private final Map<UUID,Map<String,Long>> shotCooldowns=new HashMap<>();
+    private final Map<UUID,Long> gatlingVictimCooldowns=new HashMap<>();
+    private record Heat(double amount,boolean overheated,long tick) {}
+    private final Map<UUID,Heat> storedHeat=new HashMap<>();
     private final Map<String,ItemStack> models=new HashMap<>();
     private final Set<UUID> applyingDamage=new HashSet<>();
     private BukkitTask task;
@@ -165,6 +169,7 @@ final class GundamAdvancedWeapons implements Listener {
     private void clear(UUID id){
         State s=active.remove(id);
         if(s!=null){
+            if(s.kind.equals("heavyarms"))storedHeat.put(id,new Heat(s.heat,s.overheated,Bukkit.getCurrentTick()));
             for(ItemDisplay d:s.parts)if(d.isValid())d.remove();
             if(s.kind.equals("epyon")){Player p=Bukkit.getPlayer(id);if(p!=null)epyonOffhand.restore(p);}
         }
@@ -184,6 +189,11 @@ final class GundamAdvancedWeapons implements Listener {
             ||s.parts.stream().anyMatch(d->!d.isValid()))){clear(id);s=null;}
         if(s!=null)return s;
         s=new State(k,serial,p.getWorld().getUID());active.put(id,s);
+        s.nextShot=shotCooldowns.getOrDefault(id,Map.of()).getOrDefault(k,0L);
+        if(k.equals("heavyarms")){
+            Heat h=storedHeat.remove(id);
+            if(h!=null){s.heat=Math.max(0,h.amount()-1.6*Math.max(0,Bukkit.getCurrentTick()-h.tick()));s.overheated=h.overheated()&&s.heat>25;}
+        }
         switch(k){
             case "epyon"->{
                 for(int i=0;i<ROD_LINKS;i++)s.parts.add(spawn(p,i==ROD_LINKS-1?"epyon_rod_tip":"epyon_rod_link"));
@@ -288,6 +298,10 @@ final class GundamAdvancedWeapons implements Listener {
         Location effect=eye.clone().add(d.clone().multiply(1.6)).subtract(0,.35,0);
         p.getWorld().spawnParticle(Particle.SWEEP_ATTACK,effect,1,0,0,0,0);
     }
+    private void rememberShot(Player p,State s,long now){
+        shotCooldowns.computeIfAbsent(p.getUniqueId(),id->new HashMap<>()).put(s.kind,s.nextShot);
+        if(!s.kind.equals("heavyarms"))WeaponCooldowns.show(p,s.kind,s.nextShot-now);
+    }
     private void use(Player p,String k){
         State s=ensure(p,k);long now=Bukkit.getCurrentTick();
         long previous=s.lastRight;s.lastRight=now;
@@ -304,6 +318,7 @@ final class GundamAdvancedWeapons implements Listener {
                 }
                 if(!epyonOffhand.equipped(p))return;
                 if(now<s.nextShot)return;s.nextShot=now+26;s.attackStart=now;s.hit.clear();s.pull=false;
+                rememberShot(p,s,now);
                 s.rodMotion=s.rodSequence++ & 3;
                 p.getWorld().playSound(p.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.2f,.65f);
             }
@@ -314,12 +329,17 @@ final class GundamAdvancedWeapons implements Listener {
                     return;
                 }
                 s.nextShot=now+(full?80:12);
+                rememberShot(p,s,now);
                 freedomFire(p,s,p.isSneaking()&&full);
             }
         }
     }
     private void tick(){
         long now=Bukkit.getCurrentTick();
+        gatlingVictimCooldowns.values().removeIf(until->until<=now);
+        shotCooldowns.values().forEach(m->m.values().removeIf(until->until<=now));
+        shotCooldowns.values().removeIf(Map::isEmpty);
+        storedHeat.values().removeIf(h->now-h.tick()>=63);
         for(UUID id:new ArrayList<>(active.keySet())){
             Player p=Bukkit.getPlayer(id);State s=active.get(id);
             if(p==null||!p.isOnline()||p.isDead()||!s.kind.equals(kind(p))||!enabled(s.kind)
@@ -445,6 +465,7 @@ final class GundamAdvancedWeapons implements Listener {
         }
         if(s.firing&&!s.overheated&&s.spin>=.95&&now>=s.nextShot){
             s.nextShot=now+HeavyarmsCadence.interval(s.gatlingPhase++);
+            rememberShot(p,s,now);
             s.heat=Math.min(HEAT_LIMIT,s.heat+2);
             Set<UUID> hits=new HashSet<>();
             Location endpoint=aimPoint(p,36);
@@ -457,7 +478,7 @@ final class GundamAdvancedWeapons implements Listener {
                 beam(p,muzzle,endpoint,36,Color.fromRGB(255,208,90),.62f,false,
                     hits,damage("heavyarms",.5),true);
             p.getWorld().playSound(p.getLocation(),Sound.ENTITY_FIREWORK_ROCKET_BLAST,.65f,1.35f);
-            if(s.heat>=HEAT_LIMIT){s.overheated=true;s.firing=false;p.getWorld().playSound(p.getLocation(),Sound.BLOCK_FIRE_EXTINGUISH,.9f,.8f);}
+            if(s.heat>=HEAT_LIMIT){s.overheated=true;s.firing=false;WeaponCooldowns.show(p,"heavyarms",(long)Math.ceil((s.heat-25)/1.6));p.getWorld().playSound(p.getLocation(),Sound.BLOCK_FIRE_EXTINGUISH,.9f,.8f);}
         }
         if(s.spin>.15&&now%4==0)for(Location muzzle:muzzles)p.getWorld().spawnParticle(Particle.SMOKE,muzzle,2,.04,.04,.04,.01);
         if(s.overheated&&now%10==0)p.sendActionBar(Component.text("§c冷却中: HEAT "+(int)s.heat+"%"));
@@ -548,10 +569,16 @@ final class GundamAdvancedWeapons implements Listener {
                     // existing hurt resistance for this hit, without disabling
                     // the victim's normal invulnerability for other attacks.
                     if(!glow&&damage>0&&plugin.getConfig().getBoolean("advanced-weapons.heavyarms.bypass-hurt-cooldown",true)){
-                        int previous=l.getNoDamageTicks();
-                        l.setNoDamageTicks(0);
-                        try{hurt(p,l,damage);}
-                        finally{if(l.isValid()&&l.getNoDamageTicks()==0)l.setNoDamageTicks(previous);}
+                        long now=Bukkit.getCurrentTick();
+                        UUID victim=l.getUniqueId();
+                        if(now>=gatlingVictimCooldowns.getOrDefault(victim,0L)){
+                            int interval=Math.max(0,plugin.getConfig().getInt("advanced-weapons.heavyarms.hurt-cooldown-ticks",5));
+                            gatlingVictimCooldowns.put(victim,now+interval);
+                            int previous=l.getNoDamageTicks();
+                            l.setNoDamageTicks(0);
+                            try{hurt(p,l,damage);}
+                            finally{if(l.isValid())l.setNoDamageTicks(l.getNoDamageTicks()==0?previous:interval);}
+                        }
                     }else hurt(p,l,damage);
                 }}
         }

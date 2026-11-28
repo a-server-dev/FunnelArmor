@@ -303,6 +303,11 @@ final class AerialCombat implements Listener {
         removeBitFirstPreview(id);
         State st = active.remove(id);
         if (st == null) return;
+        if(st.mode==Mode.RIFLE){
+            st.rifleCooldown=tick+intCfg("rifle-cooldown-ticks",200,1);
+            rifleCooldowns.put(id,st.rifleCooldown);
+            Player owner=Bukkit.getPlayer(id);if(owner!=null)WeaponCooldowns.show(owner,"aerial",st.rifleCooldown-tick);
+        }
         st.bits.forEach(display -> { if (display.isValid()) display.remove(); });
         if (st.assembled != null && st.assembled.isValid()) st.assembled.remove();
         Player p = Bukkit.getPlayer(id);
@@ -431,6 +436,7 @@ final class AerialCombat implements Listener {
         st.rifleNextShot = -1;
         st.rifleCooldown = tick + intCfg("rifle-cooldown-ticks", 200, 1);
         rifleCooldowns.put(st.owner, st.rifleCooldown);
+        WeaponCooldowns.show(player,"aerial",st.rifleCooldown-tick);
     }
 
     private ItemDisplay spawn(Player p, String model, float size) {
@@ -626,6 +632,7 @@ final class AerialCombat implements Listener {
         retractShield(p,st);
         st.shieldCooldown = tick + intCfg("shield-cooldown-ticks",200,1);
         shieldCooldowns.put(p.getUniqueId(), st.shieldCooldown);
+        WeaponCooldowns.show(p,"aerial",st.shieldCooldown-tick);
         p.getWorld().playSound(p.getLocation(),Sound.ITEM_SHIELD_BREAK,1f,1.2f);
         p.sendMessage("§cエスカッシャン耐久限界！ §7クールダウン開始");
     }

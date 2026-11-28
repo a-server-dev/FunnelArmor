@@ -163,6 +163,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         heavyWeapons.start();
         advancedWeapons = new GundamAdvancedWeapons(this);
         advancedWeapons.start();
+        Bukkit.getScheduler().runTaskTimer(this,WeaponCooldowns::refreshOnline,1L,5L);
         Bukkit.getScheduler().runTaskTimer(this, this::updateDrones, 10L, Math.max(1L, getConfig().getLong("drones.update-ticks", 2L)));
         Bukkit.getScheduler().runTaskTimer(this, this::updateShields, 1L, 1L);
         // Migrate the item-model COMPONENT of previously issued controllers.
@@ -916,10 +917,12 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 finBarrierGuards.remove(id);
                 finBarrierHealth.remove(id);
                 finBarrierCooldowns.put(id, until);
+                WeaponCooldowns.show(player,"fin",until-animationTick);
             } else {
                 shieldGuards.remove(id);
                 shieldHealth.remove(id);
                 shieldCooldowns.put(id, until);
+                WeaponCooldowns.show(player,"shield",until-animationTick);
             }
             player.getWorld().playSound(player.getLocation(), Sound.ITEM_SHIELD_BREAK, 0.9f, 1.05f);
             player.sendMessage("§cバリア耐久限界！ §7(" + next.hits() + "回 / "
@@ -1088,6 +1091,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (qubeleyAttacks.containsKey(id)) {
             qubeleyCooldowns.put(id, animationTick + Math.max(1,
                     getConfig().getInt("qubeley.cooldown-ticks", 200)));
+            Player p=Bukkit.getPlayer(id);if(p!=null)WeaponCooldowns.show(p,"qubeley",qubeleyCooldowns.get(id)-animationTick);
         }
         stopQubeleyAttack(id);
     }
@@ -1538,7 +1542,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             return;
         }
         if (selectedVariant(player) == 1 && selectedFinFormation(player) == FinFormationMode.STORED) return;
-        long tick = player.getWorld().getGameTime();
+        long tick = Bukkit.getCurrentTick();
         int cooldown = Math.max(1, getConfig().getInt("beam.cooldown-ticks", 12));
         Long previous = lastShots.get(player.getUniqueId());
         if (previous != null && tick >= previous && tick - previous < cooldown) return;

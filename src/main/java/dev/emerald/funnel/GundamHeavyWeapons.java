@@ -481,6 +481,7 @@ final class GundamHeavyWeapons implements Listener {
                 cd.put(id,now+(ATOMIC.equals(kind)
                     ?ticks("atomic.cooldown-ticks",600,40,2400)
                     :ticks("satellite.cooldown-ticks",360,40,2400)));
+                WeaponCooldowns.show(p,kind,cd.get(id)-now);
             }
             return;
         }
@@ -696,6 +697,7 @@ final class GundamHeavyWeapons implements Listener {
         if(now<cooldownsMacePile.getOrDefault(owner,0L))return;
         int cooldown=ticks("mace.pile-cooldown-ticks",165,20,600);
         cooldownsMacePile.put(owner,now+cooldown);
+        WeaponCooldowns.show(p,"mace",cooldown);
         String serial=weaponSerial(p);
         if(serial==null)return;
         ItemStack held=p.getInventory().getItemInMainHand();
@@ -769,6 +771,7 @@ final class GundamHeavyWeapons implements Listener {
         UUID id=p.getUniqueId();
         if(now<cooldownsMaceSlam.getOrDefault(id,0L))return;
         cooldownsMaceSlam.put(id,now+ticks("mace.slam-cooldown-ticks",110,15,400));
+        WeaponCooldowns.show(p,"mace",cooldownsMaceSlam.get(id)-now);
         Vector horizontal=front(p.getLocation());
         Location center=p.getLocation().add(horizontal.multiply(1.8));
         center.setY(Math.max(center.getY(),p.getLocation().getY())+.2);

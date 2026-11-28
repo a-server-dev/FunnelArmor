@@ -253,8 +253,9 @@ advanced-weapons:
   heavyarms:
     enabled: true
     damage: 0.5
-    # Ignore existing invulnerability frames for each gatling hit only.
+    # Gatling-specific hit interval per target, in ticks.
     bypass-hurt-cooldown: true
+    hurt-cooldown-ticks: 5
   freedom:
     enabled: true
     damage: 1.5

@@ -204,6 +204,7 @@ final class GnSwordIICombat implements Listener {
             if (current.sword()) slash(player, current);
             else fire(player, current);
             actionCooldown.put(id, end);
+            WeaponCooldowns.show(player,"gn_ii",end-time);
         } catch (RuntimeException ex) {
             plugin.getLogger().log(Level.SEVERE, "GN Sword II attack failed for " + player.getName(), ex);
             player.sendMessage(Component.text("§cGNソードII攻撃エラー（コンソールを確認）"));

@@ -287,6 +287,7 @@ final class BrauBroWaistCannons implements Listener {
      * the eight emitter rays actually starts at its own extended gun model.
      * Block ray tracing limits both visuals and damage to unoccluded targets.
      */
+    private final Map<UUID,Long> fireUntil=new HashMap<>();
     private void fire(Player player) {
         if (!enabled() || !isHeld(player) || player.isDead()) return;
         State state = active.get(player.getUniqueId());
@@ -295,8 +296,10 @@ final class BrauBroWaistCannons implements Listener {
             return;
         }
         long tick = Bukkit.getCurrentTick();
-        if (tick < state.nextFireTick) return;
+        if (tick < fireUntil.getOrDefault(player.getUniqueId(),0L)) return;
         state.nextFireTick = tick + fireCooldown();
+        fireUntil.put(player.getUniqueId(),state.nextFireTick);
+        WeaponCooldowns.show(player,"brau",fireCooldown());
 
         World world = player.getWorld();
         double range = fireRange();
@@ -479,6 +482,7 @@ final class BrauBroWaistCannons implements Listener {
     }
 
     private void tick() {
+        fireUntil.values().removeIf(until->until<=Bukkit.getCurrentTick());
         if (!enabled()) {
             stop();
             return;

@@ -338,6 +338,7 @@ final class TwinBusterCombat implements Listener {
                     fireCombined(player);
                     combinedCooldowns.put(id, TwinBusterTiming.until(now,
                             cfg("combined-cooldown-ticks", 200)));
+                    WeaponCooldowns.show(player,"buster",combinedCooldowns.get(id)-now);
                 } catch (RuntimeException ex) {
                     plugin.getLogger().log(java.util.logging.Level.SEVERE,
                             "Twin Buster combined firing failed for " + player.getName(), ex);

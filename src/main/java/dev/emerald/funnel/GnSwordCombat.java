@@ -213,6 +213,7 @@ final class GnSwordCombat implements Listener {
             if (current.sword()) slash(player, current);
             else fire(player, current);
             actionCooldown.put(id, end);
+            WeaponCooldowns.show(player,"gn_v",end-time);
         } catch (RuntimeException ex) {
             plugin.getLogger().log(Level.SEVERE, "GN Sword V attack failed for " + player.getName(), ex);
             player.sendMessage(Component.text("§cGNソードV攻撃エラー（コンソールを確認）"));
