@@ -70,7 +70,11 @@ class BrauBroFiringAndFollowTest {
         assertTrue(source.contains("if (left || player.isSneaking()) toggle(player);"));
         assertTrue(source.contains("else fire(player);"));
         assertTrue(source.contains("!state.extended"));
-        assertTrue(source.contains("tick < state.nextFireTick"));
+        assertTrue(source.contains("tick < fireUntil.getOrDefault(player.getUniqueId(),0L)"));
+        assertTrue(source.contains("fireUntil.put(player.getUniqueId(),state.nextFireTick)"));
+        assertTrue(source.contains("WeaponCooldowns.show(player,\"brau\",fireCooldown())"));
+        assertFalse(source.contains("fireUntil.remove(owner)"));
+        assertFalse(source.contains("tick < state.nextFireTick"));
         assertTrue(source.contains("BrauBroFirePattern.BARRELS"));
         assertTrue(source.contains("rayTraceBlocks("));
         assertTrue(source.contains("rayTraceEntities("));
