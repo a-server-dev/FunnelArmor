@@ -216,7 +216,7 @@ final class GundamMeleeCombat implements Listener {
             }
             return true;
         }
-        sender.sendMessage("§b/funnel " + type + " status §7| 配布: /funnel give " + type + " [player]");
+        sender.sendMessage("§b/funnel " + type + " status §7| 配布: /funnel give all [player]");
         return true;
     }
 

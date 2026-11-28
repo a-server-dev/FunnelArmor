@@ -581,7 +581,7 @@ final class BrauBroWaistCannons implements Listener {
                 + " §7/ 射撃: §a通常右クリック（8砲口）");
             return true;
         }
-        sender.sendMessage("§b/funnel brau status §7| 配布: /funnel give brau [player]");
+        sender.sendMessage("§b/funnel brau status §7| 配布: /funnel give all [player]");
         return true;
     }
 

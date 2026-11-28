@@ -62,7 +62,7 @@ import java.util.UUID;
  *   two shoulder cannon barrels, charge and double continuous beam.
  *
  * Resource-pack visuals are ItemDisplays. No client mod is required.
- * /funnel give {atomic|mace|satellite} is the only distribution route.
+ * /funnel give all is the only distribution route.
  */
 final class GundamHeavyWeapons implements Listener {
     static final String ATOMIC = "atomic";
@@ -921,7 +921,7 @@ final class GundamHeavyWeapons implements Listener {
                 " §7/ クールダウン: §f"+Math.max(0,(until-now+19)/20)+"秒");
             return true;
         }
-        sender.sendMessage("§7配布: /funnel give <atomic|mace|satellite> [player]"
+        sender.sendMessage("§7配布: /funnel give all [player]"
             +" §7/ 状態: /funnel <atomic|mace|satellite> status");
         return true;
     }

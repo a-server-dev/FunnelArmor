@@ -197,7 +197,7 @@ final class TwinBusterCombat implements Listener {
 
     boolean command(CommandSender sender, String[] args) {
         if (args.length == 1) {
-            sender.sendMessage("§b/funnel buster status §7| 配布: /funnel give buster [player]");
+            sender.sendMessage("§b/funnel buster status §7| 配布: /funnel give all [player]");
             return true;
         }
         if (args[1].equalsIgnoreCase("status")) {
@@ -219,7 +219,7 @@ final class TwinBusterCombat implements Listener {
                     + " §7/ 冷却 " + (remaining + 19) / 20 + "秒");
             return true;
         }
-        sender.sendMessage("§7/funnel buster status §7| 配布: /funnel give buster [player]");
+        sender.sendMessage("§7/funnel buster status §7| 配布: /funnel give all [player]");
         return true;
     }
 

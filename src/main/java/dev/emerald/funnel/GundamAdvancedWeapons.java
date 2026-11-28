@@ -605,7 +605,7 @@ final class GundamAdvancedWeapons implements Listener {
     }
     boolean command(CommandSender sender,String[] args){
         String k=args[0].toLowerCase(Locale.ROOT);
-        sender.sendMessage("§b/funnel give "+k+" [player] §7| "+(enabled(k)?"有効":"無効"));
+        sender.sendMessage("§b/funnel give all [player] §7| "+(enabled(k)?"有効":"無効"));
         return true;
     }
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)

@@ -247,5 +247,5 @@ final class GundamMotionWeapons implements Listener {
     @EventHandler public void quit(PlayerQuitEvent e){clear(e.getPlayer().getUniqueId());clearIdle(e.getPlayer().getUniqueId());}
     @EventHandler public void death(PlayerDeathEvent e){clear(e.getEntity().getUniqueId());clearIdle(e.getEntity().getUniqueId());}
     @EventHandler public void world(PlayerChangedWorldEvent e){clear(e.getPlayer().getUniqueId());clearIdle(e.getPlayer().getUniqueId());}
-    boolean command(CommandSender sender,String[] args){if(sender instanceof Player p){String k=args[0].toLowerCase(Locale.ROOT);long remaining=Math.max(0,cooldowns.getOrDefault(p.getUniqueId(),Map.of()).getOrDefault(k,0L)-Bukkit.getCurrentTick());sender.sendMessage("§b"+k+" §7/ CT "+((remaining+19)/20)+"秒");}else sender.sendMessage("§7/funnel give <hammer|destiny> [player]");return true;}
+    boolean command(CommandSender sender,String[] args){if(sender instanceof Player p){String k=args[0].toLowerCase(Locale.ROOT);long remaining=Math.max(0,cooldowns.getOrDefault(p.getUniqueId(),Map.of()).getOrDefault(k,0L)-Bukkit.getCurrentTick());sender.sendMessage("§b"+k+" §7/ CT "+((remaining+19)/20)+"秒");}else sender.sendMessage("§7/funnel give all [player]");return true;}
 }

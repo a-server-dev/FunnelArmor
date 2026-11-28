@@ -258,7 +258,7 @@ final class AerialCombat implements Listener {
                     + " / ライフルCD " + Math.max(0,st.rifleCooldown-tick) + "t");
             return true;
         }
-        sender.sendMessage("§7/funnel aerial status §7| /funnel aerial preview <1..11|shield|clear> §7| 配布: /funnel give aerial [player]");
+        sender.sendMessage("§7/funnel aerial status §7| /funnel aerial preview <1..11|shield|clear> §7| 配布: /funnel give all [player]");
         return true;
     }
 
