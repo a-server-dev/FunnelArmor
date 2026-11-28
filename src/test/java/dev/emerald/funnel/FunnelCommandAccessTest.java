@@ -5,10 +5,12 @@ import java.util.HashSet;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FunnelCommandAccessTest {
-    @Test void onlyOperatorOrNamedAdminCanRunCommands() {
+    @Test void operatorNamedAdminOrPermissionHolderCanRunCommands() {
         assertTrue(FunnelCommandAccess.authorizedPlayer("EmeraldREX91", false));
         assertTrue(FunnelCommandAccess.authorizedPlayer("emeraldrex91", false));
         assertTrue(FunnelCommandAccess.authorizedPlayer("OtherPlayer", true));
+        assertTrue(FunnelCommandAccess.authorizedPlayer("OtherPlayer", false, true));
+        assertFalse(FunnelCommandAccess.authorizedPlayer("OtherPlayer", false, false));
         assertFalse(FunnelCommandAccess.authorizedPlayer("OtherPlayer", false));
         assertFalse(FunnelCommandAccess.authorizedPlayer("EmeraldREX9", false));
         assertFalse(FunnelCommandAccess.authorizedPlayer("EmeraldREX91x", false));
@@ -18,7 +20,8 @@ class FunnelCommandAccessTest {
     @Test void catalogHasSixteenUniqueNonLegacyEquipmentKinds() {
         assertEquals(16, FunnelGiftCatalog.ALL.size());
         assertEquals(16, new HashSet<>(FunnelGiftCatalog.ALL).size());
-        assertTrue(FunnelGiftCatalog.OPTIONS.containsAll(FunnelGiftCatalog.ALL));
+        assertEquals(java.util.List.of("all"), FunnelGiftCatalog.OPTIONS);
+        for(String kind:FunnelGiftCatalog.ALL) assertFalse(FunnelGiftCatalog.supported(kind));
         assertTrue(FunnelGiftCatalog.supported("all"));
         assertTrue(FunnelGiftCatalog.ALL.containsAll(java.util.List.of("hammer", "destiny")));
         for (String kind : java.util.List.of("gn", "gn2", "gnv")) {

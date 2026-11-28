@@ -7,3 +7,8 @@ commands:
   funnel:
     description: Funnel and Gundam weapon systems
     usage: /funnel <give|saber|hawk|gn|gn2|gnv|buster|aerial|brau|atomic|mace|satellite|epyon|heavyarms|freedom|hammer|destiny|formation|shield|barrier|angle|pack|reload|status|diagnose>
+
+permissions:
+  funnel.admin:
+    description: Access all FunnelArmor commands and tab completion
+    default: op

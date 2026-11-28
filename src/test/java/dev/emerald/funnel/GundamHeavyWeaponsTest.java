@@ -72,7 +72,7 @@ class GundamHeavyWeaponsTest {
         assertEquals(16, FunnelGiftCatalog.ALL.size());
         for(String type:List.of("atomic","mace","satellite")) {
             assertTrue(FunnelGiftCatalog.ALL.contains(type));
-            assertTrue(FunnelGiftCatalog.OPTIONS.contains(type));
+            assertFalse(FunnelGiftCatalog.OPTIONS.contains(type));
         }
         assertEquals(16, new HashSet<>(FunnelGiftCatalog.ALL).size());
     }

@@ -1685,11 +1685,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!FunnelCommandAccess.allowed(sender)) {
-            sender.sendMessage("§c/funnel コマンドはOPまたはEmeraldREX91のみ使用できます。");
+            sender.sendMessage("§c/funnel コマンドはOP・指定管理者・funnel.admin権限を持つプレイヤーのみ使用できます。");
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("§b/funnel give <1|3|4|aerial|brau|buster|saber|hawk|atomic|mace|satellite|epyon|heavyarms|freedom|hammer|destiny|all> [player]"
+            sender.sendMessage("§b/funnel give all [player]"
                 + " §7| §b/funnel pack [player] §7| §b/funnel <装備名> status"
                 + " §7| §b/funnel formation <...> §7| §b/funnel reload §7| §b/funnel status");
             return true;
@@ -1708,13 +1708,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         if (args[0].equalsIgnoreCase("hawk")) return meleeCombat.command(sender, args, "hawk");
         switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
             case "give" -> {
-                if (args.length > 3) {
-                    sender.sendMessage("§c指定: /funnel give <1|3|4|aerial|brau|buster|saber|hawk|atomic|mace|satellite|epyon|heavyarms|freedom|hammer|destiny|all> [player]");
+                if (args.length < 2 || args.length > 3) {
+                    sender.sendMessage("§c指定: /funnel give all [player]");
                     return true;
                 }
-                String kind = args.length >= 2 ? args[1].toLowerCase(Locale.ROOT) : "1";
+                String kind = args[1].toLowerCase(Locale.ROOT);
                 if (!FunnelGiftCatalog.supported(kind)) {
-                    sender.sendMessage("§c対象が不明です。/funnel give <1|3|4|aerial|brau|buster|saber|hawk|atomic|mace|satellite|epyon|heavyarms|freedom|hammer|destiny|all> [player]");
+                    sender.sendMessage("§c対象が不明です。/funnel give all [player]");
                     return true;
                 }
                 Player target = args.length == 3 ? Bukkit.getPlayerExact(args[2])
@@ -1724,9 +1724,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                     return true;
                 }
                 List<ItemStack> gifts = new ArrayList<>();
-                if (kind.equals("all")) {
-                    for (String type : FunnelGiftCatalog.ALL) gifts.add(createGift(type));
-                } else gifts.add(createGift(kind));
+                for (String type : FunnelGiftCatalog.ALL) gifts.add(createGift(type));
                 target.getInventory().addItem(gifts.toArray(ItemStack[]::new))
                     .values().forEach(overflow ->
                         target.getWorld().dropItemNaturally(target.getLocation(), overflow));

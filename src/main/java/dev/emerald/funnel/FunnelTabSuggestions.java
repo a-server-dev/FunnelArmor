@@ -7,7 +7,7 @@ import java.util.Locale;
 
 /**
  * Single /funnel command completion policy. The caller must pass the result
- * of FunnelCommandAccess.allowed(sender), not a generic LuckPerms permission.
+ * of FunnelCommandAccess.allowed(sender), including the Bukkit/LuckPerms permission check.
  */
 public final class FunnelTabSuggestions {
     private FunnelTabSuggestions() {}
