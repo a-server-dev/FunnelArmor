@@ -2,6 +2,8 @@ package dev.emerald.funnel;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -16,6 +18,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -23,6 +26,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -87,11 +91,11 @@ final class GundamMeleeCombat implements Listener {
         return Math.max(0, plugin.getConfig().getDouble(path, fallback));
     }
     private boolean saber(ItemStack item) {
-        return item != null && item.getType() == Material.FEATHER && item.hasItemMeta()
+        return item != null && (item.getType() == Material.DIAMOND_SWORD || item.getType() == Material.FEATHER) && item.hasItemMeta()
                 && item.getItemMeta().getPersistentDataContainer().has(saberKey, PersistentDataType.BYTE);
     }
     private boolean hawk(ItemStack item) {
-        return item != null && item.getType() == Material.FEATHER && item.hasItemMeta()
+        return item != null && (item.getType() == Material.DIAMOND_AXE || item.getType() == Material.FEATHER) && item.hasItemMeta()
                 && item.getItemMeta().getPersistentDataContainer().has(hawkKey, PersistentDataType.BYTE);
     }
     private String id(ItemStack item) {
@@ -133,14 +137,42 @@ final class GundamMeleeCombat implements Listener {
         item.setItemMeta(meta);
     }
 
+    // Explicit neutral modifiers replace the diamond tool's default attack
+    // attributes, retaining the former feather's vanilla attack cadence.
+    private void preserveCombatAttributes(ItemMeta meta) {
+        meta.removeAttributeModifier(Attribute.ATTACK_DAMAGE);
+        meta.removeAttributeModifier(Attribute.ATTACK_SPEED);
+        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE,
+                new AttributeModifier(new NamespacedKey(plugin, "melee_base_damage"), 0,
+                        AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
+        meta.addAttributeModifier(Attribute.ATTACK_SPEED,
+                new AttributeModifier(new NamespacedKey(plugin, "melee_base_speed"), 0,
+                        AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
+    }
+
+    private ItemStack migrateHeld(Player player) {
+        ItemStack old = player.getInventory().getItemInMainHand();
+        if (old.getType() != Material.FEATHER) return old;
+        Material target = saber(old) ? Material.DIAMOND_SWORD
+                : hawk(old) ? Material.DIAMOND_AXE : null;
+        if (target == null) return old;
+        ItemStack migrated = new ItemStack(target, old.getAmount());
+        ItemMeta meta = old.getItemMeta();
+        preserveCombatAttributes(meta);
+        if (!migrated.setItemMeta(meta)) return old;
+        player.getInventory().setItemInMainHand(migrated);
+        return migrated;
+    }
+
     ItemStack giftItem(String type) {
         return "saber".equals(type) ? newSaber() : newHawk();
     }
 
     private ItemStack newSaber() {
-        ItemStack item = new ItemStack(Material.FEATHER);
+        ItemStack item = new ItemStack(Material.DIAMOND_SWORD);
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(true);
+        preserveCombatAttributes(meta);
         meta.getPersistentDataContainer().set(saberKey, PersistentDataType.BYTE, (byte) 1);
         meta.getPersistentDataContainer().set(uidKey, PersistentDataType.STRING, UUID.randomUUID().toString());
         meta.lore(java.util.List.of(
@@ -153,9 +185,10 @@ final class GundamMeleeCombat implements Listener {
     }
 
     private ItemStack newHawk() {
-        ItemStack item = new ItemStack(Material.FEATHER);
+        ItemStack item = new ItemStack(Material.DIAMOND_AXE);
         ItemMeta meta = item.getItemMeta();
         meta.setUnbreakable(true);
+        preserveCombatAttributes(meta);
         meta.getPersistentDataContainer().set(hawkKey, PersistentDataType.BYTE, (byte) 1);
         meta.getPersistentDataContainer().set(uidKey, PersistentDataType.STRING, UUID.randomUUID().toString());
         meta.lore(java.util.List.of(
@@ -192,7 +225,7 @@ final class GundamMeleeCombat implements Listener {
                 (event.getAction() != Action.RIGHT_CLICK_AIR
                 && event.getAction() != Action.RIGHT_CLICK_BLOCK)) return;
         Player player = event.getPlayer();
-        ItemStack item = player.getInventory().getItemInMainHand();
+        ItemStack item = migrateHeld(player);
         boolean blade = saber(item),axe = hawk(item);
         if (!blade && !axe) return;
         event.setUseItemInHand(Event.Result.DENY);
@@ -226,7 +259,7 @@ final class GundamMeleeCombat implements Listener {
         int step = ticks("beam-saber.stage-ticks", 3);
         for (Player player : Bukkit.getOnlinePlayers()) {
             UUID owner = player.getUniqueId();
-            ItemStack held = player.getInventory().getItemInMainHand();
+            ItemStack held = migrateHeld(player);
             Transition transition = transitions.get(owner);
             if (transition != null) {
                 if (!saber(held) || !transition.itemId().equals(id(held))
@@ -264,7 +297,13 @@ final class GundamMeleeCombat implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onMelee(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player player)) return;
-        ItemStack item = player.getInventory().getItemInMainHand();
+        ItemStack item = migrateHeld(player);
+        // A real sword can produce additional vanilla sweep-hit events.
+        // The former feather never did; preserve single-target damage.
+        if ((saber(item) || hawk(item)) && event.getCause() == EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK) {
+            event.setCancelled(true);
+            return;
+        }
         if (saber(item)) {
             // A handle, partially growing blade, or retracting blade cannot hurt anything.
             if (!enabled("beam-saber")

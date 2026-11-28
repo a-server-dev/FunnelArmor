@@ -136,10 +136,11 @@ aerial:
 twin-buster:
   enabled: true
   dual-range: 30.0
-  dual-damage: 1.25
+  # Both modes are capped at 1.5 HP per target; the old 1.25 default upgrades to 1.5.
+  dual-damage: 1.5
   dual-interval-ticks: 10 # independent left and right cooldowns
   combined-range: 48.0
-  combined-damage: 8.0
+  combined-damage: 1.5
   combined-radius: 1.20
   # Max particle density of the white core, inner cyan ring, blue outer shell.
   particle-budget: 1800

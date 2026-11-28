@@ -31,3 +31,6 @@ Freedom uses five separately sculpted wing profiles per side (upper sword, upper
 
 ## v0.41.0
 Action bars are limited to cooldown and charging states (including charge-ready status). Firing, deployment, storage, mode switches, shield durability, ammunition/fire announcements and other routine notices are silent. Heavyarms displays heat only during overheat cooldown. Critical errors and offhand escrow warnings move to chat. Weapon behavior, sounds, particles, and models remain unchanged.
+
+## v0.42.0
+Twin Buster Rifle dual and combined shots default to 1.5 HP per target and are capped at 1.5 even with older configs; the legacy dual default 1.25 is treated as 1.5. Beam Saber uses DIAMOND_SWORD and Heat Hawk uses DIAMOND_AXE with their existing item model, PDC, unbreakability, damage, timings, and right-click behavior. Existing tagged feather weapons migrate in the main hand, preserving metadata. Neutral attack attributes and cancellation of extra vanilla sweep damage retain the former combat behavior.

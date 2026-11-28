@@ -111,6 +111,16 @@ final class TwinBusterCombat implements Listener {
         return Double.isFinite(value) && value > 0 ? value : fallback;
     }
 
+    private static final double DAMAGE_CAP = 1.5;
+
+    private double shotDamage(String name) {
+        double value = plugin.getConfig().getDouble("twin-buster." + name, DAMAGE_CAP);
+        // Upgrade the previous shipped dual-shot default without requiring
+        // existing servers to regenerate their config.yml.
+        if (name.equals("dual-damage") && value == 1.25) value = DAMAGE_CAP;
+        return Double.isFinite(value) ? Math.max(0, Math.min(DAMAGE_CAP, value)) : DAMAGE_CAP;
+    }
+
     private boolean isVisual(ItemStack item) {
         return item != null && item.hasItemMeta() && item.getItemMeta()
                 .getPersistentDataContainer().has(visualKey, PersistentDataType.BYTE);
@@ -372,7 +382,7 @@ final class TwinBusterCombat implements Listener {
         world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 3,
                 .10, .10, .10, .015);
         fireBeam(player, muzzle, dir, cfg("dual-range", 30.0), .24,
-                cfg("dual-damage", 1.25), Color.fromRGB(95, 219, 255),
+                shotDamage("dual-damage"), Color.fromRGB(95, 219, 255),
                 new HashSet<>(), false);
         world.playSound(muzzle, Sound.ENTITY_GUARDIAN_ATTACK, .62f,
                 side == Side.LEFT ? 1.40f : 1.65f);
@@ -389,7 +399,7 @@ final class TwinBusterCombat implements Listener {
         world.spawnParticle(Particle.ELECTRIC_SPARK, muzzle, 8, .20, .20, .20, .025);
         fireBeam(player, muzzle, dir, cfg("combined-range", 48),
                 cfg("combined-radius", 1.20),
-                cfg("combined-damage", 8.0), Color.fromRGB(140, 235, 255),
+                shotDamage("combined-damage"), Color.fromRGB(140, 235, 255),
                 new HashSet<>(), true);
         world.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 1.5f, .68f);
         world.playSound(muzzle, Sound.ENTITY_GUARDIAN_ATTACK, 1.3f, .58f);
