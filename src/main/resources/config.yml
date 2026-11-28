@@ -265,7 +265,7 @@ motion-weapons:
   hammer:
     enabled: true
     damage: 1.5
-    cooldown-ticks: 80
+    cooldown-ticks: 20
     range: 7.0
   destiny:
     enabled: true

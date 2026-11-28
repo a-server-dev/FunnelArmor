@@ -80,12 +80,14 @@ final class GundamMotionWeapons implements Listener {
         e.setCancelled(true);e.setUseItemInHand(Event.Result.DENY);e.setUseInteractedBlock(Event.Result.DENY);
         if(!enabled(k)||p.isDead()||p.getGameMode()==GameMode.SPECTATOR)return;
         UUID id=p.getUniqueId();long now=Bukkit.getCurrentTick();Long prev=input.put(id,now);if(prev!=null&&now-prev<=5)return;
-        if(active.containsKey(id))return;
+        Motion current=active.get(id);
+        if(current!=null&&!k.equals("hammer"))return;
         Map<String,Long> map=cooldowns.computeIfAbsent(id,key->new HashMap<>());
         long until=map.getOrDefault(k,0L);if(now<until){p.sendActionBar(Component.text("§c冷却中: "+((until-now+19)/20)+"秒"));return;}
-        int cd=ticks(k,"cooldown-ticks",k.equals("hammer")?80:100,2400);
-        cd=Math.max(cd,k.equals("hammer")?HAMMER_TICKS: ticks(k,"dash-ticks",12,30)+8);
+        int cd=ticks(k,"cooldown-ticks",k.equals("hammer")?20:100,2400);
+        if(!k.equals("hammer"))cd=Math.max(cd,ticks(k,"dash-ticks",12,30)+8);
         map.put(k,now+cd);WeaponCooldowns.show(p,k,cd);
+        if(current!=null){active.remove(id);idle.put(id,current);}
         Motion m=new Motion(k,p,now);active.put(id,m);
         if(k.equals("hammer")){
             Motion resting=idle.remove(id);
@@ -188,7 +190,7 @@ final class GundamMotionWeapons implements Listener {
         }
         drawHammer(p,m,t,true);return t<HAMMER_TICKS;
     }
-    private static final Particle.DustOptions BLUE=new Particle.DustOptions(Color.fromRGB(235,105,200),.55f),PINK=new Particle.DustOptions(Color.fromRGB(255,125,215),.50f),WHITE=new Particle.DustOptions(Color.fromRGB(255,225,247),.40f);
+    private static final Particle.DustOptions BLUE=new Particle.DustOptions(Color.fromRGB(65,155,255),1.0f),PINK=new Particle.DustOptions(Color.fromRGB(240,105,255),.8f),WHITE=new Particle.DustOptions(Color.fromRGB(210,245,255),.6f);
     // Elevation from horizontal, longest feathers at the upper edge.
     private static final double[] FAN_ANGLE={70,54,38,22,6,-15,-38};
     private static final double[] FAN_LENGTH={2.65,2.95,2.85,2.55,2.30,1.95,1.65};
@@ -211,11 +213,8 @@ final class GundamMotionWeapons implements Listener {
                 center.setYaw(0);center.setPitch(0);
                 Quaternionf rotation=new Quaternionf().rotationTo(0,1,0,(float)direction.getX(),(float)direction.getY(),(float)direction.getZ());
                 pose(m.parts.get(i*8+1+j),center,rotation,(float)(.82*q),(float)(length/1.5),(float)(.55*q));
-                if(open>.4&&t%2==0){
-                    Location tip=origin.clone().add(direction.clone().multiply(length));
-                    p.getWorld().spawnParticle(Particle.DUST,tip,1,.04,.04,.04,0,j%2==0?PINK:WHITE);
-                }
             }
+            for(int feather=0;feather<5;feather++)for(int step=1;step<=10;step++){double u=step/10.0;double span=(2.8-feather*.36)*open;Location point=root.clone().add(r.clone().multiply(side*span*u)).add(0,(.38+feather*.20)*u-.45*u*u,0).subtract(f.clone().multiply((.3+feather*.21)*u+1.1*u*u));p.getWorld().spawnParticle(Particle.DUST,point,1,0,0,0,0,feather%2==0?BLUE:PINK);if(step%3==0)p.getWorld().spawnParticle(Particle.DUST,point.clone().add(0,.035,0),1,0,0,0,0,WHITE);}
         }
     }
     private boolean destiny(Player p,Motion m,int t){

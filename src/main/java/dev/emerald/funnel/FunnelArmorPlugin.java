@@ -126,6 +126,13 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
 
     @Override public void onEnable() {
         saveDefaultConfig();
+        // One-time migration of the previous Hammer default; preserve subsequent edits.
+        if(!getConfig().getBoolean("migration.hammer-one-second",false)){
+            if(getConfig().getInt("motion-weapons.hammer.cooldown-ticks",80)==80)
+                getConfig().set("motion-weapons.hammer.cooldown-ticks",20);
+            getConfig().set("migration.hammer-one-second",true);
+            saveConfig();
+        }
         DamageSettings.upgradeOnce(this);
         itemKey = new NamespacedKey(this, "funnel_weapon");
         displayKey = new NamespacedKey(this, "funnel_drone_display");
