@@ -322,7 +322,7 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
-                        if (entry.getName().matches("assets/funnel/models/item/(hyper_hammer_(handle|ball|link)|destiny_(controller|wing_root))\\.json")) {
+                        if (entry.getName().matches("assets/funnel/models/item/(hyper_hammer_(handle|ball|link)|destiny_(controller|wing_root|wing_outer|wing_inner))\\.json")) {
                             assertEquals("funnel:item/heavy_weapon_palette",model.getAsJsonObject("textures").get("0").getAsString());
                             assertTrue(model.getAsJsonArray("elements").size()>=3);
                             for(var part:model.getAsJsonArray("elements")){
@@ -358,7 +358,7 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(58, checked,
+            assertEquals(60, checked,
                     "38 existing validated models + 15 advanced weapon models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");
