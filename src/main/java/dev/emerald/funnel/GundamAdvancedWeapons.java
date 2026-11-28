@@ -51,7 +51,7 @@ final class GundamAdvancedWeapons implements Listener {
         double cannonProgress;
         final List<Casing> casings=new ArrayList<>();
         long lastRight=-100;
-        int gatlingPhase;
+        int gatlingPhase, rodSequence, rodMotion;
         long nextInput,nextToggle,nextShot,attackStart=-1;
         State(String kind,String serial,UUID world){this.kind=kind;this.serial=serial;this.world=world;}
     }
@@ -304,6 +304,7 @@ final class GundamAdvancedWeapons implements Listener {
                 }
                 if(!epyonOffhand.equipped(p))return;
                 if(now<s.nextShot)return;s.nextShot=now+26;s.attackStart=now;s.hit.clear();s.pull=false;
+                s.rodMotion=s.rodSequence++ & 3;
                 p.getWorld().playSound(p.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,1.2f,.65f);
             }
             case "freedom"->{
@@ -348,25 +349,44 @@ final class GundamAdvancedWeapons implements Listener {
         long elapsed=s.attackStart<0?999:now-s.attackStart;
         boolean attacking=equipped&&elapsed>=0&&elapsed<18;
         if(!equipped||elapsed>=24)s.attackStart=-1;
-        double t=attacking?elapsed/17.0:1;
-        Vector look=p.getEyeLocation().getDirection();
+        Vector look=p.getEyeLocation().getDirection().normalize();
         Vector aimRight=right(f);
-        double deployed=equipped&&elapsed<24?smooth(Math.min(1,Math.min((elapsed+1)/4.0,(24-elapsed)/6.0))):0;
+        Vector aimUp=look.clone().crossProduct(aimRight).normalize();
+        double deployed=equipped&&elapsed<24?smooth(Math.min(1,Math.min((elapsed+1)/5.0,(24-elapsed)/7.0))):0;
+        boolean striking=attacking&&elapsed>=4;
+        if(equipped&&elapsed==5)p.getWorld().playSound(p.getLocation(),Sound.ENTITY_PLAYER_ATTACK_SWEEP,.8f,1.45f);
         boolean blocked=false;
         for(int i=0;i<ROD_LINKS;i++){
             double u=(i+.5)/ROD_LINKS;
-            // Each physical segment is attached to the end of the previous one.
-            // Bend travels down the chain; the resting chain hangs under the shield.
-            double angle=attacking?(1.0-2*t)*1.25+Math.sin(u*3.0-t*5.5)*.42:Math.sin(u*2.7+now*.09)*.45;
-            Vector tangent=attacking?look.clone().multiply(Math.cos(angle)).add(aimRight.clone().multiply(Math.sin(angle))).add(new Vector(0,-.11*u,0))
-                :f.clone().multiply(.65+.20*u).add(r.clone().multiply(.45*Math.sin(u*4.2))).add(new Vector(0,-.09+.20*u,0));
+            // Delayed angular wave: each link follows the previous one, including recovery.
+            double phase=Math.max(0,Math.min(1,(elapsed-2.0-u*3.5)/12.0));
+            double stroke=smooth(phase);
+            double wave=Math.sin(phase*Math.PI*2-u*3.2)*Math.sin(phase*Math.PI);
+            double yaw=0,pitch=0;
+            switch(s.rodMotion){
+                case 0 -> {yaw=1.40-2.80*stroke+.48*wave;pitch=.18*wave-.12*u;}
+                case 1 -> {yaw=-1.40+2.80*stroke-.48*wave;pitch=.18*wave-.12*u;}
+                case 2 -> {pitch=1.30-2.05*stroke+.42*wave;yaw=.19*Math.sin(u*5-phase*6);}
+                default -> {
+                    double radius=(.62*(1-stroke)+.12)*Math.sin(u*Math.PI*.85);
+                    double twist=u*6.4-phase*7.5;
+                    yaw=radius*Math.cos(twist);pitch=radius*Math.sin(twist);
+                }
+            }
+            double recoil=elapsed>=17?Math.max(0,1-(elapsed-17)/7.0):1;
+            Vector moving=look.clone().multiply(Math.cos(yaw)*Math.cos(pitch))
+                .add(aimRight.clone().multiply(Math.sin(yaw)*Math.cos(pitch)))
+                .add(aimUp.clone().multiply(Math.sin(pitch)));
+            Vector resting=f.clone().multiply(.65+.20*u).add(r.clone().multiply(.45*Math.sin(u*4.2)))
+                .add(new Vector(0,-.09+.20*u,0)).normalize();
+            Vector tangent= moving.multiply(recoil).add(resting.multiply(1-recoil));
             tangent.normalize();
             double len=.40*deployed;
             Location end=joint.clone().add(tangent.clone().multiply(len));
             if(!blocked&&len>.015){
                 RayTraceResult wall=p.getWorld().rayTraceBlocks(joint,tangent,len,FluidCollisionMode.NEVER,true);
                 if(wall!=null){end=wall.getHitPosition().toLocation(p.getWorld());blocked=true;}
-                if(attacking){
+                if(striking){
                     double travel=joint.distance(end);
                     if(travel>.01){
                         RayTraceResult hit=p.getWorld().rayTraceEntities(joint,tangent,travel,.24,e->targetable(e,p));
@@ -382,7 +402,10 @@ final class GundamAdvancedWeapons implements Listener {
             Location mid=joint.clone().add(end.toVector().subtract(joint.toVector()).multiply(.5));
             float scale=blocked||deployed<.025?(float).001:(float)deployed;
             aim(s.parts.get(i),mid,tangent,0,scale);
-            if(attacking&&!blocked&&i%4==0&&now%2==0)p.getWorld().spawnParticle(Particle.DUST,mid,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(240,95,42),.55f));
+            if(striking&&!blocked&&deployed>.2){
+                if(i%3==0&&now%2==0)p.getWorld().spawnParticle(Particle.DUST,mid,1,0,0,0,0,new Particle.DustOptions(Color.fromRGB(245,75,35),.65f));
+                if(i==ROD_LINKS-1)p.getWorld().spawnParticle(Particle.DUST,end,2,.035,.035,.035,0,new Particle.DustOptions(Color.fromRGB(255,170,65),.85f));
+            }
             joint=end;
         }
     }
