@@ -69,8 +69,10 @@ final class GundamMotionWeapons implements Listener {
     private ItemDisplay spawn(Player p,String id){return p.getWorld().spawn(p.getLocation(),ItemDisplay.class,d->{d.setItemStack(model(id));d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);d.setPersistent(false);d.setGravity(false);d.setInvulnerable(true);d.setTeleportDuration(1);d.setInterpolationDuration(1);d.getPersistentDataContainer().set(marker,PersistentDataType.BYTE,(byte)1);});}
     private static void pose(ItemDisplay d,Location at,Quaternionf rotation,float x,float y,float z){d.teleport(at);d.setTransformation(new Transformation(new Vector3f(),rotation,new Vector3f(x,y,z),new Quaternionf()));}
     private static Vector forward(Player p){double a=Math.toRadians(p.getLocation().getYaw());return new Vector(-Math.sin(a),0,Math.cos(a));}
-    private static Vector right(Vector f){return new Vector(f.getZ(),0,-f.getX());}
-    private static Location hand(Player p){Vector f=forward(p);return p.getLocation().add(0,1.18,0).add(right(f).multiply(p.getMainHand()==org.bukkit.inventory.MainHand.RIGHT?.40:-.40)).add(f.multiply(.25));}
+    private static Vector right(Vector f){return new Vector(-f.getZ(),0,f.getX());}
+    private static double handSide(Player p){return p.getMainHand()==org.bukkit.inventory.MainHand.RIGHT?1:-1;}
+    // Anchor at the forward end of the held handle, not the torso or opposite arm.
+    private static Location hammerAnchor(Player p){Vector f=forward(p);double side=handSide(p);return p.getLocation().add(0,p.isSneaking()?.88:1.02,0).add(right(f).multiply(side*.36)).add(f.multiply(.46));}
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=false)
     public void interact(PlayerInteractEvent e){
         Player p=e.getPlayer();String k=held(p);if(k.isEmpty()||e.getHand()!=EquipmentSlot.HAND)return;
@@ -93,7 +95,7 @@ final class GundamMotionWeapons implements Listener {
             m.attackMode=(sequences.merge(id,1,Integer::sum)-1)&3;
         }else{
             m.lastPlayer=p.getLocation();
-            for(int i=0;i<2;i++){m.parts.add(spawn(p,"destiny_wing_root"));m.parts.add(spawn(p,"destiny_wing_outer"));m.parts.add(spawn(p,"destiny_wing_inner"));}
+            for(int i=0;i<2;i++){m.parts.add(spawn(p,"destiny_wing_root"));for(int j=0;j<7;j++){ItemDisplay feather=spawn(p,j==0?"destiny_wing_outer":"destiny_wing_inner");feather.setBrightness(new Display.Brightness(15,15));m.parts.add(feather);}}
         }
         p.getWorld().playSound(p.getLocation(),Sound.BLOCK_BEACON_ACTIVATE,.8f,1.5f);
     }
@@ -115,12 +117,12 @@ final class GundamMotionWeapons implements Listener {
         for(int i=0;i<LINKS;i++)m.parts.add(spawn(p,"hyper_hammer_link"));
     }
     private Location restingBall(Player p){
-        Location anchor=hand(p);Vector f=forward(p),r=right(f);
-        double side=p.getMainHand()==org.bukkit.inventory.MainHand.RIGHT?1:-1;
-        return clip(anchor,anchor.clone().add(r.multiply(side*.25)).add(f.multiply(.32)).subtract(0,.54,0));
+        Location anchor=hammerAnchor(p);Vector f=forward(p),r=right(f);
+        double side=handSide(p);
+        return clip(anchor,anchor.clone().add(r.multiply(side*.13)).add(f.multiply(.20)).subtract(0,.60,0));
     }
     private void drawHammer(Player p,Motion m,int t,boolean moving){
-        Location anchor=hand(p),ball=m.ball;
+        Location anchor=hammerAnchor(p),ball=m.ball;
         pose(m.parts.get(0),ball,new Quaternionf().rotateXYZ(moving?t*.24f:0,moving?t*.32f:0,0),.80f,.80f,.80f);
         Vector delta=ball.toVector().subtract(anchor.toVector());double sag=Math.min(.60,delta.length()*.09);
         Location prior=anchor;
@@ -139,11 +141,11 @@ final class GundamMotionWeapons implements Listener {
         if(m!=null&&(!m.world.equals(p.getWorld().getUID())||m.parts.stream().anyMatch(d->!d.isValid()))){clearIdle(id);m=null;}
         if(m==null){m=new Motion("hammer",p,now);createHammer(p,m);idle.put(id,m);}
         Location goal=restingBall(p);if(m.ball.getWorld()!=goal.getWorld()||m.ball.distanceSquared(goal)>9)m.ball=goal;
-        else m.ball=clip(hand(p),m.ball.clone().add(goal.toVector().subtract(m.ball.toVector()).multiply(.55)));
+        else m.ball=clip(hammerAnchor(p),m.ball.clone().add(goal.toVector().subtract(m.ball.toVector()).multiply(.55)));
         drawHammer(p,m,0,false);
     }
     private boolean hammer(Player p,Motion m,int t){
-        Location anchor=hand(p);Vector f=forward(p),r=right(f);Location old=m.ball.clone();
+        Location anchor=hammerAnchor(p);Vector f=forward(p),r=right(f);Location old=m.ball.clone();
         double max=Math.max(.1,number("hammer","range",7,12));
         if(m.attackMode==1||m.attackMode==2){
             if(t<19){
@@ -151,11 +153,11 @@ final class GundamMotionWeapons implements Listener {
                 double reach=Math.min(max,.65+3.7*envelope);
                 Location goal;
                 if(m.attackMode==1){
-                    double angle=-1.65+3.30*progress;
+                    double angle=handSide(p)*(1.65-3.30*progress);
                     goal=anchor.clone().add(f.clone().multiply(Math.cos(angle)*reach)).add(r.clone().multiply(Math.sin(angle)*reach)).add(0,.10+.35*envelope,0);
                 }else{
                     double angle=1.48-2.0*progress;
-                    goal=anchor.clone().add(f.clone().multiply(Math.cos(angle)*reach)).add(0,Math.max(-.95,Math.sin(angle)*reach),0);
+                    goal=anchor.clone().add(f.clone().multiply(Math.cos(angle)*reach)).add(r.clone().multiply(handSide(p)*.65*(1-progress))).add(0,Math.max(-.95,Math.sin(angle)*reach),0);
                 }
                 m.ball=clip(anchor,clip(old,goal));
                 if(t>=4){strike(p,m,old,m.ball,.60);if(t%2==0)p.getWorld().spawnParticle(Particle.CRIT,m.ball,2,.1,.1,.1,.01);}
@@ -164,8 +166,8 @@ final class GundamMotionWeapons implements Listener {
         }else{
             int launch=m.attackMode==3?5:10;
             if(t<launch){
-                double a=t*.82,reach=.45+t*.13;
-                Location goal=m.attackMode==3?anchor.clone().subtract(f.clone().multiply(.45)).add(0,.35,0):anchor.clone().add(0,.95,0).add(f.clone().multiply(Math.cos(a)*reach)).add(r.clone().multiply(Math.sin(a)*reach));
+                double a=handSide(p)*(Math.PI/2-t*.82),reach=.45+t*.13;
+                Location goal=m.attackMode==3?anchor.clone().subtract(f.clone().multiply(.45)).add(r.clone().multiply(handSide(p)*.35)).add(0,.35,0):anchor.clone().add(0,.95,0).add(f.clone().multiply(Math.cos(a)*reach)).add(r.clone().multiply(Math.sin(a)*reach));
                 m.ball=clip(anchor,goal);
             }else{
                 if(t==launch||m.velocity.lengthSquared()<.00001&&!m.returning){m.velocity=m.direction.clone().multiply(m.attackMode==3?1.65:1.35);p.getWorld().playSound(anchor,Sound.ENTITY_FIREWORK_ROCKET_BLAST,.9f,.7f);}
@@ -186,18 +188,34 @@ final class GundamMotionWeapons implements Listener {
         }
         drawHammer(p,m,t,true);return t<HAMMER_TICKS;
     }
-    private static final Particle.DustOptions BLUE=new Particle.DustOptions(Color.fromRGB(65,155,255),1.0f),PINK=new Particle.DustOptions(Color.fromRGB(240,105,255),.8f),WHITE=new Particle.DustOptions(Color.fromRGB(210,245,255),.6f);
+    private static final Particle.DustOptions BLUE=new Particle.DustOptions(Color.fromRGB(235,105,200),.55f),PINK=new Particle.DustOptions(Color.fromRGB(255,125,215),.50f),WHITE=new Particle.DustOptions(Color.fromRGB(255,225,247),.40f);
+    // Elevation from horizontal, longest feathers at the upper edge.
+    private static final double[] FAN_ANGLE={70,54,38,22,6,-15,-38};
+    private static final double[] FAN_LENGTH={2.65,2.95,2.85,2.55,2.30,1.95,1.65};
     private void wings(Player p,Motion m,int t,double open){
-        Vector f=forward(p),r=right(f);Location base=p.getLocation().add(0,1.43,0).subtract(f.clone().multiply(.27));
+        Vector f=forward(p),r=right(f);
+        Location base=p.getLocation().add(0,1.46,0).subtract(f.clone().multiply(.38));
         for(int i=0;i<2;i++){
-            int side=i==0?-1:1;Location root=base.clone().add(r.clone().multiply(side*.32));root.setYaw(p.getLocation().getYaw());root.setPitch(0);
-            float fold=(float)(.18+open*.87);
-            pose(m.parts.get(i*3),root,new Quaternionf().rotateZ(-side*fold),.48f,.65f,.48f);
-            Location outer=root.clone().add(r.clone().multiply(side*(.12+open*.35))).add(0,.20,0).subtract(f.clone().multiply(.16));
-            Location inner=root.clone().add(r.clone().multiply(side*(.12+open*.20))).subtract(0,.12,0).subtract(f.clone().multiply(.12));
-            pose(m.parts.get(i*3+1),outer,new Quaternionf().rotateZ(-side*(.12f+fold)).rotateY(side*.18f),.72f,1.18f,.62f);
-            pose(m.parts.get(i*3+2),inner,new Quaternionf().rotateZ(-side*(.28f+fold)).rotateY(side*.12f),.64f,1.03f,.58f);
-            for(int feather=0;feather<5;feather++)for(int step=1;step<=10;step++){double u=step/10.0;double span=(2.8-feather*.36)*open;Location point=root.clone().add(r.clone().multiply(side*span*u)).add(0,(.38+feather*.20)*u-.45*u*u,0).subtract(f.clone().multiply((.3+feather*.21)*u+1.1*u*u));p.getWorld().spawnParticle(Particle.DUST,point,1,0,0,0,0,feather%2==0?BLUE:PINK);if(step%3==0)p.getWorld().spawnParticle(Particle.DUST,point.clone().add(0,.035,0),1,0,0,0,0,WHITE);}
+            int side=i==0?-1:1;
+            Location root=base.clone().add(r.clone().multiply(side*.24));
+            root.setYaw(p.getLocation().getYaw());root.setPitch(0);
+            pose(m.parts.get(i*8),root,new Quaternionf().rotateZ((float)(side*(.15+open*.40))),.48f,.62f,.48f);
+            for(int j=0;j<7;j++){
+                double angle=Math.toRadians(FAN_ANGLE[j]);
+                double q=Math.max(.001,open);
+                double length=FAN_LENGTH[j]*q;
+                Vector direction=r.clone().multiply(side*Math.cos(angle)).add(new Vector(0,Math.sin(angle),0)).subtract(f.clone().multiply(.17+j*.025)).normalize();
+                Location origin=root.clone().add(r.clone().multiply(side*.10)).add(0,.05-j*.045,0).subtract(f.clone().multiply(.12+j*.025));
+                Location center=origin.clone().add(direction.clone().multiply(length*.5));
+                // The feather mesh points along local +Y. Rotate it directly into the world-space fan direction.
+                center.setYaw(0);center.setPitch(0);
+                Quaternionf rotation=new Quaternionf().rotationTo(0,1,0,(float)direction.getX(),(float)direction.getY(),(float)direction.getZ());
+                pose(m.parts.get(i*8+1+j),center,rotation,(float)(.82*q),(float)(length/1.5),(float)(.55*q));
+                if(open>.4&&t%2==0){
+                    Location tip=origin.clone().add(direction.clone().multiply(length));
+                    p.getWorld().spawnParticle(Particle.DUST,tip,1,.04,.04,.04,0,j%2==0?PINK:WHITE);
+                }
+            }
         }
     }
     private boolean destiny(Player p,Motion m,int t){

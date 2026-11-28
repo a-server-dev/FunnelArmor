@@ -323,7 +323,9 @@ class ResourcePackTest {
                             continue;
                         }
                         if (entry.getName().matches("assets/funnel/models/item/(hyper_hammer_(handle|ball|link)|destiny_(controller|wing_root|wing_outer|wing_inner))\\.json")) {
-                            assertEquals("funnel:item/heavy_weapon_palette",model.getAsJsonObject("textures").get("0").getAsString());
+                            boolean destinyWing=entry.getName().contains("/destiny_wing_");
+                            if(destinyWing)assertTrue(model.getAsJsonObject("textures").get("0").getAsString().startsWith("minecraft:block/"));
+                            else assertEquals("funnel:item/heavy_weapon_palette",model.getAsJsonObject("textures").get("0").getAsString());
                             assertTrue(model.getAsJsonArray("elements").size()>=3);
                             for(var part:model.getAsJsonArray("elements")){
                                 var cube=part.getAsJsonObject();
@@ -331,7 +333,7 @@ class ResourcePackTest {
                                     double lo=cube.getAsJsonArray("from").get(axis).getAsDouble(),hi=cube.getAsJsonArray("to").get(axis).getAsDouble();
                                     assertTrue(lo>=-16&&lo<hi&&hi<=32,entry.getName());
                                 }
-                                for(var face:cube.getAsJsonObject("faces").entrySet())assertEquals("#0",face.getValue().getAsJsonObject().get("texture").getAsString());
+                                for(var face:cube.getAsJsonObject("faces").entrySet()){String ref=face.getValue().getAsJsonObject().get("texture").getAsString();assertTrue(ref.startsWith("#")&&model.getAsJsonObject("textures").has(ref.substring(1)));}
                             }
                             checked++;zip.closeEntry();continue;
                         }
