@@ -59,6 +59,7 @@ final class TwinBusterCombat implements Listener {
     private final NamespacedKey modeKey;
     private final NamespacedKey identityKey;
     private final Map<UUID, Charge> charging = new HashMap<>();
+    private final Set<UUID> applyingBeamDamage = new HashSet<>();
     private final Map<UUID, Long> combinedCooldowns = new HashMap<>();
     private final Map<UUID, Long> leftCooldowns = new HashMap<>();
     private final Map<UUID, Long> rightCooldowns = new HashMap<>();
@@ -94,6 +95,7 @@ final class TwinBusterCombat implements Listener {
     void stop() {
         for (Player player : Bukkit.getOnlinePlayers()) removeLeftVisual(player);
         charging.clear();
+        applyingBeamDamage.clear();
         combinedCooldowns.clear();
         leftCooldowns.clear();
         rightCooldowns.clear();
@@ -294,7 +296,8 @@ final class TwinBusterCombat implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onMelee(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player player
-                && weapon(player.getInventory().getItemInMainHand())) {
+                && weapon(player.getInventory().getItemInMainHand())
+                && !applyingBeamDamage.contains(player.getUniqueId())) {
             event.setCancelled(true);
         }
     }
@@ -483,7 +486,9 @@ final class TwinBusterCombat implements Listener {
         Vector start = muzzle.toVector();
         for (Entity entity : world.getNearbyEntities(middle.toLocation(world),
                 length / 2 + 2, length / 2 + 2, length / 2 + 2)) {
-            if (!(entity instanceof LivingEntity living) || living instanceof Player
+            if (!(entity instanceof LivingEntity living) || living.equals(shooter)
+                    || living instanceof Player target && (target.getGameMode() == org.bukkit.GameMode.CREATIVE
+                        || target.getGameMode() == org.bukkit.GameMode.SPECTATOR || !world.getPVP())
                     || !living.isValid() || living.isDead()
                     || hit.contains(living.getUniqueId())) continue;
             Vector center = living.getLocation().add(0, living.getHeight() * .52, 0).toVector();
@@ -494,7 +499,11 @@ final class TwinBusterCombat implements Listener {
             if (fromStart.subtract(closest).lengthSquared()
                     > Math.pow(radius + living.getWidth() * .5, 2)) continue;
             hit.add(living.getUniqueId());
-            living.damage(damage, shooter);
+            if (damage <= 0) continue;
+            UUID owner = shooter.getUniqueId();
+            applyingBeamDamage.add(owner);
+            try { living.damage(damage, shooter); }
+            finally { applyingBeamDamage.remove(owner); }
         }
     }
 

@@ -17,6 +17,17 @@ class WeaponMaterialAndDamageTest {
         assertTrue(cfg.contains("combined-damage: 1.5"));
     }
 
+    @Test void twinBusterCustomBeamDamageIsNotCancelledByOwnMeleeListener() throws Exception {
+        String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/TwinBusterCombat.java"));
+        assertTrue(code.contains("!applyingBeamDamage.contains(player.getUniqueId())"));
+        assertTrue(code.contains("applyingBeamDamage.add(owner)"));
+        assertTrue(code.contains("try { living.damage(damage, shooter); }"));
+        assertTrue(code.contains("finally { applyingBeamDamage.remove(owner); }"));
+        assertTrue(code.contains("living.equals(shooter)"));
+        assertTrue(code.contains("!world.getPVP()"));
+        assertFalse(code.contains("|| living instanceof Player\n"));
+    }
+
     @Test void diamondWeaponMaterialsPreserveCustomAttackLogicAndLegacyMetadata() throws Exception {
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamMeleeCombat.java"));
         assertTrue(code.contains("new ItemStack(Material.DIAMOND_SWORD)"));
