@@ -322,6 +322,19 @@ class ResourcePackTest {
                             zip.closeEntry();
                             continue;
                         }
+                        if (entry.getName().matches("assets/funnel/models/item/(hyper_hammer_(handle|ball|link)|destiny_(controller|wing_root))\\.json")) {
+                            assertEquals("funnel:item/heavy_weapon_palette",model.getAsJsonObject("textures").get("0").getAsString());
+                            assertTrue(model.getAsJsonArray("elements").size()>=3);
+                            for(var part:model.getAsJsonArray("elements")){
+                                var cube=part.getAsJsonObject();
+                                for(int axis=0;axis<3;axis++){
+                                    double lo=cube.getAsJsonArray("from").get(axis).getAsDouble(),hi=cube.getAsJsonArray("to").get(axis).getAsDouble();
+                                    assertTrue(lo>=-16&&lo<hi&&hi<=32,entry.getName());
+                                }
+                                for(var face:cube.getAsJsonObject("faces").entrySet())assertEquals("#0",face.getValue().getAsJsonObject().get("texture").getAsString());
+                            }
+                            checked++;zip.closeEntry();continue;
+                        }
                         String textureId = model.getAsJsonObject("textures").get("0").getAsString();
                         assertTrue(textureId.equals("funnel:item/funnel") ||
                                 textureId.equals("funnel:block/funnel") ||
@@ -345,7 +358,7 @@ class ResourcePackTest {
                     zip.closeEntry();
                 }
             }
-            assertEquals(53, checked,
+            assertEquals(58, checked,
                     "38 existing validated models + 15 advanced weapon models");
             assertEquals(2, aerialAliases, "Generic Aerial controller and legacy bit aliases");
             assertEquals(27, aerialExports, "14 legacy models + 11 live bit-first pieces + idle and blocking v2 shields");

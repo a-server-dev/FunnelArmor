@@ -259,3 +259,17 @@ advanced-weapons:
   freedom:
     enabled: true
     damage: 1.5
+
+# Motion weapons: HP, ticks and blocks.
+motion-weapons:
+  hammer:
+    enabled: true
+    damage: 1.5
+    cooldown-ticks: 80
+    range: 7.0
+  destiny:
+    enabled: true
+    damage: 1.5
+    cooldown-ticks: 100
+    dash-ticks: 12
+    dash-speed: 1.05

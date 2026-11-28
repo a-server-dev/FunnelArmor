@@ -6,10 +6,10 @@ import java.util.List;
 final class FunnelGiftCatalog {
     static final List<String> ALL = List.of(
         "1", "3", "4", "aerial", "brau", "buster",
-        "saber", "hawk", "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom");
+        "saber", "hawk", "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom", "hammer", "destiny");
     static final List<String> OPTIONS = List.of(
         "1", "3", "4", "aerial", "brau", "buster",
-        "saber", "hawk", "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom", "all");
+        "saber", "hawk", "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom", "hammer", "destiny", "all");
 
     private FunnelGiftCatalog() {}
 

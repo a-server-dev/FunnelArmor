@@ -17,6 +17,8 @@ final class WeaponCooldowns {
         if(model.startsWith("twin_buster_rifle_"))return "buster";
         if(model.startsWith("barbatos_ultra_mace"))return "mace";
         return switch(model){
+            case "hyper_hammer_handle" -> "hammer";
+            case "destiny_controller" -> "destiny";
             case "epyon_beam_sword","epyon_shield" -> "epyon";
             case "heavyarms_gatling_body" -> "heavyarms";
             case "freedom_lupus_rifle" -> "freedom";

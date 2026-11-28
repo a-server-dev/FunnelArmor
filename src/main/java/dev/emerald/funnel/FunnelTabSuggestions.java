@@ -32,14 +32,14 @@ public final class FunnelTabSuggestions {
         String action = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 1) {
             candidates.addAll(List.of("aerial", "brau", "buster", "gn", "gn2",
-                "gnv", "saber", "hawk", "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom",
+                "gnv", "saber", "hawk", "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom", "hammer", "destiny",
                 "pack", "status", "diagnose",
                 "give", "angle", "reload"));
             if (player) candidates.addAll(List.of("formation", "shield", "barrier"));
         } else {
             switch (action) {
                 case "saber", "hawk", "gn", "gn2", "gnv", "brau", "buster",
-                     "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom" -> {
+                     "atomic", "mace", "satellite", "epyon", "heavyarms", "freedom", "hammer", "destiny" -> {
                     if (args.length != 2) return List.of();
                     candidates.add("status");
                 }
