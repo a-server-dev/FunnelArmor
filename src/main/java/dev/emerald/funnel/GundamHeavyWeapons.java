@@ -122,9 +122,10 @@ final class GundamHeavyWeapons implements Listener {
     ItemStack giftItem(String kind) {
         if (!List.of(ATOMIC,MACE,SATELLITE).contains(kind))
             throw new IllegalArgumentException("Unknown heavy weapon: "+kind);
-        ItemStack result = new ItemStack(Material.LEATHER_HORSE_ARMOR);
+        ItemStack result = new ItemStack(MACE.equals(kind)?Material.MACE:Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = result.getItemMeta();
-        meta.setUnbreakable(true);
+        if(MACE.equals(kind))prepareMace(meta);
+        else meta.setUnbreakable(true);
         switch(kind) {
             case ATOMIC -> {
                 meta.displayName(Component.text("§bGP02A アトミック・バズーカ"));
@@ -161,10 +162,11 @@ final class GundamHeavyWeapons implements Listener {
 
     private String kind(Player player) {
         ItemStack item = player.getInventory().getItemInMainHand();
-        if (item.getType()!=Material.LEATHER_HORSE_ARMOR || !item.hasItemMeta())
+        if ((item.getType()!=Material.LEATHER_HORSE_ARMOR && item.getType()!=Material.MACE) || !item.hasItemMeta())
             return "";
         String value=item.getItemMeta().getPersistentDataContainer()
             .get(kindKey,PersistentDataType.STRING);
+        if(item.getType()==Material.MACE)return MACE.equals(value)?MACE:"";
         return value!=null && List.of(ATOMIC,MACE,SATELLITE).contains(value) ? value : "";
     }
 
@@ -187,6 +189,32 @@ final class GundamHeavyWeapons implements Listener {
     private double number(String path,double fallback,double minimum,double maximum) {
         double v=plugin.getConfig().getDouble("heavy-weapons."+path,fallback);
         return Double.isFinite(v)?Math.max(minimum,Math.min(maximum,v)):fallback;
+    }
+
+    private double weaponDamage(String path,double fallback) {
+        return DamageSettings.read(plugin.getConfig(),"heavy-weapons."+path,fallback);
+    }
+
+    private void prepareMace(ItemMeta meta) {
+        meta.setUnbreakable(false);
+        meta.removeAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE);
+        meta.removeAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED);
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_DAMAGE,
+            new org.bukkit.attribute.AttributeModifier(new NamespacedKey(plugin,"mace_base_damage"),0,
+                org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+        meta.addAttributeModifier(org.bukkit.attribute.Attribute.ATTACK_SPEED,
+            new org.bukkit.attribute.AttributeModifier(new NamespacedKey(plugin,"mace_base_speed"),0,
+                org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,org.bukkit.inventory.EquipmentSlotGroup.MAINHAND));
+    }
+
+    private void migrateMace(Player p) {
+        ItemStack old=p.getInventory().getItemInMainHand();
+        if(!MACE.equals(kind(p)))return;
+        ItemMeta meta=old.getItemMeta();
+        if(old.getType()==Material.MACE&&!meta.isUnbreakable())return;
+        ItemStack migrated=old.getType()==Material.MACE?old.clone():new ItemStack(Material.MACE,old.getAmount());
+        prepareMace(meta);
+        if(migrated.setItemMeta(meta))p.getInventory().setItemInMainHand(migrated);
     }
 
     void start() {
@@ -494,6 +522,7 @@ final class GundamHeavyWeapons implements Listener {
                 ||!enabled(visuals.get(id).kind))clear(id);
         }
         for(Player p:Bukkit.getOnlinePlayers()) {
+            if(!p.isDead())migrateMace(p);
             String k=kind(p);
             if(!k.isEmpty()&&!p.isDead()&&enabled(k)&&!k.equals(MACE)) {
                 ensureVisuals(p,k);
@@ -599,7 +628,7 @@ final class GundamHeavyWeapons implements Listener {
     private void atomicBlast(Player shooter,Location origin) {
         World w=origin.getWorld();
         double radius=number("atomic.radius",7.0,1.0,12.0);
-        double baseDamage=number("atomic.damage",1.5,0,1.5);
+        double baseDamage=weaponDamage("atomic.damage",1.5);
         w.playSound(origin,Sound.ENTITY_GENERIC_EXPLODE,3f,.52f);
         w.playSound(origin,Sound.BLOCK_BEACON_DEACTIVATE,2.6f,.5f);
         w.spawnParticle(Particle.EXPLOSION,origin,14,1.15,1.15,1.15,.025);
@@ -695,7 +724,7 @@ final class GundamHeavyWeapons implements Listener {
             RayTraceResult hit=world.rayTraceEntities(eye,ray,unobstructed,.45,
                 entity->targetable(entity,shooter));
             if(hit!=null&&hit.getHitEntity() instanceof LivingEntity victim) {
-                double damage=number("mace.pile-damage",1.5,0,1.5);
+                double damage=weaponDamage("mace.pile-damage",1.5);
                 slamDamage.add(owner);
                 try {if(damage>0)victim.damage(damage,shooter);}
                 finally {slamDamage.remove(owner);}
@@ -745,7 +774,7 @@ final class GundamHeavyWeapons implements Listener {
         center.setY(Math.max(center.getY(),p.getLocation().getY())+.2);
         World w=p.getWorld();
         double radius=number("mace.slam-radius",4.0,1,8);
-        double damage=number("mace.slam-damage",1.5,0,1.5);
+        double damage=weaponDamage("mace.slam-damage",1.5);
         w.playSound(center,Sound.ENTITY_IRON_GOLEM_ATTACK,1.4f,.60f);
         w.playSound(center,Sound.ENTITY_GENERIC_EXPLODE,.75f,.91f);
         for(int wave=0;wave<3;wave++){
@@ -778,7 +807,8 @@ final class GundamHeavyWeapons implements Listener {
     @EventHandler(priority=EventPriority.HIGHEST,ignoreCancelled=true)
     public void onMaceHit(EntityDamageByEntityEvent event) {
         if(!(event.getDamager() instanceof Player p))return;
-        if(!MACE.equals(kind(p))||!enabled(MACE))return;
+        if(!MACE.equals(kind(p)))return;
+        if(!enabled(MACE)){event.setCancelled(true);return;}
         UUID id=p.getUniqueId();
         if(slamDamage.contains(id))return;
         long now=Bukkit.getCurrentTick();
@@ -786,7 +816,7 @@ final class GundamHeavyWeapons implements Listener {
             event.setCancelled(true);return;
         }
         cooldownsMaceHit.put(id,now+ticks("mace.hit-cooldown-ticks",11,2,40));
-        event.setDamage(number("mace.hit-damage",1.5,0,1.5));
+        event.setDamage(weaponDamage("mace.hit-damage",1.5));
         if(event.getEntity() instanceof LivingEntity target){
             Vector dir=target.getLocation().toVector().subtract(p.getLocation().toVector());
             if(dir.lengthSquared()>1e-6){
@@ -812,7 +842,7 @@ final class GundamHeavyWeapons implements Listener {
         World w=p.getWorld();
         double range=number("satellite.range",56,8,90);
         Location aimed=shotAim(p,range);
-        double perBeam=number("satellite.beam-damage",1.5,0,1.5);
+        double perBeam=weaponDamage("satellite.beam-damage",3.0);
         Map<UUID,LivingEntity> hit=new HashMap<>();
         Location[] start=new Location[2];
         Vector[] direction=new Vector[2];

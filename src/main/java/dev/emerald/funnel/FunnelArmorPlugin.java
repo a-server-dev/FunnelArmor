@@ -125,6 +125,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
 
     @Override public void onEnable() {
         saveDefaultConfig();
+        DamageSettings.upgradeOnce(this);
         itemKey = new NamespacedKey(this, "funnel_weapon");
         displayKey = new NamespacedKey(this, "funnel_drone_display");
         variantKey = new NamespacedKey(this, "funnel_variant");
@@ -1275,8 +1276,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             player.getWorld().playSound(aim, Sound.ENTITY_GUARDIAN_ATTACK,
                     0.24f, 1.95f);
             if (target.isValid() && !target.isDead()) {
-                target.damage(Math.min(0.5, Math.max(0,
-                        getConfig().getDouble("qubeley.damage", 0.5))), player);
+                target.damage(DamageSettings.read(getConfig(),"qubeley.damage",0.5), player);
             }
         }
     }
@@ -1577,8 +1577,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
             }
         }
         if (closestOwner != null)
-            registerBarrierHit(closestOwner, Math.min(0.5, Math.max(0,
-                    getConfig().getDouble("beam.damage", 0.5))));
+            registerBarrierHit(closestOwner, DamageSettings.read(getConfig(),"beam.damage",0.5));
         return closest;
     }
 
@@ -1638,7 +1637,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
         }
         Entity hit = entityHit == null ? null : entityHit.getHitEntity();
         if (hit instanceof LivingEntity living) living.damage(
-                Math.min(0.5, Math.max(0, getConfig().getDouble("beam.damage", 0.5))), player);
+                DamageSettings.read(getConfig(),"beam.damage",0.5), player);
     }
 
     @Override

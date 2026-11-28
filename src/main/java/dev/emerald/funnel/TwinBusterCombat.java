@@ -111,14 +111,9 @@ final class TwinBusterCombat implements Listener {
         return Double.isFinite(value) && value > 0 ? value : fallback;
     }
 
-    private static final double DAMAGE_CAP = 1.5;
-
     private double shotDamage(String name) {
-        double value = plugin.getConfig().getDouble("twin-buster." + name, DAMAGE_CAP);
-        // Upgrade the previous shipped dual-shot default without requiring
-        // existing servers to regenerate their config.yml.
-        if (name.equals("dual-damage") && value == 1.25) value = DAMAGE_CAP;
-        return Double.isFinite(value) ? Math.max(0, Math.min(DAMAGE_CAP, value)) : DAMAGE_CAP;
+        return DamageSettings.read(plugin.getConfig(),"twin-buster."+name,
+                name.equals("dual-damage")?.5:1.5);
     }
 
     private boolean isVisual(ItemStack item) {

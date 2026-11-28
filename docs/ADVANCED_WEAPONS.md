@@ -34,3 +34,6 @@ Action bars are limited to cooldown and charging states (including charge-ready 
 
 ## v0.42.0
 Twin Buster Rifle dual and combined shots default to 1.5 HP per target and are capped at 1.5 even with older configs; the legacy dual default 1.25 is treated as 1.5. Beam Saber uses DIAMOND_SWORD and Heat Hawk uses DIAMOND_AXE with their existing item model, PDC, unbreakability, damage, timings, and right-click behavior. Existing tagged feather weapons migrate in the main hand, preserving metadata. Neutral attack attributes and cancellation of extra vanilla sweep damage retain the former combat behavior.
+
+## v0.43.0
+Config is authoritative for weapon damage, with no hard-coded maximum. The first upgrade backs up the existing config and copies the listed damage defaults from the bundled config once, marking damage-config-revision: 1. Subsequent reloads/restarts preserve user edits. Twin Buster dual .5 / combined 1.5, Satellite 3 per target per volley, Aerial .5 for both modes. Tagged Beam Saber, Heat Hawk and Barbatos Mace have normal durability; existing held items migrate, keeping metadata. Barbatos uses MACE and retains custom attacks. Heavyarms bypasses existing target hurt cooldown only for its own volleys (configurable), still deduplicating the four muzzles per victim. No model changes.

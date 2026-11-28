@@ -152,12 +152,13 @@ final class GundamMeleeCombat implements Listener {
 
     private ItemStack migrateHeld(Player player) {
         ItemStack old = player.getInventory().getItemInMainHand();
-        if (old.getType() != Material.FEATHER) return old;
         Material target = saber(old) ? Material.DIAMOND_SWORD
                 : hawk(old) ? Material.DIAMOND_AXE : null;
         if (target == null) return old;
-        ItemStack migrated = new ItemStack(target, old.getAmount());
         ItemMeta meta = old.getItemMeta();
+        if (old.getType() == target && !meta.isUnbreakable()) return old;
+        ItemStack migrated = old.getType() == target ? old.clone() : new ItemStack(target, old.getAmount());
+        meta.setUnbreakable(false);
         preserveCombatAttributes(meta);
         if (!migrated.setItemMeta(meta)) return old;
         player.getInventory().setItemInMainHand(migrated);
@@ -171,7 +172,7 @@ final class GundamMeleeCombat implements Listener {
     private ItemStack newSaber() {
         ItemStack item = new ItemStack(Material.DIAMOND_SWORD);
         ItemMeta meta = item.getItemMeta();
-        meta.setUnbreakable(true);
+        meta.setUnbreakable(false);
         preserveCombatAttributes(meta);
         meta.getPersistentDataContainer().set(saberKey, PersistentDataType.BYTE, (byte) 1);
         meta.getPersistentDataContainer().set(uidKey, PersistentDataType.STRING, UUID.randomUUID().toString());
@@ -187,7 +188,7 @@ final class GundamMeleeCombat implements Listener {
     private ItemStack newHawk() {
         ItemStack item = new ItemStack(Material.DIAMOND_AXE);
         ItemMeta meta = item.getItemMeta();
-        meta.setUnbreakable(true);
+        meta.setUnbreakable(false);
         preserveCombatAttributes(meta);
         meta.getPersistentDataContainer().set(hawkKey, PersistentDataType.BYTE, (byte) 1);
         meta.getPersistentDataContainer().set(uidKey, PersistentDataType.STRING, UUID.randomUUID().toString());

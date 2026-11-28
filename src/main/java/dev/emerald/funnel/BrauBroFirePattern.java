@@ -26,10 +26,8 @@ final class BrauBroFirePattern {
         return Double.isFinite(blocks) ? Math.max(4, Math.min(48, blocks)) : 30;
     }
 
-    static final double DAMAGE_CAP = 0.5;
-
     static double damage(double hp) {
-        return Double.isFinite(hp) ? Math.max(0, Math.min(DAMAGE_CAP, hp)) : DAMAGE_CAP;
+        return DamageSettings.nonnegative(hp, .5);
     }
 
     static double burstDamage(double perBeam, double maximum, int hits) {

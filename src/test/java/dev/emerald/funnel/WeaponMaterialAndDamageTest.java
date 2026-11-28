@@ -6,15 +6,14 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WeaponMaterialAndDamageTest {
-    @Test void twinBusterDamageIsCappedAndLegacyDefaultsUpgrade() throws Exception {
+    @Test void twinBusterDamageReadsConfigWithoutFixedCeiling() throws Exception {
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/TwinBusterCombat.java"));
         String cfg=Files.readString(Path.of("src/main/resources/config.yml"));
-        assertTrue(code.contains("DAMAGE_CAP = 1.5"));
-        assertTrue(code.contains("Math.min(DAMAGE_CAP, value)"));
-        assertTrue(code.contains("value == 1.25"));
+        assertFalse(code.contains("DAMAGE_CAP"));
+        assertTrue(code.contains("DamageSettings.read(plugin.getConfig()"));
         assertTrue(code.contains("shotDamage(\"dual-damage\")"));
         assertTrue(code.contains("shotDamage(\"combined-damage\")"));
-        assertTrue(cfg.contains("dual-damage: 1.5"));
+        assertTrue(cfg.contains("dual-damage: 0.5"));
         assertTrue(cfg.contains("combined-damage: 1.5"));
     }
 
@@ -22,7 +21,7 @@ class WeaponMaterialAndDamageTest {
         String code=Files.readString(Path.of("src/main/java/dev/emerald/funnel/GundamMeleeCombat.java"));
         assertTrue(code.contains("new ItemStack(Material.DIAMOND_SWORD)"));
         assertTrue(code.contains("new ItemStack(Material.DIAMOND_AXE)"));
-        assertTrue(code.contains("old.getType() != Material.FEATHER"));
+        assertTrue(code.contains("old.getType() == target && !meta.isUnbreakable()"));
         assertTrue(code.contains("migrated.setItemMeta(meta)"));
         assertTrue(code.contains("Attribute.ATTACK_SPEED"));
         assertTrue(code.contains("Attribute.ATTACK_DAMAGE"));

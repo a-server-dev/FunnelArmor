@@ -150,9 +150,8 @@ final class GundamAdvancedWeapons implements Listener {
     }
     private String kind(Player p){String s=value(p,kindKey);return TYPES.contains(s)?s:"";}
     private boolean enabled(String k){return plugin.getConfig().getBoolean("advanced-weapons."+k+".enabled",true);}
-    private double damage(String k,double cap){
-        double d=plugin.getConfig().getDouble("advanced-weapons."+k+".damage",cap);
-        return Double.isFinite(d)?Math.max(0,Math.min(cap,d)):cap;
+    private double damage(String k,double fallback){
+        return DamageSettings.read(plugin.getConfig(),"advanced-weapons."+k+".damage",fallback);
     }
     void start(){
         for(World w:Bukkit.getWorlds())for(ItemDisplay d:w.getEntitiesByClass(ItemDisplay.class))
@@ -521,7 +520,17 @@ final class GundamAdvancedWeapons implements Listener {
         if(length>.001){
             RayTraceResult contact=w.rayTraceEntities(muzzle,d,length,.19,e->targetable(e,p));
             if(contact!=null){length=muzzle.toVector().distance(contact.getHitPosition());
-                if(contact.getHitEntity() instanceof LivingEntity l&&hit.add(l.getUniqueId()))hurt(p,l,damage);}
+                if(contact.getHitEntity() instanceof LivingEntity l&&hit.add(l.getUniqueId())){
+                    // Only Heavyarms uses the non-glowing beam branch. Bypass
+                    // existing hurt resistance for this hit, without disabling
+                    // the victim's normal invulnerability for other attacks.
+                    if(!glow&&damage>0&&plugin.getConfig().getBoolean("advanced-weapons.heavyarms.bypass-hurt-cooldown",true)){
+                        int previous=l.getNoDamageTicks();
+                        l.setNoDamageTicks(0);
+                        try{hurt(p,l,damage);}
+                        finally{if(l.isValid()&&l.getNoDamageTicks()==0)l.setNoDamageTicks(previous);}
+                    }else hurt(p,l,damage);
+                }}
         }
         // Rendering is independent of collision and damage.
         if(!render)return;

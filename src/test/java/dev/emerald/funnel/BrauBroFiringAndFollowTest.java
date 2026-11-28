@@ -33,14 +33,14 @@ class BrauBroFiringAndFollowTest {
         assertEquals(48, BrauBroFirePattern.range(999), 1e-8);
         assertEquals(30, BrauBroFirePattern.range(Double.NaN), 1e-8);
         assertEquals(0, BrauBroFirePattern.damage(-100), 1e-8);
-        assertEquals(.5, BrauBroFirePattern.damage(999), 1e-8);
+        assertEquals(999, BrauBroFirePattern.damage(999), 1e-8);
         assertEquals(.5, BrauBroFirePattern.damage(Double.POSITIVE_INFINITY), 1e-8);
     }
 
-    @Test void allEightBeamsTogetherCannotExceedHalfHpPerVictim() {
+    @Test void allEightBeamsTogetherRespectConfiguredMaximumPerVictim() {
         for (int hits=1; hits<=8; hits++) {
             assertEquals(.5, BrauBroFirePattern.burstDamage(.5, .5, hits), 1e-8);
-            assertEquals(.5, BrauBroFirePattern.burstDamage(1.5, 12, hits), 1e-8);
+            assertEquals(1.5*hits, BrauBroFirePattern.burstDamage(1.5, 12, hits), 1e-8);
         }
         assertEquals(0, BrauBroFirePattern.burstDamage(.5,.5,0), 1e-8);
         assertEquals(.2, BrauBroFirePattern.burstDamage(.5,.2,8), 1e-8);

@@ -1,4 +1,7 @@
 # Changes require /funnel reload or a server restart.
+# Migration marker: do not remove or reset after first upgrade.
+damage-config-revision: 1
+# All damage values below are HP. No fixed damage ceiling in code.
 beam:
   damage: 0.5
   range: 32.0
@@ -118,7 +121,7 @@ aerial:
   # First right click charges once, then five separate right clicks fire manually.
   rifle-shots: 5
   rifle-charge-ticks: 20
-  rifle-damage: 1.5
+  rifle-damage: 0.5
   rifle-range: 32.0
   rifle-shot-interval-ticks: 4
   rifle-cooldown-ticks: 200
@@ -136,8 +139,7 @@ aerial:
 twin-buster:
   enabled: true
   dual-range: 30.0
-  # Both modes are capped at 1.5 HP per target; the old 1.25 default upgrades to 1.5.
-  dual-damage: 1.5
+  dual-damage: 0.5
   dual-interval-ticks: 10 # independent left and right cooldowns
   combined-range: 48.0
   combined-damage: 1.5
@@ -207,8 +209,7 @@ brau-bro:
   # Eight beams fired together from four twin-muzzle pods, aimed by crosshair.
   fire-range: 30.0
   fire-cooldown-ticks: 20
-  # Base HP damage: one target receives at most 0.5 per eight-beam volley.
-  # The code also clamps older server configurations to this limit.
+  # Per-beam damage and configurable maximum per target per eight-beam volley.
   fire-damage-per-beam: 0.5
   max-burst-damage: 0.5
   beam-particle-step: 0.72
@@ -242,9 +243,9 @@ heavy-weapons:
     charge-ticks: 240
     cooldown-ticks: 360
     range: 56.0
-    beam-damage: 1.5
+    beam-damage: 3.0
 
-# Three independent weapons, 0.5/1.5 HP caps per target per attack.
+# Three independent weapons; damage per target per attack.
 advanced-weapons:
   epyon:
     enabled: true
@@ -252,6 +253,8 @@ advanced-weapons:
   heavyarms:
     enabled: true
     damage: 0.5
+    # Ignore existing invulnerability frames for each gatling hit only.
+    bypass-hurt-cooldown: true
   freedom:
     enabled: true
     damage: 1.5
