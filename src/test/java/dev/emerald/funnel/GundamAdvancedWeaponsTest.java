@@ -28,7 +28,7 @@ class GundamAdvancedWeaponsTest {
     }
     @Test void weaponsAreRegisteredAndGnRemainsUndistributable(){
         assertTrue(FunnelGiftCatalog.ALL.containsAll(List.of("epyon","heavyarms","freedom")));
-        assertEquals(14,FunnelGiftCatalog.ALL.size());
+        assertEquals(16, FunnelGiftCatalog.ALL.size());
         assertFalse(FunnelGiftCatalog.supported("gn"));
         assertFalse(FunnelGiftCatalog.supported("gn2"));
         assertFalse(FunnelGiftCatalog.supported("gnv"));

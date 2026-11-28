@@ -15,11 +15,12 @@ class FunnelCommandAccessTest {
         assertFalse(FunnelCommandAccess.authorizedPlayer("", false));
     }
 
-    @Test void catalogHasElevenUniqueNonLegacyEquipmentKinds() {
-        assertEquals(14, FunnelGiftCatalog.ALL.size());
-        assertEquals(14, new HashSet<>(FunnelGiftCatalog.ALL).size());
+    @Test void catalogHasSixteenUniqueNonLegacyEquipmentKinds() {
+        assertEquals(16, FunnelGiftCatalog.ALL.size());
+        assertEquals(16, new HashSet<>(FunnelGiftCatalog.ALL).size());
         assertTrue(FunnelGiftCatalog.OPTIONS.containsAll(FunnelGiftCatalog.ALL));
         assertTrue(FunnelGiftCatalog.supported("all"));
+        assertTrue(FunnelGiftCatalog.ALL.containsAll(java.util.List.of("hammer", "destiny")));
         for (String kind : java.util.List.of("gn", "gn2", "gnv")) {
             assertFalse(FunnelGiftCatalog.supported(kind));
             assertFalse(FunnelGiftCatalog.ALL.contains(kind));
