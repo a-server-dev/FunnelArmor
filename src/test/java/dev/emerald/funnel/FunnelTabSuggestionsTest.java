@@ -18,6 +18,18 @@ class FunnelTabSuggestionsTest {
             new String[]{""},false,false,ONLINE));
     }
 
+    @Test void publicUsersSeeOnlyPermittedCommandsAndNoTargetNames(){
+        var a=new FunnelCommandAccess.Access(false,true,true,true);
+        var top=FunnelTabSuggestions.complete(new String[]{""},a,true,1,ONLINE);
+        assertTrue(top.containsAll(List.of("pack","status","formation","shield","barrier","hammer","aerial")));
+        assertFalse(top.contains("give"));assertFalse(top.contains("reload"));assertFalse(top.contains("diagnose"));assertFalse(top.contains("angle"));
+        assertEquals(List.of("status"),FunnelTabSuggestions.complete(new String[]{"aerial",""},a,true,1,ONLINE));
+        assertEquals(List.of(),FunnelTabSuggestions.complete(new String[]{"pack",""},a,true,1,ONLINE));
+        assertEquals(List.of(),FunnelTabSuggestions.complete(new String[]{"give",""},a,true,1,ONLINE));
+        assertEquals(List.of(),FunnelTabSuggestions.complete(new String[]{"aerial","preview",""},a,true,1,ONLINE));
+        assertEquals(List.of("pack"),FunnelTabSuggestions.complete(new String[]{""},new FunnelCommandAccess.Access(false,true,false,false),true,1,ONLINE));
+    }
+
     @Test void fullAdminCommandsAndConsoleCompletionStayAvailable() {
         var player = FunnelTabSuggestions.complete(new String[]{""},true,true,ONLINE);
         assertTrue(player.containsAll(List.of("give","pack","status","aerial",

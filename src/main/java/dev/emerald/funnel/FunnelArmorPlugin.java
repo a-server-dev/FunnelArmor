@@ -1658,11 +1658,11 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command,
                                       String alias, String[] args) {
-        if (!command.getName().equalsIgnoreCase("funnel") || !FunnelCommandAccess.allowed(sender)) return List.of();
+        if (!command.getName().equalsIgnoreCase("funnel")) return List.of();
         // Never disclose admin-only actions or offer player targets to non-admins.
         List<String> online = Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName).toList();
-        return FunnelTabSuggestions.complete(args, FunnelCommandAccess.allowed(sender),
+        return FunnelTabSuggestions.complete(args, FunnelCommandAccess.access(sender),
                 sender instanceof Player,
                 sender instanceof Player p ? selectedVariant(p) : 0, online);
     }
@@ -1684,11 +1684,18 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
     }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!FunnelCommandAccess.allowed(sender)) {
-            sender.sendMessage("§c/funnel コマンドはOP・指定管理者・funnel.admin権限を持つプレイヤーのみ使用できます。");
+        FunnelCommandAccess.Access access=FunnelCommandAccess.access(sender);
+        if (!access.permits(args)) {
+            sender.sendMessage("§cこの/funnelコマンドを使用する権限がありません。");
             return true;
         }
         if (args.length == 0) {
+            if(!access.admin()){
+                if(access.pack())sender.sendMessage("§b/funnel pack");
+                if(access.status())sender.sendMessage("§b/funnel status §7| §b/funnel <装備名> status");
+                if(access.use())sender.sendMessage("§b/funnel formation <...> §7| §b/funnel shield §7| §b/funnel barrier");
+                return true;
+            }
             sender.sendMessage("§b/funnel give all [player]"
                 + " §7| §b/funnel pack [player] §7| §b/funnel <装備名> status"
                 + " §7| §b/funnel formation <...> §7| §b/funnel reload §7| §b/funnel status");
@@ -1869,6 +1876,7 @@ public final class FunnelArmorPlugin extends JavaPlugin implements Listener, Com
                 sender.sendMessage("§bFin tip angle: §f" + FinTipAngleSetting.effective(raw)
                         + "° §7(config: " + raw + ")");
                 sender.sendMessage("§bPack SHA1: §f" + sha1);
+                if(!access.admin())break;
                 sender.sendMessage("§bPack URL: §f" + (sender instanceof Player p ? publicUrl(p) : publicUrl()));
                 sender.sendMessage("§bConfigured public host: §f" + getConfig().getString("pack.embedded-http.public-host", "auto"));
                 sender.sendMessage("§bPack bytes: §f" + (packBytes == null ? 0 : packBytes.length));

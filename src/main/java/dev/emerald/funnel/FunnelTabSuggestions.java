@@ -26,8 +26,12 @@ public final class FunnelTabSuggestions {
     public static List<String> complete(String[] args, boolean admin,
                                         boolean player, int variant,
                                         Collection<String> onlineNames) {
-        // No command or argument hints for unauthorized players.
-        if (!admin || args == null || args.length == 0) return List.of();
+        return complete(args,new FunnelCommandAccess.Access(admin,false,false,false),player,variant,onlineNames);
+    }
+    static List<String> complete(String[] args,FunnelCommandAccess.Access access,
+                                 boolean player,int variant,Collection<String> onlineNames){
+        boolean admin=access.admin();
+        if(args==null||args.length==0)return List.of();
         List<String> candidates = new ArrayList<>();
         String action = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 1) {
@@ -83,6 +87,18 @@ public final class FunnelTabSuggestions {
                 }
                 default -> { return List.of(); }
             }
+        }
+        if(!admin){
+            if(args.length==1)candidates.removeIf(candidate->{
+                if(FunnelCommandAccess.WEAPONS.contains(candidate))return !access.status();
+                return !access.permits(new String[]{candidate});
+            });
+            else if(action.equals("formation")){
+                if(!access.use())return List.of();
+            }else if(FunnelCommandAccess.WEAPONS.contains(action)&&args.length==2){
+                if(!access.status())return List.of();
+                candidates.removeIf(candidate->!candidate.equals("status"));
+            }else return List.of();
         }
         String partial = args[args.length-1] == null ? "" : args[args.length-1];
         String prefix = partial.toLowerCase(Locale.ROOT);

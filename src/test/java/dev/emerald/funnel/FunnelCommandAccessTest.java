@@ -17,6 +17,16 @@ class FunnelCommandAccessTest {
         assertFalse(FunnelCommandAccess.authorizedPlayer("", false));
     }
 
+    @Test void publicPermissionsAreLimitedToTheirOwnCommands(){
+        var a=new FunnelCommandAccess.Access(false,true,true,true);
+        for(String[] args:new String[][]{{"pack"},{"status"},{"hammer","status"},{"formation","next"},{"shield"},{"barrier"},{}})assertTrue(a.permits(args));
+        for(String[] args:new String[][]{{"give","all"},{"pack","other"},{"reload"},{"angle"},{"diagnose"},{"aerial","preview","1"},{"hammer","give"}})assertFalse(a.permits(args));
+        var pack=new FunnelCommandAccess.Access(false,true,false,false);
+        assertTrue(pack.permits(new String[]{"pack"}));
+        assertFalse(pack.permits(new String[]{"status"}));
+        assertFalse(pack.permits(new String[]{"shield"}));
+    }
+
     @Test void catalogHasSixteenUniqueNonLegacyEquipmentKinds() {
         assertEquals(16, FunnelGiftCatalog.ALL.size());
         assertEquals(16, new HashSet<>(FunnelGiftCatalog.ALL).size());

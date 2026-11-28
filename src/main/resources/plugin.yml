@@ -12,3 +12,12 @@ permissions:
   funnel.admin:
     description: Access all FunnelArmor commands and tab completion
     default: op
+  funnel.pack:
+    description: Resend your own resource pack
+    default: true
+  funnel.status:
+    description: View public plugin and weapon status
+    default: true
+  funnel.use:
+    description: Change your formation and toggle shield or barrier
+    default: true
